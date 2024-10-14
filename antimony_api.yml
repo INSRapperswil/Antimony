@@ -19,7 +19,7 @@ tags:
   - name: topology
     description: A lab topology template that can be deployed or edited.
   - name: user
-    description: The Antimony main actor. Editor or reader.
+    description: The Antimony main actor. MonacoWrapper or reader.
   - name: device
     description: A device that represents a node in a topology.
 paths:

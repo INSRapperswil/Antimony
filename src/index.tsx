@@ -5,16 +5,19 @@ import App from '@sb/App';
 
 import '@sb/theme/Base.sass';
 
+/*
+ * We want to register the workbox service worker before loading the web-app.
+ */
 if (process.env.NODE_ENV === 'production') {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register('/service-worker.js')
         .then(registration => {
-          console.log('SW registered: ', registration);
+          console.log('[SW] Worker registered: ', registration);
         })
         .catch(registrationError => {
-          console.error('SW registration failed: ', registrationError);
+          console.error('[SW] Worker registration failed: ', registrationError);
         });
     });
   }

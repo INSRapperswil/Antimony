@@ -1,0 +1,21 @@
+.sb-topology-editor-topbar {
+  padding: 8px;
+  margin: -1px;
+}
+
+.sb-topology-editor-bottombar {
+  padding: 4px;
+  margin: -1px;
+  background-color: var(--dock-background-color);
+  border-bottom: 0;
+  font-weight: 400;
+  gap: 4px;
+  height: 30px;
+  z-index: 1;
+}
+.sb-topology-editor-bottombar > i.pi {
+  display: flex;
+  align-items: center;
+}
+
+/*# sourceMappingURL=TopologyEditor.css.map */

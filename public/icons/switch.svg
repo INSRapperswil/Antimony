@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="61.122936mm"
+   height="52.934017mm"
+   viewBox="0 0 61.122936 52.934017"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   sodipodi:docname="icons.svg"
+   inkscape:export-batch-path="../public/icons"
+   inkscape:export-batch-name=""
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.3344978"
+     inkscape:cx="207.19405"
+     inkscape:cy="315.84915"
+     inkscape:window-width="1728"
+     inkscape:window-height="1000"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer5" />
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="ArrowWideRounded"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide, rounded arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:round"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path2" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="ArrowWideRounded-5"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide, rounded arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:round"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path2-0" />
+    </marker>
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer5"
+     inkscape:label="switch"
+     transform="translate(-52.122919,-29.633333)">
+    <path
+       sodipodi:type="star"
+       style="display:inline;fill:#42b5ac;fill-opacity:1;stroke:#000000;stroke-width:0.836999"
+       id="path1-2-7-6-6"
+       inkscape:flatsided="true"
+       sodipodi:sides="6"
+       sodipodi:cx="6.6796913"
+       sodipodi:cy="6.2117114"
+       sodipodi:r1="32.137733"
+       sodipodi:r2="27.832094"
+       sodipodi:arg1="0"
+       sodipodi:arg2="0.52359878"
+       inkscape:rounded="0"
+       inkscape:randomized="0"
+       d="m 38.817425,6.2117114 -16.068867,27.8320936 -32.1377334,0 -16.0688666,-27.8320936 16.0688666,-27.8320934 32.1377334,0 z"
+       transform="matrix(0.93686559,0,0,0.93686559,76.426415,50.280803)"
+       inkscape:label="Background" />
+    <circle
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:1.3586;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path8-7"
+       cx="81.978409"
+       cy="56.101917"
+       r="19.895784"
+       inkscape:label="Circle" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:1.78339;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker-start:url(#ArrowWideRounded)"
+       d="M 94.817172,50.448033 H 86.268965 L 77.813474,67.105972 H 69.697379"
+       id="path26"
+       sodipodi:nodetypes="cccc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:1.78339;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker-start:url(#ArrowWideRounded-5)"
+       d="m 68.954166,50.448033 h 8.54821 l 8.455491,16.657939 h 8.116095"
+       id="path26-6"
+       sodipodi:nodetypes="cccc" />
+  </g>
+</svg>

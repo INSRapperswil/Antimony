@@ -22,15 +22,24 @@ export class APIConnector {
     return true;
   }
 
-  public async get<T>(path: string): Promise<[boolean, T | ErrorResponse]> {
+  public async get<T>(
+    path: string,
+    isExternal = false
+  ): Promise<[boolean, T | ErrorResponse]> {
     try {
-      const response = await fetch(`${this.apiUrl}/${path}`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          Authorization: this.authToken,
-        },
-      });
+      let response: Response | null = null;
+
+      if (isExternal) {
+        response = await fetch(path, {method: 'GET'});
+      } else {
+        response = await fetch(this.apiUrl + path, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            Authorization: this.authToken,
+          },
+        });
+      }
 
       if (!response.ok) {
         console.error(
@@ -43,6 +52,10 @@ export class APIConnector {
             message: `Failed to connect to the requested resource: ${response.status}.`,
           },
         ];
+      }
+
+      if (isExternal) {
+        return [true, JSON.parse(await response.text())];
       }
 
       const responseBody = await response.json();
@@ -69,10 +82,13 @@ export class APIConnector {
 
   public async post<T, R>(
     path: string,
-    body: T
+    body: T,
+    isExternal = false
   ): Promise<[boolean, R | ErrorResponse]> {
     try {
-      const response = await fetch(`${this.apiUrl}/${path}`, {
+      const url = isExternal ? path : this.apiUrl + path;
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           Accept: 'application/json',

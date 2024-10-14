@@ -17,7 +17,7 @@ export type LabIn = {
   templateId: uuid4;
 };
 
-export type LabOut = {
+export type Lab = {
   id: uuid4;
   name: string;
   startDate: string;
@@ -36,15 +36,21 @@ export type TopologyIn = {
   definition: string;
 };
 
-export type TopologyOut = {
+export type Topology = {
   id: uuid4;
+  name: string;
   definition: string;
   groupId: uuid4;
   creatorId: uuid4;
 };
 
+export type GroupIn = {
+  name: string;
+  public: boolean;
+};
+
 export type Group = {
-  id?: uuid4;
+  id: uuid4;
   name: string;
   public: boolean;
 };
@@ -61,9 +67,12 @@ export type UserCredentials = {
 };
 
 export type DeviceInfo = {
+  kind: string;
   name: string;
-  fullName: string;
-  type: DeviceType;
+  interfacePattern: string;
+  interfaceStart: number;
+  images: string[];
+  type: string;
 };
 
 export type NodeMeta = {
@@ -74,12 +83,22 @@ export type NodeMeta = {
   webSsh: string;
 };
 
-export enum DeviceType {
-  Router,
-  Switch,
-  Container,
-  VirtualMachine,
-  Generic,
+export interface TopologyDefinition {
+  name: string;
+  topology: {
+    nodes: {[nodeName: string]: TopologyNode};
+    links: TopologyLink[];
+  };
+}
+
+export interface TopologyNode {
+  kind: string;
+  image?: string;
+  'startup-config': string;
+}
+
+export interface TopologyLink {
+  endpoints: string[];
 }
 
 export enum LabState {
@@ -88,4 +107,10 @@ export enum LabState {
   Running,
   Failed,
   Done,
+}
+
+export enum FetchState {
+  Fetching,
+  Done,
+  NetworkError,
 }

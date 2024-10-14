@@ -1,0 +1,52 @@
+.p-button
+  transition: all 0.1s ease-in
+  color: black
+  background-color: var(--primary-color-border)
+  border-radius: 3px
+  border-color: var(--primary-color-border)
+
+  &.p-button-outlined
+    color: var(--primary-color-border)
+    background-color: transparent
+
+  &:hover
+    filter: brightness(0.8)
+
+.p-tooltip
+  transition: opacity 0.2s ease-in-out !important
+  opacity: 0 !important
+
+  &.p-tooltip-active
+    opacity: 1 !important
+
+.p-tree
+  background-color: transparent
+  border: none
+  padding: 0
+
+.p-treenode-label
+  text-overflow: ellipsis
+  overflow: hidden
+
+.p-contextmenu
+  border-left: 3px solid var(--primary-color-border)
+
+  // This makes it so context menus can expand if the content too wide
+  min-width: 12.5rem
+  width: auto
+
+.p-splitter
+  background-color: transparent
+  border: none
+  width: 100%
+
+.p-megamenu
+  background-color: var(--primary-color)
+  border: var(--primary-color-border) solid 1px
+  border-radius: 0 0 4px 4px
+  margin-right: -1px
+
+.p-megamenu-panel,.p-submenu-header
+  background-color: var(--primary-color)
+  border-radius: 4px
+

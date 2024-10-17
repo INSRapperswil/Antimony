@@ -4,7 +4,6 @@ export const NetworkOptions = {
   },
   nodes: {
     shape: 'image',
-    chosen: false,
     color: '#42b5ac',
     font: {
       face: 'Figtree',

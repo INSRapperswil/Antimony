@@ -36,10 +36,16 @@ export type TopologyIn = {
   definition: string;
 };
 
+export type TopologyOut = {
+  id: uuid4;
+  definition: string;
+  groupId: uuid4;
+  creatorId: uuid4;
+};
+
 export type Topology = {
   id: uuid4;
-  name: string;
-  definition: string;
+  definition: TopologyDefinition;
   groupId: uuid4;
   creatorId: uuid4;
 };
@@ -99,6 +105,19 @@ export interface TopologyNode {
 
 export interface TopologyLink {
   endpoints: string[];
+}
+
+// We need to access these fields specifically to get the list of possible kinds
+export interface ClabSchema {
+  definitions: {
+    'node-config': {
+      properties: {
+        kind: {
+          enum: string[];
+        };
+      };
+    };
+  };
 }
 
 export enum LabState {

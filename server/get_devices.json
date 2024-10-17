@@ -7,7 +7,7 @@
       "interfaceStart": 1,
       "images": [
         "ghcr.io/nokia/srlinux"
-      ]
+      ],
       "type": "Router"
     },
     {

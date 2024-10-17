@@ -11,10 +11,18 @@ import {NetworkOptions} from './network.conf';
 import './NodeEditor.sass';
 import {ContextMenu} from 'primereact/contextmenu';
 import {MegaMenu} from 'primereact/megamenu';
+import {NotificationController} from '@sb/lib/NotificationController';
 
 interface NodeEditorProps {
-  topology: TopologyDefinition | null;
+  notificationController: NotificationController;
+
+  openTopology: TopologyDefinition | null;
   devices: DeviceInfo[];
+
+  onNodeAdd: (kind: string) => void;
+  onNodeEdit: (nodeName: string) => void;
+  onNodeConnect: (nodeName1: string, nodeName2: string) => void;
+  onNodeDelete: (nodeName: string) => void;
 }
 
 const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
@@ -22,6 +30,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [deviceInfoMap, setDeviceInfoMap] = useState<Map<string, DeviceInfo>>(
     new Map()
   );
+  const [nodeLookup, setNodeLookup] = useState<Map<number, string>>(new Map());
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
 
@@ -36,7 +45,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     network.on('beforeDrawing', drawGrid);
   }, [network]);
 
-  useEffect(generateGraph, [props.topology]);
+  useEffect(generateGraph, [props.openTopology]);
 
   preload('./icons/generic.svg', {as: 'image'});
   preload('./icons/virtualserver.svg', {as: 'image'});
@@ -44,15 +53,16 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   preload('./icons/switch.svg', {as: 'image'});
 
   function generateGraph() {
-    if (!props.topology) return;
+    if (!props.openTopology) return;
 
     const nodeMap = new Map<string, number>();
+    const nodeLookup = new Map<number, string>();
 
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
     for (const [index, [nodeName, node]] of Object.entries(
-      props.topology.topology.nodes
+      props.openTopology.topology.nodes
     ).entries()) {
       if (!node) continue;
 
@@ -62,9 +72,11 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
         label: nodeName,
         image: getNodeIcon(node.kind),
       });
+
+      nodeLookup.set(index, nodeName);
     }
 
-    for (const [index, link] of props.topology.topology.links.entries()) {
+    for (const [index, link] of props.openTopology.topology.links.entries()) {
       edges.push({
         id: index,
         from: nodeMap.get(link.endpoints[0].split(':')[0]),
@@ -72,7 +84,10 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       });
     }
 
+    setNodeLookup(nodeLookup);
     network?.setData({nodes: nodes, edges: edges});
+
+    console.log('GENERATE GRAPH');
   }
 
   function drawGrid(ctx: CanvasRenderingContext2D) {
@@ -120,10 +135,30 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   }
 
   const nodeContextMenu = [
-    {label: 'Connect', icon: 'pi pi-arrow-right-arrow-left'},
-    {label: 'Edit', icon: 'pi pi-pen-to-square'},
-    {label: 'Delete', icon: 'pi pi-trash'},
+    {
+      label: 'Connect',
+      icon: 'pi pi-arrow-right-arrow-left',
+      command: onNodeConnect,
+    },
+    {label: 'Edit', icon: 'pi pi-pen-to-square', command: onNodeEdit},
+    {label: 'Delete', icon: 'pi pi-trash', command: onNodeDelete},
   ];
+
+  function onNodeConnect() {}
+
+  function onNodeEdit() {
+    if (!network || network.getSelectedNodes().length < 1) return;
+
+    props.onNodeEdit(nodeLookup.get(network.getSelectedNodes()[0] as number)!);
+  }
+
+  function onNodeDelete() {
+    if (!network || network.getSelectedNodes().length < 1) return;
+
+    props.onNodeDelete(
+      nodeLookup.get(network.getSelectedNodes()[0] as number)!
+    );
+  }
 
   const headerMenu = [
     {
@@ -204,23 +239,31 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     console.log('Selected: ', selectData);
   }
 
-  function onNodeContext(selectData: NodeClickEvent) {
-    console.log('CONTEXT: ', selectData);
+  function onNodeDoubleClick(selectData: NodeClickEvent) {
     if (!nodeContextMenuRef.current) return;
 
-    console.log('ponter:', selectData.pointer);
-    console.log('node:', network!.getNodeAt(selectData.pointer.DOM));
+    const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+    if (targetNode !== undefined) {
+      network?.selectNodes([targetNode]);
+      onNodeEdit();
+    }
+  }
 
-    if (network?.getNodeAt(selectData.pointer.DOM) !== undefined) {
+  function onNodeContext(selectData: NodeClickEvent) {
+    if (!nodeContextMenuRef.current) return;
+
+    const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+    if (targetNode !== undefined) {
+      network?.selectNodes([targetNode]);
       nodeContextMenuRef.current.show(selectData.event);
     }
   }
 
   function getNodeIcon(kind: string) {
-    let iconName = null;
+    let iconName: string;
     const deviceInfo = deviceInfoMap.get(kind);
     if (deviceInfo) {
-      iconName = IconMap.get(deviceInfo?.type);
+      iconName = IconMap.get(deviceInfo?.type) ?? 'generic';
     } else {
       iconName = 'generic';
     }
@@ -235,7 +278,11 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       <Graph
         graph={{nodes: [], edges: []}}
         options={NetworkOptions}
-        events={{click: onNodeClick, oncontext: onNodeContext}}
+        events={{
+          click: onNodeClick,
+          oncontext: onNodeContext,
+          doubleClick: onNodeDoubleClick,
+        }}
         getNetwork={setNetwork}
       />
       <ContextMenu model={nodeContextMenu} ref={nodeContextMenuRef} />

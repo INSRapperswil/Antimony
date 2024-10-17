@@ -1,0 +1,62 @@
+stages:
+ - lint
+ - deploy
+
+default:
+  image: node:22-alpine
+
+lint_frontend:
+  stage: lint
+  cache:
+    - key:
+        files:
+          - node_modules.lock
+      paths:
+        - ./node_modules
+  script:
+    - yarn install
+    - yarn run lint
+
+deploy_mockserver:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  script:
+    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+    - gcloud config set project antimony-438914
+    - >-
+      gcloud builds submit ./server
+      --tag europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-mockserver-dev:latest
+      --region=europe-west1
+    - >-
+      gcloud run deploy antimony-mockserver-development
+      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-mockserver-dev:latest
+      --allow-unauthenticated
+      --region=europe-west1
+      --memory=2Gi
+      --ingress=all
+      --port 3000
+      --cpu=1
+
+
+deploy_frontend:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  script:
+    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+    - gcloud config set project antimony-438914
+    - >-
+      gcloud builds submit .
+      --tag europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-frontend-dev:latest
+      --region=europe-west1
+    - >-
+      gcloud run deploy antimony-development
+      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-frontend-dev:latest
+      --set-env-vars NODE_ENV=development
+      --allow-unauthenticated
+      --region=europe-west1
+      --memory=2Gi
+      --ingress=all
+      --port 8100
+      --cpu=1

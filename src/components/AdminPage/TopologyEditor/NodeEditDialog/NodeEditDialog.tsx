@@ -4,7 +4,7 @@ import {validate} from 'jsonschema';
 
 import {Dialog} from 'primereact/dialog';
 
-import {ClabSchema, TopologyDefinition} from '@sb/types/Types';
+import {ClabSchema, DeviceInfo, TopologyDefinition} from '@sb/types/Types';
 
 import './NodeEditDialog.sass';
 import {NotificationController} from '@sb/lib/NotificationController';
@@ -13,6 +13,7 @@ import NodePropertyTable, {
 } from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodePropertyTable/NodePropertyTable';
 import SBInput from '@sb/components/common/SBInput';
 import {Dropdown} from 'primereact/dropdown';
+import {SelectItem} from 'primereact/selectitem';
 
 interface NodeEditDialogProps {
   notificationController: NotificationController;
@@ -20,6 +21,7 @@ interface NodeEditDialogProps {
   openTopology: TopologyDefinition | null;
   editingNode: string | null;
   clabSchema: ClabSchema | null;
+  deviceLookup: Map<string, DeviceInfo>;
 
   onClose: () => void;
   onDone: (updatedTopology: TopologyDefinition) => void;
@@ -39,7 +41,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   const [nameError, setNameError] = useState<string | null>(null);
   const [kindError, setKindError] = useState<string | null>(null);
 
-  const [kindList, setKindList] = useState<{value: string}[]>([]);
+  const [kindList, setKindList] = useState<SelectItem[]>([]);
 
   useEffect(() => {
     setOpen(props.editingNode !== null && props.openTopology !== null);

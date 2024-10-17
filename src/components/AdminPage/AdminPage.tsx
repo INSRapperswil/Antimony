@@ -46,6 +46,14 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
     []
   );
 
+  const [deviceLookup, setDeviceLookup] = useState<Map<string, DeviceInfo>>(
+    new Map()
+  );
+
+  useEffect(() => {
+    setDeviceLookup(new Map(devices.map(device => [device.kind, device])));
+  }, [devices]);
+
   // TODO(kian): REMOVE DEBUG
   useEffect(() => {
     if (topologies && topologies.length > 0) {
@@ -126,7 +134,7 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
             onSaveTopology={onSaveTopology}
             hasPendingEdits={pendingEdits}
             onEdit={setPendingEdits}
-            devices={devices}
+            deviceLookup={deviceLookup}
             notificationController={props.notificationController}
           />
         </div>

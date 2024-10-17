@@ -40,7 +40,7 @@ interface TopologyEditorProps {
   hasPendingEdits: boolean;
   onEdit: (isEdited: boolean) => void;
 
-  devices: DeviceInfo[];
+  deviceLookup: Map<string, DeviceInfo>;
 }
 
 let validationTimeout: number;
@@ -78,7 +78,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
       monacoWrapperRef?.current.openTopology(props.selectedTopology.definition);
       setEditingTopology(cloneDeep(props.selectedTopology.definition));
     }
-  }, [props.selectedTopology]);
+  }, [props.selectedTopology, monacoWrapperRef]);
 
   function onSaveTopology() {
     if (!editingTopology) return;
@@ -244,7 +244,6 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                     language="yaml"
                     setContent={onContentChange}
                     setValidationError={setValidationError}
-                    device={props.devices}
                   />
                 </SplitterPanel>
                 <SplitterPanel
@@ -253,7 +252,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                 >
                   <NodeEditor
                     openTopology={editingTopology}
-                    devices={props.devices}
+                    deviceLookup={props.deviceLookup}
                     onNodeDelete={onNodeDelete}
                     onNodeEdit={onNodeEdit}
                     onNodeConnect={onNodeConnect}
@@ -291,7 +290,11 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
           </div>
         </When>
         <When condition={schemaFetchState === FetchState.NetworkError}>
-          <h3>Failed to fetch topology schema from GitHub.</h3>
+          <div className="flex h-full w-full align-items-center justify-content-center">
+            <h3 className="text-center">
+              Failed to fetch topology schema from GitHub.
+            </h3>
+          </div>
         </When>
         <Otherwise>
           <div className="flex h-full w-full align-items-center justify-content-center">
@@ -306,9 +309,18 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
         onClose={() => setCurrentlyEditedNode(null)}
         clabSchema={clabSchema}
         notificationController={props.notificationController}
+        deviceLookup={props.deviceLookup}
       />
     </>
   );
 };
+
+export const IconMap = new Map<string, string>([
+  ['VM', 'virtualserver'],
+  ['Generic', 'generic'],
+  ['Router', 'router'],
+  ['Switch', 'switch'],
+  ['Container', 'computer'],
+]);
 
 export default TopologyEditor;

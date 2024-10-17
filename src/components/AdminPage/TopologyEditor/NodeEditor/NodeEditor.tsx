@@ -12,12 +12,13 @@ import './NodeEditor.sass';
 import {ContextMenu} from 'primereact/contextmenu';
 import {MegaMenu} from 'primereact/megamenu';
 import {NotificationController} from '@sb/lib/NotificationController';
+import {IconMap} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
 
 interface NodeEditorProps {
   notificationController: NotificationController;
 
   openTopology: TopologyDefinition | null;
-  devices: DeviceInfo[];
+  deviceLookup: Map<string, DeviceInfo>;
 
   onNodeAdd: (kind: string) => void;
   onNodeEdit: (nodeName: string) => void;
@@ -27,18 +28,9 @@ interface NodeEditorProps {
 
 const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
-  const [deviceInfoMap, setDeviceInfoMap] = useState<Map<string, DeviceInfo>>(
-    new Map()
-  );
   const [nodeLookup, setNodeLookup] = useState<Map<number, string>>(new Map());
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
-
-  useEffect(() => {
-    setDeviceInfoMap(
-      new Map(props.devices.map(device => [device.kind, device]))
-    );
-  }, [props.devices]);
 
   useEffect(() => {
     if (!network) return;
@@ -261,7 +253,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
 
   function getNodeIcon(kind: string) {
     let iconName: string;
-    const deviceInfo = deviceInfoMap.get(kind);
+    const deviceInfo = props.deviceLookup.get(kind);
     if (deviceInfo) {
       iconName = IconMap.get(deviceInfo?.type) ?? 'generic';
     } else {
@@ -305,12 +297,4 @@ interface NodeClickEvent {
     };
   };
 }
-
-const IconMap = new Map([
-  ['VM', 'virtualserver'],
-  ['Generic', 'generic'],
-  ['Router', 'router'],
-  ['Switch', 'switch'],
-  ['Container', 'computer'],
-]);
 export default NodeEditor;

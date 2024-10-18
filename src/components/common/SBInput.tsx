@@ -16,6 +16,8 @@ interface SBInputProps extends InputProps {
   validationError?: string;
   disabled?: boolean;
 
+  wasEdited?: boolean;
+
   defaultValue?: string;
 
   isTextArea?: boolean;
@@ -38,6 +40,7 @@ const SBInput = (props: SBInputProps) => (
           className={classNames({
             'sb-input-disabled': props.disabled,
             'sb-input-error': !!props.validationError,
+            'sb-input-edited': props.wasEdited,
           })}
           readOnly={props.disabled}
           tooltip={props.validationError}
@@ -56,7 +59,8 @@ const SBInput = (props: SBInputProps) => (
           defaultValue={props.defaultValue ?? ''}
           className={classNames({
             'sb-input-disabled': props.disabled,
-            'sb-input-error': props.validationError !== null,
+            'sb-input-error': !!props.validationError,
+            'sb-input-edited': props.wasEdited,
           })}
           readOnly={props.disabled}
           tooltip={props.validationError}

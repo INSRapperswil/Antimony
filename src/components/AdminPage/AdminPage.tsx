@@ -18,6 +18,7 @@ import TopologyEditor from '@sb/components/AdminPage/TopologyEditor/TopologyEdit
 import TopologyExplorer from '@sb/components/AdminPage/TopologyExplorer/TopologyExplorer';
 
 import './AdminPage.sass';
+import classNames from 'classnames';
 
 interface AdminPageProps {
   apiConnector: APIConnector;
@@ -31,6 +32,8 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
 
   // Whether the current topology has pending changes to save
   const [pendingEdits, setPendingEdits] = useState(false);
+
+  const [isMaximized, setMaximized] = useState(false);
 
   const [topologies, topologyFetchState, fetchTopologies] = useResource<
     Topology[]
@@ -127,7 +130,20 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
 
   return (
     <>
-      <div className="bg-primary font-bold height-100 sb-card overflow-y-scroll overflow-x-hidden sb-admin-page-left">
+      <div
+        className={classNames(
+          'bg-primary',
+          'font-bold',
+          'height-100',
+          'sb-card',
+          'overflow-y-scroll',
+          'overflow-x-hidden',
+          'sb-admin-page-left',
+          {
+            'sb-admin-page-left-maximized': isMaximized,
+          }
+        )}
+      >
         <TopologyExplorer
           selectedTopology={selectedTopology}
           onTopologySelect={onSelectTopology}
@@ -137,7 +153,11 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
           fetchState={topologyFetchState}
         />
       </div>
-      <div className="flex-grow-1">
+      <div
+        className={classNames('flex-grow-1', 'sb-admin-page-right', {
+          'sb-admin-page-right-maximized': isMaximized,
+        })}
+      >
         <div className="bg-primary font-bold height-100 sb-card overflow-y-scroll overflow-x-hidden">
           <TopologyEditor
             clabSchema={clabSchema}
@@ -147,6 +167,8 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
             hasPendingEdits={pendingEdits}
             setPendingEdits={setPendingEdits}
             deviceLookup={deviceLookup}
+            isMaximized={isMaximized}
+            setMaximized={setMaximized}
             notificationController={props.notificationController}
           />
         </div>

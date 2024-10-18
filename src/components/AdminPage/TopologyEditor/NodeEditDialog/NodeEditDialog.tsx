@@ -287,6 +287,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
           <NodePropertyTable
             editingNode={editingNode}
             editingTopology={editingTopology}
+            originalTopology={props.openTopology}
             onKeyUpdate={onKeyUpdate}
             onValueUpdate={onValueUpdate}
             onTypeUpdate={onTypeUpdate}

@@ -1,4 +1,4 @@
-import React, {KeyboardEvent, useState} from 'react';
+import React, {useState} from 'react';
 import {Dropdown, DropdownChangeEvent} from 'primereact/dropdown';
 import {Checkbox} from 'primereact/checkbox';
 import SBInput from '@sb/components/common/SBInput';
@@ -7,7 +7,9 @@ interface NodePropertyTableRowProps {
   propertyKey: string;
   propertyValue: string;
   propertyType: string;
-  isList: boolean;
+  propertyIsList: boolean;
+
+  wasEdited: boolean;
 
   onUpdateType: (type: 'string' | 'number' | 'boolean') => string | null;
   onUpdateKey: (key: string) => string | null;
@@ -23,12 +25,6 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
 
   const [keyError, setKeyError] = useState<string | null>(null);
   const [valueError, setValueError] = useState<string | null>(null);
-
-  function onInputKeydown(event: KeyboardEvent<HTMLElement>) {
-    if (event.key === 'Enter') {
-      (event.target as HTMLElement).blur();
-    }
-  }
 
   function onValueSubmit(content: string) {
     console.log('value:', content);
@@ -72,6 +68,7 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
           onClick={onEnterKeyEdit}
           onEnter={onKeySubmit}
           disabled={!isEditingKey}
+          wasEdited={props.wasEdited}
           validationError={keyError ?? undefined}
           defaultValue={props.propertyKey}
           readOnly={!isEditingKey}
@@ -82,9 +79,10 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
           onClick={onEnterValueEdit}
           onEnter={onValueSubmit}
           disabled={!isEditingValue}
+          wasEdited={props.wasEdited}
           validationError={valueError ?? undefined}
           defaultValue={props.propertyValue}
-          isTextArea={props.isList}
+          isTextArea={props.propertyIsList}
           rows={5}
           cols={30}
         />
@@ -99,7 +97,7 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
       </td>
       <td className="sb-node-property-checkbox">
         <Checkbox
-          checked={props.isList}
+          checked={props.propertyIsList}
           onChange={e => props.onUpdateIsList(e.checked!)}
         />
       </td>

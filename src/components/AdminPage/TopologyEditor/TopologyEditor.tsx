@@ -21,6 +21,7 @@ import NodeEditDialog from '@sb/components/AdminPage/TopologyEditor/NodeEditDial
 import {NotificationController} from '@sb/lib/NotificationController';
 import _, {clone} from 'lodash';
 import cloneDeep from 'lodash.clonedeep';
+import {Tooltip} from 'primereact/tooltip';
 
 export enum ValidationState {
   Working,
@@ -34,6 +35,9 @@ interface TopologyEditorProps {
 
   selectedTopology: Topology | null;
   onSaveTopology: (topology: TopologyDefinition) => boolean;
+
+  isMaximized: boolean;
+  setMaximized: (isMinimized: boolean) => void;
 
   hasPendingEdits: boolean;
   setPendingEdits: (hasEdits: boolean) => void;
@@ -227,13 +231,28 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   tooltip="Deploy Topology"
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
-                <Button
-                  outlined
-                  icon="pi pi-window-maximize"
-                  size="large"
-                  tooltip="Enter Fullscreen"
-                  tooltipOptions={{position: 'bottom', showDelay: 500}}
-                />
+                <Choose>
+                  <When condition={props.isMaximized}>
+                    <Button
+                      outlined
+                      icon="pi pi-arrow-down-left-and-arrow-up-right-to-center"
+                      size="large"
+                      tooltip="Fullscreen"
+                      onClick={() => props.setMaximized(false)}
+                      tooltipOptions={{position: 'bottom', showDelay: 2000}}
+                    />
+                  </When>
+                  <Otherwise>
+                    <Button
+                      outlined
+                      icon="pi pi-arrow-up-right-and-arrow-down-left-from-center"
+                      size="large"
+                      tooltip="Fullscreen"
+                      onClick={() => props.setMaximized(true)}
+                      tooltipOptions={{position: 'bottom', showDelay: 2000}}
+                    />
+                  </Otherwise>
+                </Choose>
               </div>
             </div>
             <div className="flex-grow-1 min-h-0">
@@ -267,14 +286,24 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                 </SplitterPanel>
               </Splitter>
             </div>
-            <div className="flex sb-card sb-topology-editor-bottombar">
+            <div
+              className="flex sb-card sb-topology-editor-bottombar sb-toplogy-editor-validation"
+              data-pr-tooltip="test"
+              data-pr-position="top"
+            >
               <Choose>
                 <When condition={validationState === ValidationState.Error}>
                   <i
                     className="pi pi-times"
                     style={{color: 'var(--danger-color)'}}
                   ></i>
-                  <span>{validationError}</span>
+                  <span
+                    // className="sb-toplogy-editor-validation"
+                    data-pr-tooltip="test"
+                    data-pr-position="top"
+                  >
+                    {validationError}
+                  </span>
                 </When>
                 <When condition={validationState === ValidationState.Working}>
                   <i
@@ -291,6 +320,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   <span>Done.</span>
                 </Otherwise>
               </Choose>
+              <Tooltip target=".sb-toplogy-editor-validation" />
             </div>
           </div>
         </When>

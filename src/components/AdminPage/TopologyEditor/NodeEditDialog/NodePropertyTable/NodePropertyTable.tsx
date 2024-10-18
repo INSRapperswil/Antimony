@@ -1,13 +1,15 @@
 import React from 'react';
 
-import {TopologyDefinition} from '@sb/types/Types';
+import {TopologyDefinition, TopologyNode} from '@sb/types/Types';
 import NodePropertyTableRow from './NodePropertyTableRow';
 
 import './NodePropertyTable.sass';
+import _ from 'lodash';
 
 interface NodePropertyTableProps {
   editingNode: string | null;
   editingTopology: TopologyDefinition | null;
+  originalTopology: TopologyDefinition | null;
 
   onKeyUpdate: (key: string, newKey: string, value: string) => string | null;
   onValueUpdate: (key: string, value: string, type: FieldType) => string | null;
@@ -25,7 +27,8 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
   props: NodePropertyTableProps
 ) => {
   function generatePropertyTable(topology: TopologyDefinition | null) {
-    if (!props.editingNode || !topology) return <></>;
+    if (!props.editingNode || !topology || !props.originalTopology)
+      return <></>;
 
     const node = topology.topology.nodes[props.editingNode];
     if (!node) return <></>;
@@ -37,7 +40,18 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
           propertyKey={key}
           propertyValue={value}
           propertyType={typeof value}
-          isList={Array.isArray(value)}
+          propertyIsList={Array.isArray(value)}
+          wasEdited={
+            !(
+              key in props.originalTopology!.topology.nodes[props.editingNode!]
+            ) ||
+            !_.isEqual(
+              props.originalTopology!.topology.nodes[props.editingNode!][
+                key as keyof TopologyNode
+              ],
+              value
+            )
+          }
           onUpdateValue={newValue =>
             props.onValueUpdate(key, newValue, typeof value as FieldType)
           }

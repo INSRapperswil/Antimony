@@ -12,6 +12,7 @@ import {ContextMenu} from 'primereact/contextmenu';
 import {MegaMenu} from 'primereact/megamenu';
 import {NotificationController} from '@sb/lib/NotificationController';
 import {IconMap} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
+import useResizeObserver from '@react-hook/resize-observer';
 
 interface NodeEditorProps {
   notificationController: NotificationController;
@@ -34,6 +35,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     if (!network) return;
@@ -41,6 +43,12 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
 
     return () => network.off('beforeDrawing', drawGrid);
   }, [network]);
+
+  useResizeObserver(containerRef, () => {
+    if (network) {
+      network.redraw();
+    }
+  });
 
   const nodeLookup: Map<number, string> = useMemo(() => {
     if (!props.openTopology) return new Map();
@@ -275,7 +283,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   }
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full" ref={containerRef}>
       <MegaMenu model={headerMenu} />
       <Graph
         graph={{nodes: [], edges: []}}

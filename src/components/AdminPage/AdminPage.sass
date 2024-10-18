@@ -1,3 +1,23 @@
 .sb-admin-page-left
   width: 400px
   flex: 0 0 400px
+
+  transition: transform ease 0.3s
+
+  &.sb-admin-page-left-maximized
+    transform: translateX(-420px)
+
+.sb-admin-page-right
+  transition: margin-left ease 0.3s
+  margin-left: 0
+
+  &.sb-admin-page-right-maximized
+    margin-left: -408px
+
+.sb-admin-page-content
+  margin: 0
+  transition: margin-top ease 0.3s
+
+  &.sb-admin-page-content-maximized
+    margin: -90px
+

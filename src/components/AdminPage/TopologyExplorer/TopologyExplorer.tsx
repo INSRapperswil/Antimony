@@ -168,6 +168,9 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
           />
           <Tooltip target=".tree-node" />
           <Tree
+            filter
+            filterMode="lenient"
+            filterPlaceholder="Search"
             value={topologyTree}
             className="w-full"
             emptyMessage=" "

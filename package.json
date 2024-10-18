@@ -8,6 +8,7 @@
   "private": true,
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
+    "@react-hook/resize-observer": "^2.0.2",
     "classnames": "^2.5.1",
     "express": "^4.21.1",
     "http-proxy-middleware": "^3.0.3",

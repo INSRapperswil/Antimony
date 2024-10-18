@@ -29,6 +29,20 @@ module.exports = merge(common, {
         test: /\.(sa|sc|c)ss$/i,
         use: ['style-loader', 'css-loader', 'sass-loader'],
       },
+      {
+        test: /\.(ts|tsx)$/i,
+        use: [
+          'babel-loader',
+          {
+            loader: 'ifdef-loader',
+            options: {
+              'ifdef-verbose': true,
+              DEBUG: true,
+            },
+          },
+        ],
+        exclude: /node_modules/,
+      },
     ],
   },
 });

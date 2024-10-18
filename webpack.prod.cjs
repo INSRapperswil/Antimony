@@ -26,6 +26,20 @@ module.exports = merge(common, {
           'sass-loader',
         ],
       },
+      {
+        test: /\.(ts|tsx)$/i,
+        use: [
+          'babel-loader',
+          {
+            loader: 'ifdef-loader',
+            options: {
+              'ifdef-verbose': true,
+              DEBUG: false,
+            },
+          },
+        ],
+        exclude: /node_modules/,
+      },
     ],
   },
 });

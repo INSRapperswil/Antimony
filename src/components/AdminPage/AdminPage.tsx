@@ -1,10 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 
 import YAML from 'yaml';
 import {confirmDialog, ConfirmDialog} from 'primereact/confirmdialog';
 
 import {useResource} from '@sb/lib/Hooks';
 import {
+  ClabSchema,
   DeviceInfo,
   Group,
   Topology,
@@ -31,15 +32,10 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
   // Whether the current topology has pending changes to save
   const [pendingEdits, setPendingEdits] = useState(false);
 
-  const [topologies, topologyFetchState] = useResource<Topology[]>(
-    '/topologies',
-    props.apiConnector,
-    [],
-    topologies => mapTopologies(topologies as TopologyOut[])
-  );
-
-  const [topologyLookup, setTopologyLookup] = useState<Map<string, Topology>>(
-    new Map()
+  const [topologies, topologyFetchState, fetchTopologies] = useResource<
+    Topology[]
+  >('/topologies', props.apiConnector, [], topologies =>
+    mapTopologies(topologies as TopologyOut[])
   );
 
   const [devices] = useResource<DeviceInfo[]>(
@@ -48,26 +44,36 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
     []
   );
 
-  const [deviceLookup, setDeviceLookup] = useState<Map<string, DeviceInfo>>(
-    new Map()
+  const [clabSchema] = useResource<ClabSchema | null>(
+    process.env.SB_CLAB_SCHEMA_URL!,
+    props.apiConnector,
+    null,
+    null,
+    true
+  );
+
+  const deviceLookup = useMemo(
+    () => new Map(devices.map(device => [device.kind, device])),
+    [devices]
+  );
+
+  const topologyLookup = useMemo(
+    () => new Map(topologies.map(topology => [topology.id, topology])),
+    [topologies]
   );
 
   useEffect(() => {
-    setDeviceLookup(new Map(devices.map(device => [device.kind, device])));
-  }, [devices]);
-
-  // TODO(kian): REMOVE DEBUG
-  useEffect(() => {
+    /// #if DEBUG
     if (topologies && topologies.length > 0) {
       setSelectedTopology(topologies[0]);
     }
-  }, [topologies]);
+    /// #endif
 
-  useEffect(() => {
-    setTopologyLookup(
-      new Map(topologies.map(topology => [topology.id, topology]))
-    );
-  }, [topologies]);
+    // Refresh currently selected topology when topologies are reloaded
+    if (selectedTopology && topologyLookup.has(selectedTopology.id)) {
+      setSelectedTopology(topologyLookup.get(selectedTopology.id)!);
+    }
+  }, [topologies, topologyLookup, selectedTopology]);
 
   const [groups] = useResource<Group[]>('/groups', props.apiConnector, []);
 
@@ -111,9 +117,11 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
   }
 
   function onSaveTopology(topology: TopologyDefinition): boolean {
-    console.log('Toplogy is now saved!');
+    console.log('Topology is now saved!');
     setSelectedTopology({...selectedTopology!, definition: topology});
     setPendingEdits(false);
+
+    fetchTopologies();
     return true;
   }
 
@@ -132,11 +140,12 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
       <div className="flex-grow-1">
         <div className="bg-primary font-bold height-100 sb-card overflow-y-scroll overflow-x-hidden">
           <TopologyEditor
+            clabSchema={clabSchema}
             apiConnector={props.apiConnector}
             selectedTopology={selectedTopology}
             onSaveTopology={onSaveTopology}
             hasPendingEdits={pendingEdits}
-            onEdit={setPendingEdits}
+            setPendingEdits={setPendingEdits}
             deviceLookup={deviceLookup}
             notificationController={props.notificationController}
           />

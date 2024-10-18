@@ -37,6 +37,7 @@ export default [
       'plugin:@typescript-eslint/recommended',
       'plugin:jsx-control-statements/recommended',
       'plugin:import/recommended',
+      'plugin:react-hooks/recommended',
       './node_modules/gts'
     )
   ),

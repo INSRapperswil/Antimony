@@ -7,7 +7,6 @@ import {validate} from 'jsonschema';
 import {
   ClabSchema,
   DeviceInfo,
-  FetchState,
   Topology,
   TopologyDefinition,
 } from '@sb/types/Types';
@@ -18,7 +17,6 @@ import MonacoWrapper, {MonacoWrapperRef} from './MonacoWrapper/MonacoWrapper';
 import './TopologyEditor.sass';
 import YAML from 'yaml';
 import {APIConnector} from '@sb/lib/APIConnector';
-import {useResource} from '@sb/lib/Hooks';
 import NodeEditDialog from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEditDialog';
 import {NotificationController} from '@sb/lib/NotificationController';
 import _, {clone} from 'lodash';
@@ -38,7 +36,8 @@ interface TopologyEditorProps {
   onSaveTopology: (topology: TopologyDefinition) => boolean;
 
   hasPendingEdits: boolean;
-  onEdit: (isEdited: boolean) => void;
+  setPendingEdits: (hasEdits: boolean) => void;
+  clabSchema: ClabSchema | null;
 
   deviceLookup: Map<string, DeviceInfo>;
 }
@@ -56,35 +55,30 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
   const [editingTopology, setEditingTopology] =
     useState<TopologyDefinition | null>(null);
 
+  const editingTopologyRef = useRef(editingTopology);
+
   const [currentlyEditedNode, setCurrentlyEditedNode] = useState<string | null>(
     null
   );
 
-  const [clabSchema, schemaFetchState] = useResource<ClabSchema | null>(
-    process.env.SB_CLAB_SCHEMA_URL!,
-    props.apiConnector,
-    null,
-    null,
-    true
-  );
+  const monacoWrapperRef = useRef<MonacoWrapperRef>(null);
 
-  const monacoWrapperRef = useRef<MonacoWrapperRef | null>(null);
-
-  /*
-   * This is called when the selected topology has been changed by the user.
-   */
   useEffect(() => {
-    if (props.selectedTopology && monacoWrapperRef.current) {
-      monacoWrapperRef?.current.openTopology(props.selectedTopology.definition);
-      setEditingTopology(cloneDeep(props.selectedTopology.definition));
+    if (props.selectedTopology) {
+      editingTopologyRef.current = cloneDeep(props.selectedTopology.definition);
+      setEditingTopology(editingTopologyRef.current);
+
+      monacoWrapperRef?.current?.openTopology(
+        props.selectedTopology.definition
+      );
     }
-  }, [props.selectedTopology, monacoWrapperRef]);
+  }, [props.selectedTopology]);
 
   function onSaveTopology() {
     if (!editingTopology) return;
 
     if (props.onSaveTopology(editingTopology)) {
-      // success
+      props.notificationController.success('Topology has been saved!');
     }
   }
 
@@ -108,14 +102,16 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
       if (_.isEqual(obj, props.selectedTopology?.definition)) {
         setValidationState(ValidationState.Done);
-        props.onEdit(false);
+        setEditingTopology(obj);
+        props.setPendingEdits(false);
         return;
       }
 
-      if (validate(obj, clabSchema).errors.length === 0) {
+      const validation = validate(obj, props.clabSchema);
+      if (validation.errors.length === 0) {
         setValidationState(ValidationState.Done);
-        props.onEdit(true);
         setEditingTopology(obj);
+        props.setPendingEdits(true);
         return;
       }
 
@@ -125,6 +121,19 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     }
   }
 
+  function onClearTopology() {
+    if (!editingTopology) return;
+
+    setEditingTopology({
+      name: editingTopology.name,
+      topology: {
+        nodes: {},
+        links: [],
+      },
+    });
+    props.setPendingEdits(true);
+  }
+
   function onNodeEdit(nodeName: string) {
     setCurrentlyEditedNode(nodeName);
   }
@@ -132,7 +141,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
   function onNodeEditDone(updatedDefinition: TopologyDefinition) {
     if (!_.isEqual(updatedDefinition, editingTopology)) {
       setEditingTopology(updatedDefinition);
-      props.onEdit(true);
+      props.setPendingEdits(true);
     }
 
     setCurrentlyEditedNode(null);
@@ -146,26 +155,21 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     delete updatedTopology.topology.nodes[nodeName];
 
     setEditingTopology(updatedTopology);
-    props.onEdit(true);
+    props.setPendingEdits(true);
   }
 
   function onNodeConnect(nodeName1: string, nodeName2: string) {
-    props.onEdit(true);
+    props.setPendingEdits(true);
   }
 
   function onNodeAdd(kind: string) {
-    props.onEdit(true);
+    props.setPendingEdits(true);
   }
 
   return (
     <>
       <Choose>
-        <When
-          condition={
-            props.selectedTopology !== null &&
-            schemaFetchState === FetchState.Done
-          }
-        >
+        <When condition={editingTopology !== null}>
           <div className="flex flex-column h-full overflow-hidden">
             <div className="flex justify-content-between sb-card sb-topology-editor-topbar">
               <div className="flex gap-2 justify-content-center left-tab">
@@ -204,6 +208,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   icon="pi pi-trash"
                   size="large"
                   tooltip="Clear"
+                  onClick={onClearTopology}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
                 <Button
@@ -289,13 +294,6 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
             </div>
           </div>
         </When>
-        <When condition={schemaFetchState === FetchState.NetworkError}>
-          <div className="flex h-full w-full align-items-center justify-content-center">
-            <h3 className="text-center">
-              Failed to fetch topology schema from GitHub.
-            </h3>
-          </div>
-        </When>
         <Otherwise>
           <div className="flex h-full w-full align-items-center justify-content-center">
             <h3 className="text-center">No topology selected</h3>
@@ -307,7 +305,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
         editingNode={currentlyEditedNode}
         onDone={onNodeEditDone}
         onClose={() => setCurrentlyEditedNode(null)}
-        clabSchema={clabSchema}
+        clabSchema={props.clabSchema}
         notificationController={props.notificationController}
         deviceLookup={props.deviceLookup}
       />

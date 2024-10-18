@@ -2,8 +2,8 @@ import React, {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
-  useState,
 } from 'react';
 
 import {editor} from 'monaco-editor';
@@ -30,8 +30,8 @@ window.MonacoEnvironment = {
 interface MonacoWrapperProps {
   openTopology: TopologyDefinition | null;
 
-  setContent(content: string): void;
-  setValidationError(error: string | null): void;
+  setContent: (content: string) => void;
+  setValidationError: (error: string | null) => void;
 
   language: string;
 }
@@ -48,31 +48,25 @@ export interface MonacoWrapperRef {
 
 const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
   (props, ref) => {
-    const [textModel, setTextModel] = useState<editor.ITextModel | null>(null);
-    const [content, setContent] = useState<string>('');
+    const textModelRef = useRef<editor.ITextModel | null>(null);
+    const monacoEditorRef = useRef<Monaco | null>(null);
 
-    const monacoRef = useRef<Monaco | null>(null);
+    useImperativeHandle(ref, () => ({
+      openTopology: (toplogy: TopologyDefinition) => {
+        if (textModelRef.current) {
+          textModelRef.current.setValue(YAML.stringify(toplogy));
+        }
+      },
+      undo: onTriggerUndo,
+      redo: onTriggerRedo,
+    }));
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        openTopology: (toplogy: TopologyDefinition) => {
-          if (textModel) {
-            console.log('  resetting text');
-            textModel.setValue(YAML.stringify(toplogy));
-          }
-        },
-        undo: onTriggerUndo,
-        redo: onTriggerRedo,
-      }),
-      [textModel]
-    );
-
-    useEffect(() => {
-      if (props.openTopology && textModel) {
-        setContent(YAML.stringify(props.openTopology));
+    const content = useMemo(() => {
+      if (props.openTopology) {
+        return YAML.stringify(props.openTopology);
       }
-    }, [props.openTopology, textModel]);
+      return '';
+    }, [props.openTopology]);
 
     useEffect(() => {
       window.addEventListener('keydown', onGlobalKeyPress);
@@ -83,7 +77,7 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
     }, []);
 
     function onGlobalKeyPress(event: KeyboardEvent) {
-      if (!event.ctrlKey || !monacoRef.current) return;
+      if (!event.ctrlKey) return;
 
       switch (event.key) {
         case 'z':
@@ -96,20 +90,20 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
     }
 
     function onTriggerUndo() {
-      monacoRef.current?.editor.getEditors()[0].trigger('', 'undo', '');
+      monacoEditorRef.current?.editor.getEditors()[0].trigger('', 'undo', '');
     }
 
     function onTriggerRedo() {
-      monacoRef.current?.editor.getEditors()[0].trigger('', 'redo', '');
+      monacoEditorRef.current?.editor.getEditors()[0].trigger('', 'redo', '');
     }
 
     function onEditorMount(_editor: unknown, monaco: Monaco) {
-      monacoRef.current = monaco;
+      monacoEditorRef.current = monaco;
+      textModelRef.current = monaco.editor.getModel(
+        monaco.Uri.parse(schemaModelUri)
+      )!;
 
       monaco.editor.defineTheme('antimonyTheme', AntimonyTheme);
-
-      const model = monaco.editor.getModel(monaco.Uri.parse(schemaModelUri))!;
-      setTextModel(model);
 
       editor.onDidChangeMarkers(() => {
         window.clearTimeout(validationTimeout);
@@ -132,7 +126,9 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
     }
 
     function onContentChange() {
-      props.setContent(textModel!.getValue());
+      if (textModelRef.current) {
+        props.setContent(textModelRef.current.getValue());
+      }
     }
 
     return (

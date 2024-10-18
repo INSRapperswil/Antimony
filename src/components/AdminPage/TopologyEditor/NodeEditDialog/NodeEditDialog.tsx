@@ -52,8 +52,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   useEffect(() => {
     if (!props.clabSchema) return;
 
-    console.log('schema:', props.clabSchema);
-
     setKindList(
       props.clabSchema['definitions']['node-config']['properties']['kind'][
         'enum'

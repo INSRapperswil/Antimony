@@ -39,7 +39,7 @@
     "yaml": "^2.5.1"
   },
   "scripts": {
-    "start": "webpack serve",
+    "start": "webpack serve --config webpack.dev.cjs",
     "build:dev": "webpack --progress --config webpack.dev.cjs",
     "build:prod": "webpack --progress --config webpack.prod.cjs",
     "lint": "gts lint '**/*.ts'",
@@ -74,10 +74,12 @@
     "eslint-plugin-jsx-control-statements": "^3.0.0",
     "eslint-plugin-n": "^17.10.3",
     "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-unused-imports": "^3.1.0",
     "file-loader": "^6.2.0",
     "gts": "^5.3.1",
     "html-webpack-plugin": "^5.5.3",
+    "ifdef-loader": "^2.3.2",
     "mini-css-extract-plugin": "^2.7.6",
     "postcss": "^8.4.47",
     "postcss-loader": "^8.1.1",

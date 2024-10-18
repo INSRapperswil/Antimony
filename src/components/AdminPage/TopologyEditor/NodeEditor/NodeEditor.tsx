@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Node, Edge} from 'vis';
 import {Network} from 'vis-network';
@@ -25,27 +25,54 @@ interface NodeEditorProps {
   onNodeDelete: (nodeName: string) => void;
 }
 
+type GraphDefinition = {
+  nodes?: Node[];
+  edges?: Edge[];
+};
+
 const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
-  const [nodeLookup, setNodeLookup] = useState<Map<number, string>>(new Map());
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
 
   useEffect(() => {
     if (!network) return;
     network.on('beforeDrawing', drawGrid);
+
+    return () => network.off('beforeDrawing', drawGrid);
   }, [network]);
 
-  useEffect(generateGraph, [props.openTopology]);
+  const nodeLookup: Map<number, string> = useMemo(() => {
+    if (!props.openTopology) return new Map();
 
-  function generateGraph() {
-    if (!props.openTopology) return;
+    return new Map(
+      Object.entries(props.openTopology.topology.nodes)
+        .entries()
+        .map(([index, [nodeName]]) => [index, nodeName])
+    );
+  }, [props.openTopology]);
+
+  const getNodeIcon = useCallback(
+    (kind: string) => {
+      let iconName: string;
+      const deviceInfo = props.deviceLookup.get(kind);
+      if (deviceInfo) {
+        iconName = IconMap.get(deviceInfo?.type) ?? 'generic';
+      } else {
+        iconName = 'generic';
+      }
+      if (!iconName) iconName = 'generic';
+
+      return '/assets/icons/' + iconName + '.svg';
+    },
+    [props.deviceLookup]
+  );
+
+  const graph: GraphDefinition = useMemo(() => {
+    if (!props.openTopology) return {nodes: [], edges: []};
 
     const nodeMap = new Map<string, number>();
-    const nodeLookup = new Map<number, string>();
-
     const nodes: Node[] = [];
-    const edges: Edge[] = [];
 
     for (const [index, [nodeName, node]] of Object.entries(
       props.openTopology.topology.nodes
@@ -58,23 +85,25 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
         label: nodeName,
         image: getNodeIcon(node.kind),
       });
-
-      nodeLookup.set(index, nodeName);
     }
 
-    for (const [index, link] of props.openTopology.topology.links.entries()) {
-      edges.push({
+    const edges: Edge[] = [
+      ...props.openTopology.topology.links.entries().map(([index, link]) => ({
         id: index,
         from: nodeMap.get(link.endpoints[0].split(':')[0]),
         to: nodeMap.get(link.endpoints[1].split(':')[0]),
-      });
-    }
+      })),
+    ];
 
-    setNodeLookup(nodeLookup);
-    network?.setData({nodes: nodes, edges: edges});
+    return {nodes: nodes, edges: edges};
+  }, [props.openTopology, getNodeIcon]);
 
-    console.log('GENERATE GRAPH');
-  }
+  /*
+   * Passing this through the graph's prop directly was causing a weird error. We need to take the imperative way here.
+   */
+  useEffect(() => {
+    network?.setData(graph);
+  }, [network, graph]);
 
   function drawGrid(ctx: CanvasRenderingContext2D) {
     const width = ctx.canvas.clientWidth;
@@ -243,19 +272,6 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       network?.selectNodes([targetNode]);
       nodeContextMenuRef.current.show(selectData.event);
     }
-  }
-
-  function getNodeIcon(kind: string) {
-    let iconName: string;
-    const deviceInfo = props.deviceLookup.get(kind);
-    if (deviceInfo) {
-      iconName = IconMap.get(deviceInfo?.type) ?? 'generic';
-    } else {
-      iconName = 'generic';
-    }
-    if (!iconName) iconName = 'generic';
-
-    return '/assets/icons/' + iconName + '.svg';
   }
 
   return (

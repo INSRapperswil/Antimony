@@ -90,5 +90,7 @@ typings/
 
 src/**/*.js
 
+.css
+.css.map
 
 build/

@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from 'react';
 
-import './AdminPage.sass';
-import TopologyExplorer from '@sb/components/AdminPage/TopologyExplorer/TopologyExplorer';
+import YAML from 'yaml';
+import {confirmDialog, ConfirmDialog} from 'primereact/confirmdialog';
+
 import {useResource} from '@sb/lib/Hooks';
 import {
   DeviceInfo,
@@ -11,10 +12,11 @@ import {
   TopologyOut,
 } from '@sb/types/Types';
 import {APIConnector} from '@sb/lib/APIConnector';
-import TopologyEditor from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
 import {NotificationController} from '@sb/lib/NotificationController';
-import {confirmDialog, ConfirmDialog} from 'primereact/confirmdialog';
-import YAML from 'yaml';
+import TopologyEditor from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
+import TopologyExplorer from '@sb/components/AdminPage/TopologyExplorer/TopologyExplorer';
+
+import './AdminPage.sass';
 
 interface AdminPageProps {
   apiConnector: APIConnector;
@@ -110,6 +112,7 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
 
   function onSaveTopology(topology: TopologyDefinition): boolean {
     console.log('Toplogy is now saved!');
+    setSelectedTopology({...selectedTopology!, definition: topology});
     setPendingEdits(false);
     return true;
   }

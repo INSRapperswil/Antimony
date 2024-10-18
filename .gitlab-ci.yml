@@ -1,9 +1,42 @@
 stages:
  - lint
+ - build
+ - clone
  - deploy
 
 default:
   image: node:22-alpine
+
+upload_frontend:
+  image:
+    name: google/cloud-sdk:latest
+  services:
+    - us-docker.pkg.dev/gcb-catalog-release/preview/gar-upload@sha256:468bec8ae7097469ffdc41f702936c4d92edeaa72719f52009367c27b5b6788a
+    - docker:dind
+  stage: clone
+  before_script:
+    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+    - gcloud config set project antimony-438914
+    - echo $CI_REGISTRY_PASSWORD | docker login -u "$CI_REGISTRY_USER" $CI_REGISTRY --password-stdin
+  script:
+    - gar-upload --source $CI_REGISTRY_IMAGE/antimony-dev:latest --target europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-dev:latest
+
+upload_mockserver:
+  image:
+    name: google/cloud-sdk:latest
+  services:
+    - us-docker.pkg.dev/gcb-catalog-release/preview/gar-upload@sha256:468bec8ae7097469ffdc41f702936c4d92edeaa72719f52009367c27b5b6788a
+    - docker:dind
+  stage: clone
+  before_script:
+    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+    - gcloud config set project antimony-438914
+    - echo $CI_REGISTRY_PASSWORD | docker login -u "$CI_REGISTRY_USER" $CI_REGISTRY --password-stdin
+  script:
+    - gar-upload --source $CI_REGISTRY_IMAGE/antimony-mockserver-dev:latest --target europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-mockserver-dev:latest
+
 
 lint_frontend:
   stage: lint
@@ -17,20 +50,29 @@ lint_frontend:
     - yarn install
     - yarn run lint
 
+build_mockserver:
+  stage: build
+  image: docker:cli
+  services:
+    - docker:dind
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u "$CI_REGISTRY_USER" $CI_REGISTRY --password-stdin
+  script:
+    - cd server
+    - docker build -t $CI_REGISTRY_IMAGE/antimony-mockserver-dev:latest .
+    - docker push $CI_REGISTRY_IMAGE/antimony-mockserver-dev:latest
+
 deploy_mockserver:
   stage: deploy
   image: google/cloud-sdk:latest
-  script:
+  before_script:
     - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
     - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
     - gcloud config set project antimony-438914
-    - >-
-      gcloud builds submit ./server
-      --tag europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-mockserver-dev:latest
-      --region=europe-west1
+  script:
     - >-
       gcloud run deploy antimony-mockserver-development
-      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-mockserver-dev:latest
+      --image europe-west1-docker.pkg.dev/antimony-438914/antimony-mockserver-dev/antimony-mockserver-dev:latest
       --allow-unauthenticated
       --region=europe-west1
       --memory=2Gi
@@ -38,22 +80,28 @@ deploy_mockserver:
       --port 3000
       --cpu=1
 
+build_frontend:
+  stage: build
+  image: docker:cli
+  services:
+    - docker:dind
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u "$CI_REGISTRY_USER" $CI_REGISTRY --password-stdin
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE/antimony-dev:latest" .
+    - docker push "$CI_REGISTRY_IMAGE/antimony-dev:latest"
 
 deploy_frontend:
   stage: deploy
   image: google/cloud-sdk:latest
-  script:
+  before_script:
     - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
     - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
     - gcloud config set project antimony-438914
-    - >-
-      gcloud builds submit .
-      --tag europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-frontend-dev:latest
-      --region=europe-west1
+  script:
     - >-
       gcloud run deploy antimony-development
-      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-frontend-dev:latest
-      --set-env-vars NODE_ENV=development
+      --image europe-west1-docker.pkg.dev/antimony-438914/antimony-dev/antimony-dev:latest
       --allow-unauthenticated
       --region=europe-west1
       --memory=2Gi

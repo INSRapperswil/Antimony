@@ -1,5 +1,4 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {preload} from 'react-dom';
 
 import {Node, Edge} from 'vis';
 import {Network} from 'vis-network';
@@ -38,11 +37,6 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   }, [network]);
 
   useEffect(generateGraph, [props.openTopology]);
-
-  preload('./icons/generic.svg', {as: 'image'});
-  preload('./icons/virtualserver.svg', {as: 'image'});
-  preload('./icons/router.svg', {as: 'image'});
-  preload('./icons/switch.svg', {as: 'image'});
 
   function generateGraph() {
     if (!props.openTopology) return;
@@ -261,7 +255,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     }
     if (!iconName) iconName = 'generic';
 
-    return './icons/' + iconName + '.svg';
+    return '/assets/icons/' + iconName + '.svg';
   }
 
   return (

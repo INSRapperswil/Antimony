@@ -22,7 +22,9 @@ export default [
   {
     ignores: [
       '**/build/',
-      'webpack.config.cjs',
+      'webpack.common.cjs',
+      'webpack.prod.cjs',
+      'webpack.dev.cjs',
       'workbox-config.cjs',
       'eslint.config.js',
       '.prettierrc.cjs',

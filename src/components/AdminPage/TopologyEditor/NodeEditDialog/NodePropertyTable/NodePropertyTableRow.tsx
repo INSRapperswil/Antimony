@@ -72,7 +72,7 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
           onClick={onEnterKeyEdit}
           onEnter={onKeySubmit}
           disabled={!isEditingKey}
-          validationError={keyError}
+          validationError={keyError ?? undefined}
           defaultValue={props.propertyKey}
           readOnly={!isEditingKey}
         />
@@ -82,7 +82,7 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
           onClick={onEnterValueEdit}
           onEnter={onValueSubmit}
           disabled={!isEditingValue}
-          validationError={valueError}
+          validationError={valueError ?? undefined}
           defaultValue={props.propertyValue}
           isTextArea={props.isList}
           rows={5}

@@ -1,8 +1,7 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {Button} from 'primereact/button';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
-import {validate} from 'jsonschema';
 
 import {
   ClabSchema,
@@ -15,13 +14,13 @@ import NodeEditor from './NodeEditor/NodeEditor';
 import MonacoWrapper, {MonacoWrapperRef} from './MonacoWrapper/MonacoWrapper';
 
 import './TopologyEditor.sass';
-import YAML from 'yaml';
 import {APIConnector} from '@sb/lib/APIConnector';
 import NodeEditDialog from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEditDialog';
 import {NotificationController} from '@sb/lib/NotificationController';
-import _, {clone} from 'lodash';
-import cloneDeep from 'lodash.clonedeep';
 import {Tooltip} from 'primereact/tooltip';
+import YAML from 'yaml';
+import {TopologyEditReport, TopologyManager} from '@sb/lib/TopologyManager';
+import {validate} from 'jsonschema';
 
 export enum ValidationState {
   Working,
@@ -33,20 +32,16 @@ interface TopologyEditorProps {
   apiConnector: APIConnector;
   notificationController: NotificationController;
 
-  selectedTopology: Topology | null;
-  onSaveTopology: (topology: TopologyDefinition) => boolean;
-
   isMaximized: boolean;
   setMaximized: (isMinimized: boolean) => void;
 
-  hasPendingEdits: boolean;
-  setPendingEdits: (hasEdits: boolean) => void;
-  clabSchema: ClabSchema | null;
+  clabSchema: ClabSchema;
 
   deviceLookup: Map<string, DeviceInfo>;
-}
+  topologyManager: TopologyManager;
 
-let validationTimeout: number;
+  onSaveTopology: () => void;
+}
 
 const TopologyEditor: React.FC<TopologyEditorProps> = (
   props: TopologyEditorProps
@@ -56,10 +51,14 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     ValidationState.Done
   );
 
+  const [hasPendingEdits, setPendingEdits] = useState(false);
+
+  const [isNodeEditDialogOpen, setNodeEditDialogOpen] = useState(false);
+
   const [editingTopology, setEditingTopology] =
     useState<TopologyDefinition | null>(null);
 
-  const editingTopologyRef = useRef(editingTopology);
+  // const editingTopologyRef = useRef(editingTopology);
 
   const [currentlyEditedNode, setCurrentlyEditedNode] = useState<string | null>(
     null
@@ -67,107 +66,94 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
   const monacoWrapperRef = useRef<MonacoWrapperRef>(null);
 
+  // useEffect(() => {
+  //   if (props.selectedTopology) {
+  //     // editingTopologyRef.current = cloneDeep(props.selectedTopology.definition);
+  //     // setEditingTopology(editingTopologyRef.current);
+  //
+  //     console.log('OPEN TOPOLOGY');
+  //
+  //     props.topologyManager.openTopology(props.selectedTopology.definition);
+  //
+  //     monacoWrapperRef?.current?.openTopology(
+  //       props.selectedTopology.definition
+  //     );
+  //   }
+  // }, [props.topologyManager, props.selectedTopology]);
+
+  const onTopologyOpen = useCallback((topology: Topology) => {
+    console.log('ON TOPOLOGY OPEN');
+    monacoWrapperRef?.current?.openTopology(topology.definition);
+    setEditingTopology(topology.definition);
+  }, []);
+
+  const onTopologyEdit = useCallback(
+    (editReport: TopologyEditReport) => {
+      console.log('ON UPDATE TOPOLOGY: isedit:', editReport.isEdited);
+
+      setPendingEdits(editReport.isEdited);
+      setEditingTopology(editReport.updatedTopology.definition);
+    },
+    [props]
+  );
+
   useEffect(() => {
-    if (props.selectedTopology) {
-      editingTopologyRef.current = cloneDeep(props.selectedTopology.definition);
-      setEditingTopology(editingTopologyRef.current);
+    console.log('SUBSCRIBE MANAGER');
+    props.topologyManager.onEdit.register(onTopologyEdit);
+    props.topologyManager.onOpen.register(onTopologyOpen);
 
-      monacoWrapperRef?.current?.openTopology(
-        props.selectedTopology.definition
-      );
-    }
-  }, [props.selectedTopology]);
-
-  function onSaveTopology() {
-    if (!editingTopology) return;
-
-    if (props.onSaveTopology(editingTopology)) {
-      props.notificationController.success('Topology has been saved!');
-    }
-  }
+    return () => {
+      props.topologyManager.onEdit.unregister(onTopologyEdit);
+      props.topologyManager.onOpen.unregister(onTopologyOpen);
+    };
+  }, [props.topologyManager, onTopologyOpen, onTopologyEdit]);
 
   function onContentChange(content: string) {
-    setValidationState(ValidationState.Working);
-
-    /*
-     * We delay the validation to 'sync' with the delay of the monaco worker validator.
-     *
-     * This also debounces the validation as this is called on every input.
-     */
-    window.clearTimeout(validationTimeout);
-    validationTimeout = window.setTimeout(() => {
-      validateAndSetContent(content);
-    }, 400);
-  }
-
-  function validateAndSetContent(content: string) {
     try {
       const obj = YAML.parse(content) as TopologyDefinition;
 
-      if (_.isEqual(obj, props.selectedTopology?.definition)) {
+      if (validate(obj, props.clabSchema).errors.length === 0) {
         setValidationState(ValidationState.Done);
-        setEditingTopology(obj);
-        props.setPendingEdits(false);
-        return;
+      } else {
+        // Set this to working until the monaco worker has finished and generated the error
+        setValidationState(ValidationState.Working);
       }
 
-      const validation = validate(obj, props.clabSchema);
-      if (validation.errors.length === 0) {
-        setValidationState(ValidationState.Done);
-        setEditingTopology(obj);
-        props.setPendingEdits(true);
-        return;
-      }
+      props.topologyManager.edit(obj);
 
-      setValidationState(ValidationState.Error);
+      // if (props.topologyManager.isSaved(obj)) {
+      //   setValidationState(ValidationState.Done);
+      //   props.topologyManager.edit(obj);
+      //   // setEditingTopology(obj);
+      //   // setPendingEdits(false);
+      //   return;
+      // }
+      //
+      // if (validate(obj, props.clabSchema).errors.length === 0) {
+      //   setValidationState(ValidationState.Done);
+      //   props.topologyManager.edit(obj);
+      //   // setEditingTopology(obj);
+      //   // setPendingEdits(true);
+      //   return;
+      // }
     } catch (e) {
-      setValidationState(ValidationState.Error);
+      setValidationState(ValidationState.Working);
     }
   }
 
-  function onClearTopology() {
-    if (!editingTopology) return;
+  function onSetValidationError(error: string | null) {
+    if (!error) {
+      setValidationState(ValidationState.Done);
+      return;
+    }
 
-    setEditingTopology({
-      name: editingTopology.name,
-      topology: {
-        nodes: {},
-        links: [],
-      },
-    });
-    props.setPendingEdits(true);
+    setValidationState(ValidationState.Error);
+    setValidationError(error);
   }
 
   function onNodeEdit(nodeName: string) {
+    setNodeEditDialogOpen(true);
     setCurrentlyEditedNode(nodeName);
-  }
-
-  function onNodeEditDone(updatedDefinition: TopologyDefinition) {
-    if (!_.isEqual(updatedDefinition, editingTopology)) {
-      setEditingTopology(updatedDefinition);
-      props.setPendingEdits(true);
-    }
-
-    setCurrentlyEditedNode(null);
-  }
-
-  function onNodeDelete(nodeName: string) {
-    if (!editingTopology?.topology.nodes[nodeName]) return;
-
-    const updatedTopology = clone(editingTopology);
-
-    delete updatedTopology.topology.nodes[nodeName];
-
-    setEditingTopology(updatedTopology);
-    props.setPendingEdits(true);
-  }
-
-  function onNodeConnect(nodeName1: string, nodeName2: string) {
-    props.setPendingEdits(true);
-  }
-
-  function onNodeAdd(kind: string) {
-    props.setPendingEdits(true);
   }
 
   return (
@@ -201,10 +187,9 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   size="large"
                   icon="pi pi-save"
                   disabled={
-                    validationState !== ValidationState.Done ||
-                    !props.hasPendingEdits
+                    validationState !== ValidationState.Done || !hasPendingEdits
                   }
-                  onClick={onSaveTopology}
+                  onClick={props.onSaveTopology}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
                 <Button
@@ -212,7 +197,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   icon="pi pi-trash"
                   size="large"
                   tooltip="Clear"
-                  onClick={onClearTopology}
+                  onClick={props.topologyManager.clear}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
                 <Button
@@ -267,7 +252,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                     openTopology={editingTopology}
                     language="yaml"
                     setContent={onContentChange}
-                    setValidationError={setValidationError}
+                    setValidationError={onSetValidationError}
                   />
                 </SplitterPanel>
                 <SplitterPanel
@@ -275,12 +260,10 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   minSize={10}
                 >
                   <NodeEditor
+                    onEditNode={onNodeEdit}
                     openTopology={editingTopology}
                     deviceLookup={props.deviceLookup}
-                    onNodeDelete={onNodeDelete}
-                    onNodeEdit={onNodeEdit}
-                    onNodeConnect={onNodeConnect}
-                    onNodeAdd={onNodeAdd}
+                    topologyManager={props.topologyManager}
                     notificationController={props.notificationController}
                   />
                 </SplitterPanel>
@@ -331,10 +314,11 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
         </Otherwise>
       </Choose>
       <NodeEditDialog
-        openTopology={editingTopology}
+        isOpen={isNodeEditDialogOpen}
+        editingTopology={editingTopology}
         editingNode={currentlyEditedNode}
-        onDone={onNodeEditDone}
-        onClose={() => setCurrentlyEditedNode(null)}
+        topologyManager={props.topologyManager}
+        onClose={() => setNodeEditDialogOpen(false)}
         clabSchema={props.clabSchema}
         notificationController={props.notificationController}
         deviceLookup={props.deviceLookup}

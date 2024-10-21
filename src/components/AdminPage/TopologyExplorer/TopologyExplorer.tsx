@@ -18,7 +18,7 @@ interface TopologyBrowserProps {
   fetchState: FetchState;
   devices: DeviceInfo[];
 
-  selectedTopology: Topology | null;
+  selectedTopologyId?: string | null;
   onTopologySelect: (id: string) => void;
 }
 
@@ -176,7 +176,7 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
             emptyMessage=" "
             expandedKeys={expandedKeys}
             selectionMode="single"
-            selectionKeys={props.selectedTopology?.id}
+            selectionKeys={props.selectedTopologyId}
             nodeTemplate={TreeNodeTemplate}
             onSelectionChange={onSelectionChange}
             onContextMenu={e => onContextMenu(e)}

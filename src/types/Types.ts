@@ -100,7 +100,6 @@ export interface TopologyDefinition {
 export interface TopologyNode {
   kind: string;
   image?: string;
-  'startup-config': string;
 }
 
 export interface TopologyLink {

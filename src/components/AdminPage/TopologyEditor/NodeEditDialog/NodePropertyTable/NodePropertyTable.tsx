@@ -1,67 +1,61 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 
-import {TopologyDefinition, TopologyNode} from '@sb/types/Types';
+import {NodeEditor} from '@sb/lib/NodeEditor';
 import NodePropertyTableRow from './NodePropertyTableRow';
 
 import './NodePropertyTable.sass';
-import _ from 'lodash';
 
 interface NodePropertyTableProps {
-  editingNode: string | null;
-  editingTopology: TopologyDefinition | null;
-  originalTopology: TopologyDefinition | null;
-
-  onKeyUpdate: (key: string, newKey: string, value: string) => string | null;
-  onValueUpdate: (key: string, value: string, type: FieldType) => string | null;
-  onTypeUpdate: (key: string, value: string, type: FieldType) => string | null;
-  onIsListUpdate: (
-    key: string,
-    value: string | string[],
-    toList: boolean
-  ) => string | null;
-
-  schema: object | null;
+  nodeEditor: NodeEditor;
 }
 
 const NodePropertyTable: React.FC<NodePropertyTableProps> = (
   props: NodePropertyTableProps
 ) => {
-  function generatePropertyTable(topology: TopologyDefinition | null) {
-    if (!props.editingNode || !topology || !props.originalTopology)
-      return <></>;
-
-    const node = topology.topology.nodes[props.editingNode];
-    if (!node) return <></>;
-
-    return Object.entries(topology.topology.nodes[props.editingNode]).map(
-      ([key, value], index) => (
-        <NodePropertyTableRow
-          key={index}
-          propertyKey={key}
-          propertyValue={value}
-          propertyType={typeof value}
-          propertyIsList={Array.isArray(value)}
-          wasEdited={
-            !(
-              key in props.originalTopology!.topology.nodes[props.editingNode!]
-            ) ||
-            !_.isEqual(
-              props.originalTopology!.topology.nodes[props.editingNode!][
-                key as keyof TopologyNode
-              ],
-              value
-            )
-          }
-          onUpdateValue={newValue =>
-            props.onValueUpdate(key, newValue, typeof value as FieldType)
-          }
-          onUpdateKey={newKey => props.onKeyUpdate(key, newKey, value)}
-          onUpdateType={newType => props.onTypeUpdate(key, value, newType)}
-          onUpdateIsList={toList => props.onIsListUpdate(key, value, toList)}
-        />
-      )
-    );
-  }
+  const propertyTable = useMemo(
+    () =>
+      props.nodeEditor
+        .getProperties()
+        .map(property => (
+          <NodePropertyTableRow
+            key={property.index}
+            propertyKey={property.key}
+            propertyValue={property.value}
+            propertyType={property.type}
+            propertyIsList={Array.isArray(property.value)}
+            wasEdited={props.nodeEditor.wasPropertyEdited(
+              property.key,
+              property.value,
+              property.type
+            )}
+            onUpdateValue={newValue =>
+              props.nodeEditor.onPropertyValueUpdate(
+                property.key,
+                newValue,
+                property.type
+              )
+            }
+            onUpdateKey={newKey =>
+              props.nodeEditor.onPropertyKeyUpdate(property.key, newKey)
+            }
+            onUpdateType={newType =>
+              props.nodeEditor.onPropertyTypeUpdate(
+                property.key,
+                property.value,
+                newType
+              )
+            }
+            onUpdateIsList={toList =>
+              props.nodeEditor.onPropertyIsListUpdate(
+                property.key,
+                property.value,
+                toList
+              )
+            }
+          />
+        )),
+    [props.nodeEditor]
+  );
 
   return (
     <table className="sb-node-property-table">
@@ -73,13 +67,9 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
           <td>As List</td>
         </tr>
       </thead>
-      <tbody>
-        {props.editingTopology && generatePropertyTable(props.editingTopology)}
-      </tbody>
+      <tbody>{propertyTable}</tbody>
     </table>
   );
 };
-
-export type FieldType = 'string' | 'number' | 'boolean';
 
 export default NodePropertyTable;

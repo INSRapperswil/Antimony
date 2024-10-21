@@ -13,6 +13,8 @@ import {Toast} from 'primereact/toast';
 import {NotificationController} from '@sb/lib/NotificationController';
 import {useReady, useSingleton} from '@sb/lib/Hooks';
 
+import './App.sass';
+
 const App: React.FC = () => {
   const [pageIndex, setPageIndex] = useState(1);
   const [isAuthenticated, setAuthenticated] = useState(false);
@@ -31,7 +33,7 @@ const App: React.FC = () => {
   return (
     <PrimeReactProvider>
       <If condition={isReady}>
-        <div className="flex flex-column flex-grow-1 m-3">
+        <div className="flex flex-column flex-grow-1 m-3 sb-app-container">
           <Dock onPageSwitch={setPageIndex} />
           <div className="flex flex-grow-1 gap-2 min-h-0">
             <Choose>

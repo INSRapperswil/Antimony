@@ -7,12 +7,14 @@ import Graph from 'react-graph-vis';
 import {DeviceInfo, TopologyDefinition} from '@sb/types/Types';
 import {NetworkOptions} from './network.conf';
 
-import './NodeEditor.sass';
 import {ContextMenu} from 'primereact/contextmenu';
 import {MegaMenu} from 'primereact/megamenu';
 import {NotificationController} from '@sb/lib/NotificationController';
 import {IconMap} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
 import useResizeObserver from '@react-hook/resize-observer';
+
+import './NodeEditor.sass';
+import {TopologyManager} from '@sb/lib/TopologyManager';
 
 interface NodeEditorProps {
   notificationController: NotificationController;
@@ -20,10 +22,9 @@ interface NodeEditorProps {
   openTopology: TopologyDefinition | null;
   deviceLookup: Map<string, DeviceInfo>;
 
-  onNodeAdd: (kind: string) => void;
-  onNodeEdit: (nodeName: string) => void;
-  onNodeConnect: (nodeName1: string, nodeName2: string) => void;
-  onNodeDelete: (nodeName: string) => void;
+  onEditNode: (nodeName: string) => void;
+
+  topologyManager: TopologyManager;
 }
 
 type GraphDefinition = {
@@ -114,8 +115,8 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   }, [network, graph]);
 
   function drawGrid(ctx: CanvasRenderingContext2D) {
-    const width = ctx.canvas.clientWidth;
-    const height = ctx.canvas.clientHeight;
+    const width = window.outerWidth;
+    const height = window.outerHeight;
     const gridSpacing = 30;
     const gridExtent = 4;
     ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
@@ -172,13 +173,13 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   function onNodeEdit() {
     if (!network || network.getSelectedNodes().length < 1) return;
 
-    props.onNodeEdit(nodeLookup.get(network.getSelectedNodes()[0] as number)!);
+    props.onEditNode(nodeLookup.get(network.getSelectedNodes()[0] as number)!);
   }
 
   function onNodeDelete() {
     if (!network || network.getSelectedNodes().length < 1) return;
 
-    props.onNodeDelete(
+    props.topologyManager.deleteNode(
       nodeLookup.get(network.getSelectedNodes()[0] as number)!
     );
   }

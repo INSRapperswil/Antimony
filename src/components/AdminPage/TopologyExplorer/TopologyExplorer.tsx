@@ -18,7 +18,8 @@ interface TopologyBrowserProps {
   fetchState: FetchState;
   devices: DeviceInfo[];
 
-  onTopologySelect(id: string): void;
+  selectedTopologyId?: string | null;
+  onTopologySelect: (id: string) => void;
 }
 
 const TopologyExplorer: React.FC<TopologyBrowserProps> = (
@@ -29,7 +30,6 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
 
   const [topologyTree, setTopologyTree] = useState<TreeNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<TreeExpandedKeysType>({});
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
   function onCreateGroup() {}
   function onEditGroup() {}
@@ -72,7 +72,7 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
         leaf: false,
         children: topologiesByGroup.get(group.id)?.map(topology => ({
           key: topology.id,
-          label: topology.name,
+          label: topology.definition.name,
           icon: 'pi pi-file',
           leaf: true,
           selectable: true,
@@ -139,17 +139,10 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
     }
   }
 
-  function onEntrySelect(e: TreeEventNodeEvent) {
-    if (e.node.leaf) {
-      props.onTopologySelect(e.node.key as string);
-    }
-  }
-
   function onSelectionChange(e: TreeSelectionEvent) {
-    // Disable de-selecting
     if (e.value === null) return;
 
-    setSelectedNode(e.value as string);
+    props.onTopologySelect(e.value as string);
   }
 
   const TreeNodeTemplate = (node: TreeNode) => (
@@ -175,13 +168,15 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
           />
           <Tooltip target=".tree-node" />
           <Tree
+            filter
+            filterMode="lenient"
+            filterPlaceholder="Search"
             value={topologyTree}
             className="w-full"
             emptyMessage=" "
             expandedKeys={expandedKeys}
             selectionMode="single"
-            selectionKeys={selectedNode}
-            onSelect={onEntrySelect}
+            selectionKeys={props.selectedTopologyId}
             nodeTemplate={TreeNodeTemplate}
             onSelectionChange={onSelectionChange}
             onContextMenu={e => onContextMenu(e)}

@@ -4,7 +4,6 @@ export const NetworkOptions = {
   },
   nodes: {
     shape: 'image',
-    chosen: false,
     color: '#42b5ac',
     font: {
       face: 'Figtree',
@@ -26,6 +25,7 @@ export const NetworkOptions = {
         enabled: false,
       },
     },
+    width: 2,
   },
   physics: {
     barnesHut: {

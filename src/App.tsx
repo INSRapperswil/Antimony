@@ -1,42 +1,57 @@
-import React, {useEffect, useState} from 'react';
+import React, {useRef, useState} from 'react';
 
 import {PrimeReactProvider} from 'primereact/api';
 
 import Dock from '@sb/components/Dock/Dock';
-import {Choose, When} from '@sb/types/control';
-import LabsPage from '@sb/components/LabsPage/LabsPage';
+import {Choose, If, When} from '@sb/types/control';
 import AdminPage from '@sb/components/AdminPage/AdminPage';
 
 import 'primereact/resources/themes/lara-dark-blue/theme.css';
 import {APIConnector} from '@sb/lib/APIConnector';
+import {Toast} from 'primereact/toast';
+import {NotificationController} from '@sb/lib/NotificationController';
+import {useReady, useSingleton} from '@sb/lib/Hooks';
+
+import './App.sass';
+import LabsPage from '@sb/components/LabsPage/LabsPage';
 
 const App: React.FC = () => {
   const [pageIndex, setPageIndex] = useState(0); //starting page
-  const [apiConnector, setApiConnector] = useState(new APIConnector());
 
   const [isAuthenticated, setAuthenticated] = useState(false);
 
-  useEffect(() => {
-    setApiConnector(new APIConnector());
-  }, []);
+  const apiConnector = useSingleton(APIConnector);
 
-  // const [searchParams, setSearchParams] = useSearchParams();
+  const toastRef = useRef<Toast>(null);
+
+  const [notificationController] = useState<NotificationController>(
+    new NotificationController(toastRef)
+  );
+
+  // This ensures that the page is only rendered after all the necessary singletons have been instantiated
+  const isReady = useReady(notificationController, apiConnector);
 
   return (
     <PrimeReactProvider>
-      <div className="flex flex-column flex-grow-1 m-3">
-        <Dock onPageSwitch={setPageIndex} />
-        <div className="flex flex-grow-1 gap-2 min-h-0">
-          <Choose>
-            <When condition={pageIndex === 0}>
-              <LabsPage apiConnector={apiConnector} />
-            </When>
-            <When condition={pageIndex === 1}>
-              <AdminPage apiConnector={apiConnector} />
-            </When>
-          </Choose>
+      <If condition={isReady}>
+        <div className="flex flex-column flex-grow-1 m-3 sb-app-container">
+          <Dock onPageSwitch={setPageIndex} />
+          <div className="flex flex-grow-1 gap-2 min-h-0">
+            <Choose>
+              <When condition={pageIndex === 0}>
+                <LabsPage apiConnector={apiConnector!} />
+              </When>
+              <When condition={pageIndex === 1}>
+                <AdminPage
+                  apiConnector={apiConnector!}
+                  notificationController={notificationController}
+                />
+              </When>
+            </Choose>
+          </div>
         </div>
-      </div>
+      </If>
+      <Toast ref={toastRef} />
     </PrimeReactProvider>
   );
 };

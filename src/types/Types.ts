@@ -36,10 +36,16 @@ export type TopologyIn = {
   definition: string;
 };
 
+export type TopologyOut = {
+  id: uuid4;
+  definition: string;
+  groupId: uuid4;
+  creatorId: uuid4;
+};
+
 export type Topology = {
   id: uuid4;
-  name: string;
-  definition: string;
+  definition: TopologyDefinition;
   groupId: uuid4;
   creatorId: uuid4;
 };
@@ -94,11 +100,30 @@ export interface TopologyDefinition {
 export interface TopologyNode {
   kind: string;
   image?: string;
-  'startup-config': string;
 }
 
 export interface TopologyLink {
   endpoints: string[];
+}
+
+export interface ClabSchema {
+  definitions: {
+    'node-config': {
+      properties: {
+        [key: string]: PropertyDefinition;
+      };
+    };
+  };
+}
+
+export interface PropertyDefinition {
+  type?: 'string' | 'array' | 'boolean' | 'integer';
+  description: string;
+  enum?: string[];
+  minItems?: number;
+  items?: PropertyDefinition;
+  uniqueItems?: boolean;
+  anyOf?: PropertyDefinition[];
 }
 
 export enum LabState {

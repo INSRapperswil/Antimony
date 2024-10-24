@@ -12,6 +12,9 @@
   &:hover
     filter: brightness(0.8)
 
+  &:active
+    filter: brightness(0.6)
+
 .p-tooltip
   transition: opacity 0.2s ease-in-out !important
   opacity: 0 !important
@@ -22,7 +25,16 @@
 .p-tree
   background-color: transparent
   border: none
-  padding: 0
+  padding: 8px
+
+.p-tree-filter
+  background-color: transparent
+
+.p-treenode
+  border-radius: 4px
+
+.p-treenode-content
+  padding: 4px
 
 .p-treenode-label
   text-overflow: ellipsis
@@ -40,7 +52,7 @@
   border: none
   width: 100%
 
-.p-megamenu
+.p-menubar
   background-color: var(--primary-color)
   border: var(--primary-color-border) solid 1px
   border-radius: 0 0 4px 4px
@@ -50,3 +62,31 @@
   background-color: var(--primary-color)
   border-radius: 4px
 
+.p-dialog
+  border-radius: 4px
+  border: var(--primary-color-border) solid 1px
+
+.p-dialog-content
+  border-radius: 4px
+  padding: 0
+  display: flex
+  flex-direction: column
+  align-items: stretch
+  overflow: hidden
+
+.p-inputtextarea
+  resize: none
+
+.p-accordion-header-link
+  background-color: transparent
+  border: none
+  padding: 16px 0
+
+.p-accordion-header-text
+  font-size: 24px
+  font-weight: 500
+
+.p-accordion-content
+  background-color: transparent
+  border: none
+  padding: 8px

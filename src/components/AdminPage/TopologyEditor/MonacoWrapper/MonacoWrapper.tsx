@@ -1,27 +1,25 @@
-import React, {useRef, useState} from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
 
+import YAML from 'yaml';
 import {editor} from 'monaco-editor';
 import * as monaco from 'monaco-editor';
 import {Monaco} from '@monaco-editor/react';
 import MonacoEditor from 'react-monaco-editor';
 import {configureMonacoYaml} from 'monaco-yaml';
 
-import {DeviceInfo} from '@sb/types/Types';
+import {TopologyDefinition} from '@sb/types/Types';
 import {MonacoOptions, AntimonyTheme} from './monaco.conf';
 
 import './MonacoWrapper.sass';
 
-interface CodeEditorProps {
-  content?: string | null;
-  device: DeviceInfo[];
-  setContent(content: string): void;
-  setValidationError(error: string | null): void;
-
-  language: string;
-}
-
 const schemaModelUri = 'inmemory://schema.yaml';
-let validationTimeout: number | undefined;
 
 window.MonacoEnvironment = {
   getWorker() {
@@ -29,58 +27,122 @@ window.MonacoEnvironment = {
   },
 };
 
-const MonacoWrapper: React.FC<CodeEditorProps> = (props: CodeEditorProps) => {
-  const [textModel, setTextModel] = useState<editor.ITextModel | null>(null);
+interface MonacoWrapperProps {
+  openTopology: TopologyDefinition | null;
 
-  const monacoRef = useRef<Monaco | null>(null);
+  setContent: (content: string) => void;
+  setValidationError: (error: string | null) => void;
 
-  function onEditorMount(_editor: unknown, monaco: Monaco) {
-    monacoRef.current = monaco;
+  language: string;
+}
 
-    monaco.editor.defineTheme('antimonyTheme', AntimonyTheme);
+export interface MonacoWrapperRef {
+  /*
+   * We need to have this imperative function here for the parent to tell the wrapper that a new
+   * topology has been opened instead of just changing the content like in regular updates.
+   */
+  openTopology: (toplogy: TopologyDefinition) => void;
+  undo: () => void;
+  redo: () => void;
+}
 
-    const model = monaco.editor.getModel(monaco.Uri.parse(schemaModelUri))!;
-    setTextModel(model);
+const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
+  (props, ref) => {
+    const textModelRef = useRef<editor.ITextModel | null>(null);
+    const monacoEditorRef = useRef<Monaco | null>(null);
 
-    editor.onDidChangeMarkers(() => {
-      window.clearTimeout(validationTimeout);
+    useImperativeHandle(ref, () => ({
+      openTopology: (toplogy: TopologyDefinition) => {
+        if (textModelRef.current) {
+          textModelRef.current.setValue(YAML.stringify(toplogy));
+        }
+      },
+      undo: onTriggerUndo,
+      redo: onTriggerRedo,
+    }));
 
-      const markers = editor.getModelMarkers({});
-      if (markers.length > 0) {
-        props.setValidationError(markers[0].message);
+    const onGlobalKeyPress = useCallback((event: KeyboardEvent) => {
+      if (!event.ctrlKey) return;
+
+      switch (event.key) {
+        case 'z':
+          onTriggerUndo();
+          break;
+        case 'y':
+          onTriggerRedo();
+          break;
       }
-    });
+    }, []);
 
-    configureMonacoYaml(monaco, {
-      enableSchemaRequest: true,
-      schemas: [
-        {
-          fileMatch: ['**/*.yaml'],
-          uri: process.env.SB_CLAB_SCHEMA_URL!,
-        },
-      ],
-    });
-  }
+    const content = useMemo(() => {
+      if (props.openTopology) {
+        return YAML.stringify(props.openTopology);
+      }
+      return '';
+    }, [props.openTopology]);
 
-  function onContentChange() {
-    if (textModel) {
-      props.setContent(textModel.getValue());
+    useEffect(() => {
+      window.addEventListener('keydown', onGlobalKeyPress);
+
+      return () => {
+        window.removeEventListener('keydown', onGlobalKeyPress);
+      };
+    }, [onGlobalKeyPress]);
+
+    function onTriggerUndo() {
+      monacoEditorRef.current?.editor.getEditors()[0].trigger('', 'undo', '');
     }
-  }
 
-  return (
-    <div className="w-full h-full sb-monaco-wrapper">
-      <MonacoEditor
-        language="yaml"
-        theme="antimonyTheme"
-        value={props.content ?? ''}
-        options={MonacoOptions}
-        onChange={onContentChange}
-        editorDidMount={onEditorMount}
-        uri={() => monaco.Uri.parse(schemaModelUri)}
-      />
-    </div>
-  );
-};
+    function onTriggerRedo() {
+      monacoEditorRef.current?.editor.getEditors()[0].trigger('', 'redo', '');
+    }
+
+    function onEditorMount(_editor: unknown, monaco: Monaco) {
+      monacoEditorRef.current = monaco;
+      textModelRef.current = monaco.editor.getModel(
+        monaco.Uri.parse(schemaModelUri)
+      )!;
+
+      monaco.editor.defineTheme('antimonyTheme', AntimonyTheme);
+
+      editor.onDidChangeMarkers(() => {
+        const markers = editor.getModelMarkers({});
+        if (markers.length > 0) {
+          props.setValidationError(markers[0].message);
+        }
+      });
+
+      configureMonacoYaml(monaco, {
+        enableSchemaRequest: true,
+        schemas: [
+          {
+            fileMatch: ['**/*.yaml'],
+            uri: process.env.SB_CLAB_SCHEMA_URL!,
+          },
+        ],
+      });
+    }
+
+    function onContentChange() {
+      if (textModelRef.current) {
+        props.setContent(textModelRef.current.getValue());
+      }
+    }
+
+    return (
+      <div className="w-full h-full sb-monaco-wrapper">
+        <MonacoEditor
+          language="yaml"
+          value={content}
+          theme="antimonyTheme"
+          options={MonacoOptions}
+          onChange={onContentChange}
+          editorDidMount={onEditorMount}
+          uri={() => monaco.Uri.parse(schemaModelUri)}
+        />
+      </div>
+    );
+  }
+);
 
 export default MonacoWrapper;

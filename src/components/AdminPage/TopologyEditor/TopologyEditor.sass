@@ -1,21 +1,24 @@
 .sb-topology-editor-topbar
   padding: 8px
-
-  // Make up for the border
   margin: -1px
+
+  // This makes it so the node editor menu can hide between the topbar
+  z-index: 2
+  background-color: var(--primary-color)
 
 .sb-topology-editor-bottombar
   padding: 4px
 
   margin: -1px
-  background-color: var(--dock-background-color)
+  background-color: var(--header-color)
   border-bottom: 0
   font-weight: 400
   gap: 4px
-  height: 30px
   z-index: 1
+  align-items: center
+  flex: 0 0 auto
 
-  & > i.pi
+  & i.pi
     display: flex
     align-items: center
 
@@ -30,3 +33,11 @@
   //
   //  &.right-tab
   //    border-radius: 8px 2px 2px 8px
+
+.sb-toplogy-editor-validation
+  overflow: hidden
+  word-wrap: break-word
+  user-select: none
+
+.sb-node-speed-dial
+  position: absolute

@@ -1,58 +1,105 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {preload} from 'react-dom';
+import classNames from 'classnames';
+import {Menubar} from 'primereact/menubar';
+import React, {
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
-import {Node, Edge} from 'vis';
+import {Node, Edge, Position} from 'vis';
 import {Network} from 'vis-network';
 import Graph from 'react-graph-vis';
 
 import {DeviceInfo, TopologyDefinition} from '@sb/types/Types';
 import {NetworkOptions} from './network.conf';
 
-import './NodeEditor.sass';
 import {ContextMenu} from 'primereact/contextmenu';
-import {MegaMenu} from 'primereact/megamenu';
+import {NotificationController} from '@sb/lib/NotificationController';
+import {IconMap} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
+import useResizeObserver from '@react-hook/resize-observer';
+
+import './NodeEditor.sass';
+import {TopologyManager} from '@sb/lib/TopologyManager';
 
 interface NodeEditorProps {
-  topology: TopologyDefinition | null;
-  devices: DeviceInfo[];
+  notificationController: NotificationController;
+
+  openTopology: TopologyDefinition | null;
+  deviceLookup: Map<string, DeviceInfo>;
+
+  onEditNode: (nodeName: string) => void;
+  onAddNode: () => void;
+
+  topologyManager: TopologyManager;
 }
+
+type GraphDefinition = {
+  nodes?: Node[];
+  edges?: Edge[];
+};
 
 const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
-  const [deviceInfoMap, setDeviceInfoMap] = useState<Map<string, DeviceInfo>>(
-    new Map()
-  );
+  const [selectedNode, setSelectedNode] = useState<number | null>(null);
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    setDeviceInfoMap(
-      new Map(props.devices.map(device => [device.kind, device]))
-    );
-  }, [props.devices]);
+  // Connection state does not have to be reactive, so we do it during rendering
+  const nodeConnectTarget = useRef<Position | null>(null);
+  const nodeConnectDestination = useRef<Position | null>(null);
+  const nodeConnecting = useRef(false);
 
   useEffect(() => {
     if (!network) return;
     network.on('beforeDrawing', drawGrid);
+
+    return () => network.off('beforeDrawing', drawGrid);
   }, [network]);
 
-  useEffect(generateGraph, [props.topology]);
+  useResizeObserver(containerRef, () => {
+    if (network) {
+      network.redraw();
+    }
+  });
 
-  preload('./icons/generic.svg', {as: 'image'});
-  preload('./icons/virtualserver.svg', {as: 'image'});
-  preload('./icons/router.svg', {as: 'image'});
-  preload('./icons/switch.svg', {as: 'image'});
+  const nodeLookup: Map<number, string> = useMemo(() => {
+    if (!props.openTopology) return new Map();
 
-  function generateGraph() {
-    if (!props.topology) return;
+    return new Map(
+      Object.entries(props.openTopology.topology.nodes)
+        .entries()
+        .map(([index, [nodeName]]) => [index, nodeName])
+    );
+  }, [props.openTopology]);
+
+  const getNodeIcon = useCallback(
+    (kind: string) => {
+      let iconName: string;
+      const deviceInfo = props.deviceLookup.get(kind);
+      if (deviceInfo) {
+        iconName = IconMap.get(deviceInfo?.type) ?? 'generic';
+      } else {
+        iconName = 'generic';
+      }
+      if (!iconName) iconName = 'generic';
+
+      return '/assets/icons/' + iconName + '.svg';
+    },
+    [props.deviceLookup]
+  );
+
+  const graph: GraphDefinition = useMemo(() => {
+    if (!props.openTopology) return {nodes: [], edges: []};
 
     const nodeMap = new Map<string, number>();
-
     const nodes: Node[] = [];
-    const edges: Edge[] = [];
 
     for (const [index, [nodeName, node]] of Object.entries(
-      props.topology.topology.nodes
+      props.openTopology.topology.nodes
     ).entries()) {
       if (!node) continue;
 
@@ -64,25 +111,38 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       });
     }
 
-    for (const [index, link] of props.topology.topology.links.entries()) {
-      edges.push({
+    const edges: Edge[] = [
+      ...props.openTopology.topology.links.entries().map(([index, link]) => ({
         id: index,
         from: nodeMap.get(link.endpoints[0].split(':')[0]),
         to: nodeMap.get(link.endpoints[1].split(':')[0]),
-      });
-    }
+      })),
+    ];
 
-    network?.setData({nodes: nodes, edges: edges});
-  }
+    return {nodes: nodes, edges: edges};
+  }, [props.openTopology, getNodeIcon]);
+
+  /*
+   * Passing this through the graph's prop directly was causing a weird error. We need to take the imperative way here.
+   */
+  useEffect(() => {
+    network?.setData(graph);
+  }, [network, graph]);
+
+  const networkCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
 
   function drawGrid(ctx: CanvasRenderingContext2D) {
-    const width = ctx.canvas.clientWidth;
-    const height = ctx.canvas.clientHeight;
+    networkCanvasContext.current = ctx;
+
+    const width = window.outerWidth;
+    const height = window.outerHeight;
     const gridSpacing = 30;
     const gridExtent = 4;
-    ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
 
+    // ctx.globalCompositeOperation = 'destination-over';
+    ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
     ctx.beginPath();
+
     for (
       let x = -width * gridExtent;
       x <= width * gridExtent;
@@ -117,128 +177,173 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       ctx.lineTo(-width * gridExtent, y);
       ctx.stroke();
     }
+
+    drawConnectionLine(ctx);
   }
 
-  const nodeContextMenu = [
-    {label: 'Connect', icon: 'pi pi-arrow-right-arrow-left'},
-    {label: 'Edit', icon: 'pi pi-pen-to-square'},
-    {label: 'Delete', icon: 'pi pi-trash'},
-  ];
+  function drawConnectionLine(ctx: CanvasRenderingContext2D) {
+    if (
+      !nodeConnectTarget.current ||
+      !nodeConnectDestination.current ||
+      !network
+    )
+      return;
 
-  const headerMenu = [
-    {
-      label: 'Nodes',
-      icon: 'pi pi-plus',
-      items: [
-        [
-          {
-            label: 'Router',
-            items: [
-              {label: 'Accessories'},
-              {label: 'Armchair'},
-              {label: 'Coffee Table'},
-              {label: 'Couch'},
-              {label: 'TV Stand'},
-            ],
-          },
-        ],
-        [
-          {
-            label: 'Switch',
-            items: [{label: 'Bar stool'}, {label: 'Chair'}, {label: 'Table'}],
-          },
-        ],
-        [
-          {
-            label: 'Container',
-            items: [
-              {label: 'Bed'},
-              {label: 'Chaise lounge'},
-              {label: 'Cupboard'},
-              {label: 'Dresser'},
-              {label: 'Wardrobe'},
-            ],
-          },
-        ],
-        [
-          {
-            label: 'Virtual Machine',
-            items: [
-              {label: 'Bookcase'},
-              {label: 'Cabinet'},
-              {label: 'Chair'},
-              {label: 'Desk'},
-              {label: 'Executive Chair'},
-            ],
-          },
-        ],
-        [
-          {
-            label: 'Container',
-            items: [
-              {label: 'Bookcase'},
-              {label: 'Cabinet'},
-              {label: 'Chair'},
-              {label: 'Desk'},
-              {label: 'Executive Chair'},
-            ],
-          },
-        ],
-        [
-          {
-            label: 'Generic',
-            items: [
-              {label: 'Bookcase'},
-              {label: 'Cabinet'},
-              {label: 'Chair'},
-              {label: 'Desk'},
-              {label: 'Executive Chair'},
-            ],
-          },
-        ],
-      ],
-    },
-  ];
+    const target = nodeConnectTarget.current;
+    const destination = getMousePosition(
+      ctx.canvas,
+      nodeConnectDestination.current
+    );
 
-  function onNodeClick(selectData: NodeClickEvent) {
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgb(66 181 172)';
+    ctx.moveTo(target.x, target.y);
+    ctx.lineTo(destination.x, destination.y);
+    ctx.stroke();
+  }
+
+  function onMouseMove(event: MouseEvent<HTMLDivElement>) {
+    if (!nodeConnecting.current || !network) return;
+
+    console.log('ov mouse over');
+
+    nodeConnectDestination.current = {x: event.clientX, y: event.clientY};
+    network?.redraw();
+  }
+
+  function getMousePosition(
+    canvas: HTMLCanvasElement,
+    evt: Position
+  ): Position {
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+      x: (evt.x - rect.left) * (canvas.width / rect.width),
+      y: (evt.y - rect.top) * (canvas.height / rect.height),
+    };
+  }
+
+  const onNodeConnect = useCallback(() => {
+    const selectedNodes = network?.getSelectedNodes();
+    if (!selectedNodes || selectedNodes.length < 1) {
+      return;
+    }
+    nodeConnectTarget.current =
+      network?.getPosition(network?.getSelectedNodes()[0]) ?? null;
+    nodeConnecting.current = nodeConnectTarget.current !== null;
+  }, [network]);
+
+  const onNodeEdit = useCallback(() => {
+    if (!network || network.getSelectedNodes().length < 1) return;
+
+    props.onEditNode(nodeLookup.get(network.getSelectedNodes()[0] as number)!);
+  }, [network, nodeLookup, props]);
+
+  const onNodeDelete = useCallback(() => {
+    if (!network || network.getSelectedNodes().length < 1) return;
+
+    props.topologyManager.deleteNode(
+      nodeLookup.get(network.getSelectedNodes()[0] as number)!
+    );
+  }, [network, nodeLookup, props]);
+
+  const networkContextMenuItems = useMemo(() => {
+    if (selectedNode !== null) {
+      return [
+        {
+          label: 'Connect',
+          icon: 'pi pi-arrow-right-arrow-left',
+          command: onNodeConnect,
+        },
+        {label: 'Edit', icon: 'pi pi-pen-to-square', command: onNodeEdit},
+        {label: 'Delete', icon: 'pi pi-trash', command: onNodeDelete},
+      ];
+    } else {
+      return [
+        {
+          label: 'Add Node',
+          icon: 'pi pi-plus',
+          command: props.onAddNode,
+        },
+      ];
+    }
+  }, [selectedNode, onNodeConnect, onNodeDelete, onNodeEdit, props]);
+
+  const topbarItems = useMemo(() => {
+    if (selectedNode !== null && nodeLookup.has(selectedNode)) {
+      return [
+        {
+          label: `Edit '${nodeLookup.get(selectedNode)}'`,
+          icon: 'pi pi-pen-to-square',
+        },
+        {
+          label: `Delete '${nodeLookup.get(selectedNode)}'`,
+          icon: 'pi pi-trash',
+        },
+      ];
+    }
+    return [];
+  }, [selectedNode, nodeLookup]);
+
+  function onNetworkClick(selectData: NodeClickEvent) {
     console.log('Selected: ', selectData);
+
+    const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+    if (targetNode !== undefined) {
+      setSelectedNode(targetNode as number);
+    } else {
+      setSelectedNode(null);
+    }
   }
 
-  function onNodeContext(selectData: NodeClickEvent) {
-    console.log('CONTEXT: ', selectData);
+  function onNetworkDoubleClick(selectData: NodeClickEvent) {
     if (!nodeContextMenuRef.current) return;
 
-    console.log('ponter:', selectData.pointer);
-    console.log('node:', network!.getNodeAt(selectData.pointer.DOM));
-
-    if (network?.getNodeAt(selectData.pointer.DOM) !== undefined) {
-      nodeContextMenuRef.current.show(selectData.event);
+    const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+    if (targetNode !== undefined) {
+      network?.selectNodes([targetNode]);
+      onNodeEdit();
     }
   }
 
-  function getNodeIcon(kind: string) {
-    let iconName = null;
-    const deviceInfo = deviceInfoMap.get(kind);
-    if (deviceInfo) {
-      iconName = IconMap.get(deviceInfo?.type);
-    } else {
-      iconName = 'generic';
-    }
-    if (!iconName) iconName = 'generic';
+  function onNetworkContext(selectData: NodeClickEvent) {
+    if (!nodeContextMenuRef.current) return;
 
-    return './icons/' + iconName + '.svg';
+    const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+    if (targetNode !== undefined) {
+      network?.selectNodes([targetNode]);
+      setSelectedNode(targetNode as number);
+    } else {
+      setSelectedNode(null);
+    }
+
+    nodeContextMenuRef.current.show(selectData.event);
   }
 
   return (
-    <div className="w-full h-full">
-      <MegaMenu model={headerMenu} />
+    <div
+      className="w-full h-full sb-node-editor"
+      ref={containerRef}
+      onMouseMove={onMouseMove}
+    >
+      <Menubar
+        className={classNames({
+          'sb-node-editor-menubar': true,
+          'sb-node-editor-menubar-disabled': selectedNode === null,
+        })}
+        model={topbarItems}
+      />
       <Graph
         graph={{nodes: [], edges: []}}
         options={NetworkOptions}
-        events={{click: onNodeClick, oncontext: onNodeContext}}
+        events={{
+          click: onNetworkClick,
+          oncontext: onNetworkContext,
+          doubleClick: onNetworkDoubleClick,
+        }}
         getNetwork={setNetwork}
       />
-      <ContextMenu model={nodeContextMenu} ref={nodeContextMenuRef} />
+      <ContextMenu model={networkContextMenuItems} ref={nodeContextMenuRef} />
     </div>
   );
 };
@@ -258,12 +363,4 @@ interface NodeClickEvent {
     };
   };
 }
-
-const IconMap = new Map([
-  ['VM', 'virtualserver'],
-  ['Generic', 'generic'],
-  ['Router', 'router'],
-  ['Switch', 'switch'],
-  ['Container', 'computer'],
-]);
 export default NodeEditor;

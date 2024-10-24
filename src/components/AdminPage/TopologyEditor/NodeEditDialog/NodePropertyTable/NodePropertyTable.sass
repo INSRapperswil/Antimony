@@ -1,0 +1,37 @@
+.sb-node-new-property-overlay
+  background-color: var(--overlay-color)
+  border-color: var(--primary-color-border)
+
+  &::before
+    border-top-color: var(--primary-color-border)
+
+  .p-listbox
+    border: none
+    max-height: 390px
+    overflow-y: auto
+    width: auto !important
+    margin-top: 12px
+    border-radius: 0
+    background-color: transparent
+
+    .p-listbox-empty-message
+      padding-left: 16px
+
+    .p-listbox-item-group
+      background-color: transparent
+      padding-left: 12px
+      margin-right: 12px
+      user-select: none
+      font-weight: 400
+      border: 1px solid transparent
+      cursor: pointer
+      border-radius: 2px
+
+      &:hover
+        backdrop-filter: brightness(1.2)
+
+      &:active
+        backdrop-filter: brightness(1.3)
+
+    .p-listbox-list
+      padding: 0

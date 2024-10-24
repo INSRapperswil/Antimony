@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {useResource} from '@sb/lib/Hooks';
 import {DeviceInfo, Group, Lab, LabState, Topology} from '@sb/types/Types';
 import {APIConnector} from '@sb/lib/APIConnector';
@@ -6,7 +6,7 @@ import {InputText} from 'primereact/inputtext';
 import {Dialog} from 'primereact/dialog';
 import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 import {Chip} from 'primereact/chip';
-import {Choose, Otherwise, When} from '@sb/types/control';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
 
 interface LabsPageProps {
@@ -29,19 +29,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
     LabState.Running,
     LabState.Failed,
   ]);
-
-  const [topologies] = useResource<Topology[]>(
-    `/topologies`,
-    props.apiConnector,
-    []
-  );
   const [groups] = useResource<Group[]>('/groups', props.apiConnector, []);
-
-  const [devices] = useResource<DeviceInfo[]>(
-    '/devices',
-    props.apiConnector,
-    []
-  );
 
   function getGroupById(groupId?: String): String {
     const group = groups.find(group => group.id === groupId);
@@ -266,16 +254,14 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
                 }}
                 onHide={() => setLabDialogVisible(false)}
               >
-                {selectedLab && (
-                  <div>
+                <If condition={selectedLab}>
+                  <div className="height-100">
                     <LabDialog
-                      lab={selectedLab}
+                      lab={selectedLab!}
                       apiConnector={props.apiConnector}
-                      topologies={topologies}
-                      devices={devices}
                     ></LabDialog>
                   </div>
-                )}
+                </If>
               </Dialog>
             </When>
             <Otherwise>

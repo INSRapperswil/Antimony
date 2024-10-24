@@ -26,7 +26,7 @@ export default [
       'webpack.prod.cjs',
       'webpack.dev.cjs',
       'workbox-config.cjs',
-      'eslint.config.js',
+      'eslint.config.cjs',
       '.prettierrc.cjs',
       'server.js',
     ],

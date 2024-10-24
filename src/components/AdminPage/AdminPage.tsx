@@ -182,7 +182,7 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
           'font-bold',
           'height-100',
           'sb-card',
-          'overflow-y-scroll',
+          'overflow-y-auto',
           'overflow-x-hidden',
           'sb-admin-page-left',
           {
@@ -204,7 +204,7 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
           'sb-admin-page-right-maximized': isMaximized,
         })}
       >
-        <div className="bg-primary font-bold height-100 sb-card overflow-y-scroll overflow-x-hidden">
+        <div className="bg-primary font-bold height-100 sb-card overflow-y-auto overflow-x-hidden">
           <TopologyEditor
             onSaveTopology={onSaveTopology}
             topologyManager={topologyManager!}

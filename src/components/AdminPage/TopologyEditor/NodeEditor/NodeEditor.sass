@@ -1,2 +1,16 @@
 .vis-network:active
   cursor: grabbing
+
+.sb-node-editor
+  position: relative
+
+.sb-node-editor-menubar
+  position: absolute
+  z-index: 1
+  transition: top ease 0.2s
+  top: 0
+  left: 0
+  right: 0
+
+  &.sb-node-editor-menubar-disabled
+    top: -60px

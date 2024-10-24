@@ -1,3 +1,4 @@
+import {Button} from 'primereact/button';
 import React, {useMemo} from 'react';
 
 import {NodeEditor} from '@sb/lib/NodeEditor';
@@ -21,8 +22,11 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
             key={property.index}
             propertyKey={property.key}
             propertyValue={property.value}
-            propertyType={property.type}
-            propertyIsList={Array.isArray(property.value)}
+            propertyDefinition={
+              props.nodeEditor.clabSchema.definitions['node-config'].properties[
+                property.key
+              ]
+            }
             wasEdited={props.nodeEditor.wasPropertyEdited(
               property.key,
               property.value,
@@ -35,40 +39,31 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
                 property.type
               )
             }
-            onUpdateKey={newKey =>
-              props.nodeEditor.onPropertyKeyUpdate(property.key, newKey)
-            }
-            onUpdateType={newType =>
-              props.nodeEditor.onPropertyTypeUpdate(
-                property.key,
-                property.value,
-                newType
-              )
-            }
-            onUpdateIsList={toList =>
-              props.nodeEditor.onPropertyIsListUpdate(
-                property.key,
-                property.value,
-                toList
-              )
-            }
           />
         )),
     [props.nodeEditor]
   );
 
   return (
-    <table className="sb-node-property-table">
-      <thead>
-        <tr>
-          <td>Property</td>
-          <td>Value</td>
-          <td>Type</td>
-          <td>As List</td>
-        </tr>
-      </thead>
-      <tbody>{propertyTable}</tbody>
-    </table>
+    <>
+      <table className="sb-table">
+        <thead>
+          <tr>
+            <td>Property</td>
+            <td>Value</td>
+            <td className="p-0">Type</td>
+          </tr>
+        </thead>
+        <tbody>{propertyTable}</tbody>
+      </table>
+      <div className="flex justify-content-center">
+        <Button
+          label="Add Property"
+          icon="pi pi-plus"
+          className="sb-table-add-button"
+        />
+      </div>
+    </>
   );
 };
 

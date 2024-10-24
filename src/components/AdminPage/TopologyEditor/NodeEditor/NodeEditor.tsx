@@ -1,6 +1,15 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import classNames from 'classnames';
+import {Menubar} from 'primereact/menubar';
+import React, {
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
-import {Node, Edge} from 'vis';
+import {Node, Edge, Position} from 'vis';
 import {Network} from 'vis-network';
 import Graph from 'react-graph-vis';
 
@@ -8,7 +17,6 @@ import {DeviceInfo, TopologyDefinition} from '@sb/types/Types';
 import {NetworkOptions} from './network.conf';
 
 import {ContextMenu} from 'primereact/contextmenu';
-import {MegaMenu} from 'primereact/megamenu';
 import {NotificationController} from '@sb/lib/NotificationController';
 import {IconMap} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
 import useResizeObserver from '@react-hook/resize-observer';
@@ -23,6 +31,7 @@ interface NodeEditorProps {
   deviceLookup: Map<string, DeviceInfo>;
 
   onEditNode: (nodeName: string) => void;
+  onAddNode: () => void;
 
   topologyManager: TopologyManager;
 }
@@ -34,9 +43,15 @@ type GraphDefinition = {
 
 const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
+  const [selectedNode, setSelectedNode] = useState<number | null>(null);
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
   const containerRef = useRef(null);
+
+  // Connection state does not have to be reactive, so we do it during rendering
+  const nodeConnectTarget = useRef<Position | null>(null);
+  const nodeConnectDestination = useRef<Position | null>(null);
+  const nodeConnecting = useRef(false);
 
   useEffect(() => {
     if (!network) return;
@@ -114,14 +129,20 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     network?.setData(graph);
   }, [network, graph]);
 
+  const networkCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
+
   function drawGrid(ctx: CanvasRenderingContext2D) {
+    networkCanvasContext.current = ctx;
+
     const width = window.outerWidth;
     const height = window.outerHeight;
     const gridSpacing = 30;
     const gridExtent = 4;
-    ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
 
+    // ctx.globalCompositeOperation = 'destination-over';
+    ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
     ctx.beginPath();
+
     for (
       let x = -width * gridExtent;
       x <= width * gridExtent;
@@ -156,114 +177,126 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       ctx.lineTo(-width * gridExtent, y);
       ctx.stroke();
     }
+
+    drawConnectionLine(ctx);
   }
 
-  const nodeContextMenu = [
-    {
-      label: 'Connect',
-      icon: 'pi pi-arrow-right-arrow-left',
-      command: onNodeConnect,
-    },
-    {label: 'Edit', icon: 'pi pi-pen-to-square', command: onNodeEdit},
-    {label: 'Delete', icon: 'pi pi-trash', command: onNodeDelete},
-  ];
+  function drawConnectionLine(ctx: CanvasRenderingContext2D) {
+    if (
+      !nodeConnectTarget.current ||
+      !nodeConnectDestination.current ||
+      !network
+    )
+      return;
 
-  function onNodeConnect() {}
+    const target = nodeConnectTarget.current;
+    const destination = getMousePosition(
+      ctx.canvas,
+      nodeConnectDestination.current
+    );
 
-  function onNodeEdit() {
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgb(66 181 172)';
+    ctx.moveTo(target.x, target.y);
+    ctx.lineTo(destination.x, destination.y);
+    ctx.stroke();
+  }
+
+  function onMouseMove(event: MouseEvent<HTMLDivElement>) {
+    if (!nodeConnecting.current || !network) return;
+
+    console.log('ov mouse over');
+
+    nodeConnectDestination.current = {x: event.clientX, y: event.clientY};
+    network?.redraw();
+  }
+
+  function getMousePosition(
+    canvas: HTMLCanvasElement,
+    evt: Position
+  ): Position {
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+      x: (evt.x - rect.left) * (canvas.width / rect.width),
+      y: (evt.y - rect.top) * (canvas.height / rect.height),
+    };
+  }
+
+  const onNodeConnect = useCallback(() => {
+    const selectedNodes = network?.getSelectedNodes();
+    if (!selectedNodes || selectedNodes.length < 1) {
+      return;
+    }
+    nodeConnectTarget.current =
+      network?.getPosition(network?.getSelectedNodes()[0]) ?? null;
+    nodeConnecting.current = nodeConnectTarget.current !== null;
+  }, [network]);
+
+  const onNodeEdit = useCallback(() => {
     if (!network || network.getSelectedNodes().length < 1) return;
 
     props.onEditNode(nodeLookup.get(network.getSelectedNodes()[0] as number)!);
-  }
+  }, [network, nodeLookup, props]);
 
-  function onNodeDelete() {
+  const onNodeDelete = useCallback(() => {
     if (!network || network.getSelectedNodes().length < 1) return;
 
     props.topologyManager.deleteNode(
       nodeLookup.get(network.getSelectedNodes()[0] as number)!
     );
-  }
+  }, [network, nodeLookup, props]);
 
-  const headerMenu = [
-    {
-      label: 'Nodes',
-      icon: 'pi pi-plus',
-      items: [
-        [
-          {
-            label: 'Router',
-            items: [
-              {label: 'Accessories'},
-              {label: 'Armchair'},
-              {label: 'Coffee Table'},
-              {label: 'Couch'},
-              {label: 'TV Stand'},
-            ],
-          },
-        ],
-        [
-          {
-            label: 'Switch',
-            items: [{label: 'Bar stool'}, {label: 'Chair'}, {label: 'Table'}],
-          },
-        ],
-        [
-          {
-            label: 'Container',
-            items: [
-              {label: 'Bed'},
-              {label: 'Chaise lounge'},
-              {label: 'Cupboard'},
-              {label: 'Dresser'},
-              {label: 'Wardrobe'},
-            ],
-          },
-        ],
-        [
-          {
-            label: 'Virtual Machine',
-            items: [
-              {label: 'Bookcase'},
-              {label: 'Cabinet'},
-              {label: 'Chair'},
-              {label: 'Desk'},
-              {label: 'Executive Chair'},
-            ],
-          },
-        ],
-        [
-          {
-            label: 'Container',
-            items: [
-              {label: 'Bookcase'},
-              {label: 'Cabinet'},
-              {label: 'Chair'},
-              {label: 'Desk'},
-              {label: 'Executive Chair'},
-            ],
-          },
-        ],
-        [
-          {
-            label: 'Generic',
-            items: [
-              {label: 'Bookcase'},
-              {label: 'Cabinet'},
-              {label: 'Chair'},
-              {label: 'Desk'},
-              {label: 'Executive Chair'},
-            ],
-          },
-        ],
-      ],
-    },
-  ];
+  const networkContextMenuItems = useMemo(() => {
+    if (selectedNode !== null) {
+      return [
+        {
+          label: 'Connect',
+          icon: 'pi pi-arrow-right-arrow-left',
+          command: onNodeConnect,
+        },
+        {label: 'Edit', icon: 'pi pi-pen-to-square', command: onNodeEdit},
+        {label: 'Delete', icon: 'pi pi-trash', command: onNodeDelete},
+      ];
+    } else {
+      return [
+        {
+          label: 'Add Node',
+          icon: 'pi pi-plus',
+          command: props.onAddNode,
+        },
+      ];
+    }
+  }, [selectedNode, onNodeConnect, onNodeDelete, onNodeEdit, props]);
 
-  function onNodeClick(selectData: NodeClickEvent) {
+  const topbarItems = useMemo(() => {
+    if (selectedNode !== null && nodeLookup.has(selectedNode)) {
+      return [
+        {
+          label: `Edit '${nodeLookup.get(selectedNode)}'`,
+          icon: 'pi pi-pen-to-square',
+        },
+        {
+          label: `Delete '${nodeLookup.get(selectedNode)}'`,
+          icon: 'pi pi-trash',
+        },
+      ];
+    }
+    return [];
+  }, [selectedNode, nodeLookup]);
+
+  function onNetworkClick(selectData: NodeClickEvent) {
     console.log('Selected: ', selectData);
+
+    const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+    if (targetNode !== undefined) {
+      setSelectedNode(targetNode as number);
+    } else {
+      setSelectedNode(null);
+    }
   }
 
-  function onNodeDoubleClick(selectData: NodeClickEvent) {
+  function onNetworkDoubleClick(selectData: NodeClickEvent) {
     if (!nodeContextMenuRef.current) return;
 
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
@@ -273,30 +306,44 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     }
   }
 
-  function onNodeContext(selectData: NodeClickEvent) {
+  function onNetworkContext(selectData: NodeClickEvent) {
     if (!nodeContextMenuRef.current) return;
 
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
     if (targetNode !== undefined) {
       network?.selectNodes([targetNode]);
-      nodeContextMenuRef.current.show(selectData.event);
+      setSelectedNode(targetNode as number);
+    } else {
+      setSelectedNode(null);
     }
+
+    nodeContextMenuRef.current.show(selectData.event);
   }
 
   return (
-    <div className="w-full h-full" ref={containerRef}>
-      <MegaMenu model={headerMenu} />
+    <div
+      className="w-full h-full sb-node-editor"
+      ref={containerRef}
+      onMouseMove={onMouseMove}
+    >
+      <Menubar
+        className={classNames({
+          'sb-node-editor-menubar': true,
+          'sb-node-editor-menubar-disabled': selectedNode === null,
+        })}
+        model={topbarItems}
+      />
       <Graph
         graph={{nodes: [], edges: []}}
         options={NetworkOptions}
         events={{
-          click: onNodeClick,
-          oncontext: onNodeContext,
-          doubleClick: onNodeDoubleClick,
+          click: onNetworkClick,
+          oncontext: onNetworkContext,
+          doubleClick: onNetworkDoubleClick,
         }}
         getNetwork={setNetwork}
       />
-      <ContextMenu model={nodeContextMenu} ref={nodeContextMenuRef} />
+      <ContextMenu model={networkContextMenuItems} ref={nodeContextMenuRef} />
     </div>
   );
 };

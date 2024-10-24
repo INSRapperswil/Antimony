@@ -1,3 +1,5 @@
+import NodeEnvironmentTable from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEnvironmentTable/NodeEnvironmentTable';
+import {Accordion, AccordionTab} from 'primereact/accordion';
 import React, {useMemo, useState} from 'react';
 
 import {Dialog} from 'primereact/dialog';
@@ -52,13 +54,13 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   const kindList = useMemo(() => {
     return props.clabSchema['definitions']['node-config']['properties']['kind'][
       'enum'
-    ].map(kind => ({value: kind}));
+    ]!.map(kind => ({value: kind}));
   }, [props.clabSchema]);
 
   function onClose() {
     if (!nodeEditor) return;
 
-    props.topologyManager.edit(nodeEditor.getTopology());
+    props.topologyManager.apply(nodeEditor.getTopology());
     props.onClose();
   }
 
@@ -67,55 +69,50 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
       <Dialog
         showHeader={false}
         visible={props.isOpen}
-        style={{width: '70vw'}}
         dismissableMask={true}
+        className="sb-node-edit-dialog"
         onHide={onClose}
       >
         <If condition={nodeEditor !== null}>
           <div className="sb-dialog-header">
-            <div className="sb-dialog-header-title">Edit Node</div>
+            <div className="sb-dialog-header-title">
+              <span>Edit Node</span>
+            </div>
             <div className="sb-dialog-header-close">
               <Button outlined icon="pi pi-times" size="large" />
             </div>
           </div>
 
           <div className="sb-dialog-content w-full">
-            <div className="flex gap-4">
-              <div className="flex flex-column flex-grow-1 gap-4">
-                <div className="flex flex-column gap-2">
-                  <span className="sb-dialog-heading">General</span>
-                  <SBInput
-                    id="sb-node-name"
-                    label="Name"
-                    defaultValue={props.editingNode!}
-                    onValueSubmit={nodeEditor!.onNameUpdate}
-                  />
-                  <div className="flex flex-column gap-2">
-                    <label htmlFor="sb-node-kind">Kind</label>
-                    <Dropdown
-                      id="sb-node-kind"
-                      value={
-                        nodeEditor!.getTopology().topology.nodes[
-                          props.editingNode!
-                        ]?.kind
-                      }
-                      optionLabel="value"
-                      options={kindList}
-                    />
-                  </div>
-                </div>
-                {/*<div className="flex flex-column">*/}
-                {/*  <span className="sb-dialog-heading">*/}
-                {/*    Environment Variables*/}
-                {/*  </span>*/}
-                {/*  /!*<NodeEnvironmentTable nodeEditor={nodeEditor!} />*!/*/}
-                {/*</div>*/}
-              </div>
-              <div className="flex flex-column">
-                <span className="sb-dialog-heading">Additional Properties</span>
-                <NodePropertyTable nodeEditor={nodeEditor!} />
+            <div className="flex flex-column gap-2">
+              <span className="sb-dialog-heading">General</span>
+              <SBInput
+                id="sb-node-name"
+                label="Name"
+                defaultValue={props.editingNode!}
+                onValueSubmit={nodeEditor!.onNameUpdate}
+              />
+              <div className="flex flex-column gap-2">
+                <label htmlFor="sb-node-kind">Kind</label>
+                <Dropdown
+                  id="sb-node-kind"
+                  value={
+                    nodeEditor!.getTopology().topology.nodes[props.editingNode!]
+                      ?.kind
+                  }
+                  optionLabel="value"
+                  options={kindList}
+                />
               </div>
             </div>
+            <Accordion multiple>
+              <AccordionTab header="Environment Variables">
+                <NodeEnvironmentTable nodeEditor={nodeEditor!} />
+              </AccordionTab>
+              <AccordionTab header="Additional Properties">
+                <NodePropertyTable nodeEditor={nodeEditor!} />
+              </AccordionTab>
+            </Accordion>
           </div>
         </If>
       </Dialog>

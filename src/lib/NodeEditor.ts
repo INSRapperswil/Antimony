@@ -13,13 +13,13 @@ export type NodeProperty = {
 };
 
 export class NodeEditor {
-  private readonly clabSchema: ClabSchema;
-
   private readonly editingNode: string;
   private readonly originalTopology: TopologyDefinition;
   private readonly notifications: NotificationController;
 
   private editingTopology: TopologyDefinition;
+
+  public readonly clabSchema: ClabSchema;
 
   constructor(
     clabSchema: ClabSchema,

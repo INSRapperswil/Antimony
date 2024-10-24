@@ -52,53 +52,27 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
   );
 
   const [hasPendingEdits, setPendingEdits] = useState(false);
-
   const [isNodeEditDialogOpen, setNodeEditDialogOpen] = useState(false);
-
-  const [editingTopology, setEditingTopology] =
-    useState<TopologyDefinition | null>(null);
-
-  // const editingTopologyRef = useRef(editingTopology);
-
+  const [openTopology, setOpenTopology] = useState<TopologyDefinition | null>(
+    null
+  );
   const [currentlyEditedNode, setCurrentlyEditedNode] = useState<string | null>(
     null
   );
 
   const monacoWrapperRef = useRef<MonacoWrapperRef>(null);
 
-  // useEffect(() => {
-  //   if (props.selectedTopology) {
-  //     // editingTopologyRef.current = cloneDeep(props.selectedTopology.definition);
-  //     // setEditingTopology(editingTopologyRef.current);
-  //
-  //     console.log('OPEN TOPOLOGY');
-  //
-  //     props.topologyManager.openTopology(props.selectedTopology.definition);
-  //
-  //     monacoWrapperRef?.current?.openTopology(
-  //       props.selectedTopology.definition
-  //     );
-  //   }
-  // }, [props.topologyManager, props.selectedTopology]);
-
   const onTopologyOpen = useCallback((topology: Topology) => {
-    console.log('ON TOPOLOGY OPEN');
     monacoWrapperRef?.current?.openTopology(topology.definition);
-    setEditingTopology(topology.definition);
+    setOpenTopology(topology.definition);
   }, []);
 
-  const onTopologyEdit = useCallback(
-    (editReport: TopologyEditReport) => {
-      console.log('ON UPDATE TOPOLOGY: isedit:', editReport.isEdited);
-
-      setPendingEdits(editReport.isEdited);
-      setEditingTopology(editReport.updatedTopology.definition);
-    },
-    [props]
-  );
+  const onTopologyEdit = useCallback((editReport: TopologyEditReport) => {
+    setPendingEdits(editReport.isEdited);
+    setOpenTopology(editReport.updatedTopology.definition);
+  }, []);
 
   useEffect(() => {
-    console.log('SUBSCRIBE MANAGER');
     props.topologyManager.onEdit.register(onTopologyEdit);
     props.topologyManager.onOpen.register(onTopologyOpen);
 
@@ -119,23 +93,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
         setValidationState(ValidationState.Working);
       }
 
-      props.topologyManager.edit(obj);
-
-      // if (props.topologyManager.isSaved(obj)) {
-      //   setValidationState(ValidationState.Done);
-      //   props.topologyManager.edit(obj);
-      //   // setEditingTopology(obj);
-      //   // setPendingEdits(false);
-      //   return;
-      // }
-      //
-      // if (validate(obj, props.clabSchema).errors.length === 0) {
-      //   setValidationState(ValidationState.Done);
-      //   props.topologyManager.edit(obj);
-      //   // setEditingTopology(obj);
-      //   // setPendingEdits(true);
-      //   return;
-      // }
+      props.topologyManager.apply(obj);
     } catch (e) {
       setValidationState(ValidationState.Working);
     }
@@ -159,7 +117,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
   return (
     <>
       <Choose>
-        <When condition={editingTopology !== null}>
+        <When condition={openTopology !== null}>
           <div className="flex flex-column h-full overflow-hidden">
             <div className="flex justify-content-between sb-card sb-topology-editor-topbar">
               <div className="flex gap-2 justify-content-center left-tab">
@@ -249,7 +207,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                 >
                   <MonacoWrapper
                     ref={monacoWrapperRef}
-                    openTopology={editingTopology}
+                    openTopology={openTopology}
                     language="yaml"
                     setContent={onContentChange}
                     setValidationError={onSetValidationError}
@@ -261,7 +219,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                 >
                   <NodeEditor
                     onEditNode={onNodeEdit}
-                    openTopology={editingTopology}
+                    openTopology={openTopology}
                     deviceLookup={props.deviceLookup}
                     topologyManager={props.topologyManager}
                     notificationController={props.notificationController}
@@ -315,7 +273,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
       </Choose>
       <NodeEditDialog
         isOpen={isNodeEditDialogOpen}
-        editingTopology={editingTopology}
+        editingTopology={openTopology}
         editingNode={currentlyEditedNode}
         topologyManager={props.topologyManager}
         onClose={() => setNodeEditDialogOpen(false)}

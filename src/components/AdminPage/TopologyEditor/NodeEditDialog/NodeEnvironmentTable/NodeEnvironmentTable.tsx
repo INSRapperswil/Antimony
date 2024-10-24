@@ -36,7 +36,7 @@ const NodeEnvironmentTable: React.FC<NodeEnvironmentTableProps> = (
   }
 
   return (
-    <table className="sb-node-property-table">
+    <table className="sb-table">
       <thead>
         <tr>
           <td>Key</td>

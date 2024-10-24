@@ -25,3 +25,38 @@ body
 .sb-card
   border: 1px solid var(--primary-color-border)
   border-radius: 4px
+
+.sb-table
+  border-collapse: collapse
+  font-size: 14px
+  table-layout: auto
+  width: 100%
+
+  thead
+    font-weight: 700
+    background-color: var(--primary-color)
+
+    td
+      padding: 16px
+
+  tbody
+    tr:nth-child(even)
+      backdrop-filter: brightness(0.94)
+
+  td
+    font-size: 16px
+    padding: 8px 16px
+
+
+  .sb-node-property-checkbox
+    width: 80px
+
+.sb-table-add-button
+  margin-top: 8px
+  padding: 6px 12px
+  background-color: #24333e
+  border: none
+  color: rgba(255, 255, 255, 0.87)
+
+  &:hover
+    filter: brightness(1.2)

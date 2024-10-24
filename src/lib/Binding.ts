@@ -1,6 +1,6 @@
 type Listener<T> = (...args: T[]) => void;
 
-export class SBBinding<T> {
+export class Binding<T> {
   private readonly listeners: Set<Listener<T>> = new Set();
 
   public register(callback: (value: T) => void) {

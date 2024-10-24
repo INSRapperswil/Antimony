@@ -1,6 +1,6 @@
 import {ClabSchema, Topology, TopologyDefinition} from '@sb/types/Types';
 import _, {clone} from 'lodash';
-import {SBBinding} from '@sb/lib/SBBinding';
+import {Binding} from '@sb/lib/Binding';
 import cloneDeep from 'lodash.clonedeep';
 
 export type TopologyEditReport = {
@@ -16,8 +16,8 @@ export class TopologyManager {
   private editingTopology: Topology | null = null;
   private originalTopology: Topology | null = null;
 
-  public readonly onOpen: SBBinding<Topology> = new SBBinding();
-  public readonly onEdit: SBBinding<TopologyEditReport> = new SBBinding();
+  public readonly onOpen: Binding<Topology> = new Binding();
+  public readonly onEdit: Binding<TopologyEditReport> = new Binding();
 
   constructor(clabSchema: ClabSchema) {
     this.clabSchema = clabSchema;
@@ -80,7 +80,7 @@ export class TopologyManager {
    *
    * @param updatedTopology The updated topology.
    */
-  public edit(updatedTopology: TopologyDefinition) {
+  public apply(updatedTopology: TopologyDefinition) {
     if (!this.editingTopology) return;
 
     this.onEdit.update({
@@ -106,7 +106,7 @@ export class TopologyManager {
       },
     };
 
-    this.edit(updatedTopology);
+    this.apply(updatedTopology);
   }
 
   /**
@@ -121,7 +121,7 @@ export class TopologyManager {
 
     delete updatedTopology?.topology.nodes[nodeName];
 
-    this.edit(updatedTopology);
+    this.apply(updatedTopology);
   }
 
   /**
@@ -135,7 +135,7 @@ export class TopologyManager {
 
     console.log('Connecting nodes: n1:', nodeName1, 'n2:', nodeName2);
 
-    this.edit(this.editingTopology.definition);
+    this.apply(this.editingTopology.definition);
   }
 
   /**
@@ -148,7 +148,7 @@ export class TopologyManager {
 
     console.log('Add node', kind);
 
-    this.edit(this.editingTopology.definition);
+    this.apply(this.editingTopology.definition);
   }
 
   /**

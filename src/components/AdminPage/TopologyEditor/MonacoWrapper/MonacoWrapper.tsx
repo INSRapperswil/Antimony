@@ -1,11 +1,13 @@
 import React, {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
 } from 'react';
 
+import YAML from 'yaml';
 import {editor} from 'monaco-editor';
 import * as monaco from 'monaco-editor';
 import {Monaco} from '@monaco-editor/react';
@@ -16,10 +18,8 @@ import {TopologyDefinition} from '@sb/types/Types';
 import {MonacoOptions, AntimonyTheme} from './monaco.conf';
 
 import './MonacoWrapper.sass';
-import YAML from 'yaml';
 
 const schemaModelUri = 'inmemory://schema.yaml';
-let validationTimeout: number | undefined;
 
 window.MonacoEnvironment = {
   getWorker() {
@@ -61,6 +61,19 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
       redo: onTriggerRedo,
     }));
 
+    const onGlobalKeyPress = useCallback((event: KeyboardEvent) => {
+      if (!event.ctrlKey) return;
+
+      switch (event.key) {
+        case 'z':
+          onTriggerUndo();
+          break;
+        case 'y':
+          onTriggerRedo();
+          break;
+      }
+    }, []);
+
     const content = useMemo(() => {
       if (props.openTopology) {
         return YAML.stringify(props.openTopology);
@@ -74,20 +87,7 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
       return () => {
         window.removeEventListener('keydown', onGlobalKeyPress);
       };
-    }, []);
-
-    function onGlobalKeyPress(event: KeyboardEvent) {
-      if (!event.ctrlKey) return;
-
-      switch (event.key) {
-        case 'z':
-          onTriggerUndo();
-          break;
-        case 'y':
-          onTriggerRedo();
-          break;
-      }
-    }
+    }, [onGlobalKeyPress]);
 
     function onTriggerUndo() {
       monacoEditorRef.current?.editor.getEditors()[0].trigger('', 'undo', '');
@@ -106,8 +106,6 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
       monaco.editor.defineTheme('antimonyTheme', AntimonyTheme);
 
       editor.onDidChangeMarkers(() => {
-        window.clearTimeout(validationTimeout);
-
         const markers = editor.getModelMarkers({});
         if (markers.length > 0) {
           props.setValidationError(markers[0].message);

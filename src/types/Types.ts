@@ -106,17 +106,24 @@ export interface TopologyLink {
   endpoints: string[];
 }
 
-// We need to access these fields specifically to get the list of possible kinds
 export interface ClabSchema {
   definitions: {
     'node-config': {
       properties: {
-        kind: {
-          enum: string[];
-        };
+        [key: string]: PropertyDefinition;
       };
     };
   };
+}
+
+export interface PropertyDefinition {
+  type?: 'string' | 'array' | 'boolean' | 'integer';
+  description: string;
+  enum?: string[];
+  minItems?: number;
+  items?: PropertyDefinition;
+  uniqueItems?: boolean;
+  anyOf?: PropertyDefinition[];
 }
 
 export enum LabState {

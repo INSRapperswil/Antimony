@@ -25,6 +25,7 @@ export const NetworkOptions = {
         enabled: false,
       },
     },
+    width: 2,
   },
   physics: {
     barnesHut: {

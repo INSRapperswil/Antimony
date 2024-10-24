@@ -1,8 +1,10 @@
 .sb-topology-editor-topbar
   padding: 8px
-
-  // Make up for the border
   margin: -1px
+
+  // This makes it so the node editor menu can hide between the topbar
+  z-index: 2
+  background-color: var(--primary-color)
 
 .sb-topology-editor-bottombar
   padding: 4px
@@ -36,3 +38,6 @@
   overflow: hidden
   word-wrap: break-word
   user-select: none
+
+.sb-node-speed-dial
+  position: absolute

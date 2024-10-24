@@ -4,14 +4,14 @@ import {PrimeReactProvider} from 'primereact/api';
 
 import Dock from '@sb/components/Dock/Dock';
 import {Choose, When} from '@sb/types/control';
-import LabsPage from '@sb/components/LabsPage';
+import LabsPage from '@sb/components/LabsPage/LabsPage';
 import AdminPage from '@sb/components/AdminPage/AdminPage';
 
 import 'primereact/resources/themes/lara-dark-blue/theme.css';
 import {APIConnector} from '@sb/lib/APIConnector';
 
 const App: React.FC = () => {
-  const [pageIndex, setPageIndex] = useState(1);
+  const [pageIndex, setPageIndex] = useState(0); //starting page
   const [apiConnector, setApiConnector] = useState(new APIConnector());
 
   const [isAuthenticated, setAuthenticated] = useState(false);
@@ -29,7 +29,7 @@ const App: React.FC = () => {
         <div className="flex flex-grow-1 gap-2 min-h-0">
           <Choose>
             <When condition={pageIndex === 0}>
-              <LabsPage />
+              <LabsPage apiConnector={apiConnector} />
             </When>
             <When condition={pageIndex === 1}>
               <AdminPage apiConnector={apiConnector} />

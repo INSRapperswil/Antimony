@@ -1,5 +1,5 @@
 import {Button} from 'primereact/button';
-import React, {useMemo} from 'react';
+import React, {useMemo, useRef} from 'react';
 
 import {NodeEditor} from '@sb/lib/NodeEditor';
 import NodePropertyTableRow from './NodePropertyTableRow';
@@ -13,6 +13,19 @@ interface NodePropertyTableProps {
 const NodePropertyTable: React.FC<NodePropertyTableProps> = (
   props: NodePropertyTableProps
 ) => {
+  const availableProperties = useMemo(() => {
+    const allProperties = new Set(
+      Object.keys(
+        props.nodeEditor.clabSchema.definitions['node-config'].properties
+      )
+    );
+    const usedProperties = new Set(Object.keys(props.nodeEditor.getNode()));
+
+    return allProperties.difference(usedProperties);
+  }, [props.nodeEditor]);
+
+  const addPropertyContextMenu = useRef(null);
+
   const propertyTable = useMemo(
     () =>
       props.nodeEditor

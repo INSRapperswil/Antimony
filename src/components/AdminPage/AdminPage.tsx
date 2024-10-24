@@ -25,6 +25,7 @@ import './AdminPage.sass';
 import {TopologyManager} from '@sb/lib/TopologyManager';
 import {If} from '@sb/types/control';
 import classNames from 'classnames';
+import {DeviceManager} from '@sb/lib/DeviceManager';
 
 interface AdminPageProps {
   apiConnector: APIConnector;
@@ -70,19 +71,19 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
 
   const [groups] = useResource<Group[]>('/groups', props.apiConnector, []);
 
-  const deviceLookup = useMemo(
-    () => new Map(devices.map(device => [device.kind, device])),
-    [devices]
-  );
+  const topologyLookup = useMemo(() => {
+    if (!topologies) return null;
+    return new Map(topologies.map(topology => [topology.id, topology]));
+  }, [topologies]);
 
-  const topologyLookup = useMemo(
-    () => new Map(topologies.map(topology => [topology.id, topology])),
-    [topologies]
-  );
+  const deviceManager = useMemo(() => {
+    if (!devices) return null;
+    return new DeviceManager(devices);
+  }, [devices]);
 
   const isReady = useReady(
     topologyManager,
-    deviceLookup,
+    deviceManager,
     topologyLookup,
     clabSchema,
     groups
@@ -101,6 +102,8 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
   }, [topologyManager, onTopologyOpen]);
 
   useEffect(() => {
+    if (!topologyLookup) return;
+
     /// #if DEBUG
     if (topologies && topologies.length > 0 && topologyManager) {
       topologyManager.open(topologies[0]);
@@ -137,7 +140,7 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
   }
 
   function onSelectTopology(id: string) {
-    if (!topologyManager) return;
+    if (!topologyManager || !topologyLookup) return;
 
     console.log('dasdds:', id);
     console.log(topologyLookup);
@@ -210,7 +213,7 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
             topologyManager={topologyManager!}
             clabSchema={clabSchema!}
             apiConnector={props.apiConnector}
-            deviceLookup={deviceLookup}
+            deviceManager={deviceManager!}
             isMaximized={isMaximized}
             setMaximized={setMaximized}
             notificationController={props.notificationController}

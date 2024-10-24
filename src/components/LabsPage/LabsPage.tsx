@@ -1,24 +1,22 @@
-import React, {useState} from 'react';
-import {useResource} from '@sb/lib/Hooks';
+import React, {useMemo, useState} from 'react';
+import {useReady, useResource} from '@sb/lib/Hooks';
 import {DeviceInfo, Group, Lab, LabState, Topology} from '@sb/types/Types';
 import {APIConnector} from '@sb/lib/APIConnector';
 import {InputText} from 'primereact/inputtext';
 import {Dialog} from 'primereact/dialog';
 import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 import {Chip} from 'primereact/chip';
-import {Choose, Otherwise, When} from '@sb/types/control';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
+import {DeviceManager} from '@sb/lib/DeviceManager';
 
 interface LabsPageProps {
   apiConnector: APIConnector;
 }
 
 const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
-  const [labs, labsFetchState] = useResource<Lab[]>(
-    '/labs',
-    props.apiConnector,
-    []
-  );
+  const [labs] = useResource<Lab[]>('/labs', props.apiConnector, []);
+
   const [LabDialogVisible, setLabDialogVisible] = useState<boolean>(false);
   const [FilterDialogVisible, setFilterDialogVisible] =
     useState<boolean>(false);
@@ -31,7 +29,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
   ]);
 
   const [topologies] = useResource<Topology[]>(
-    `/topologies`,
+    '/topologies',
     props.apiConnector,
     []
   );
@@ -42,6 +40,13 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
     props.apiConnector,
     []
   );
+
+  const deviceManager = useMemo(() => {
+    if (!devices) return null;
+    return new DeviceManager(devices);
+  }, [devices]);
+
+  const isReady = useReady(deviceManager);
 
   function getGroupById(groupId?: String): String {
     const group = groups.find(group => group.id === groupId);
@@ -58,7 +63,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
   };
 
   return (
-    <>
+    <If condition={isReady}>
       <div className="bg-primary font-bold height-100 width-100 sb-card overflow-y-scroll overflow-x-hidden">
         <div
           className="search-bar"
@@ -272,7 +277,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
                       lab={selectedLab}
                       apiConnector={props.apiConnector}
                       topologies={topologies}
-                      devices={devices}
+                      deviceManager={deviceManager!}
                     ></LabDialog>
                   </div>
                 )}
@@ -284,7 +289,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
           </Choose>
         </div>
       </div>
-    </>
+    </If>
   );
 };
 

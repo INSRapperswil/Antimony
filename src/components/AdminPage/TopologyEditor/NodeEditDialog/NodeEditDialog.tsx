@@ -1,10 +1,10 @@
 import NodeEnvironmentTable from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEnvironmentTable/NodeEnvironmentTable';
 import {Accordion, AccordionTab} from 'primereact/accordion';
-import React, {useMemo, useState} from 'react';
+import React, {useMemo} from 'react';
 
 import {Dialog} from 'primereact/dialog';
 
-import {ClabSchema, DeviceInfo, TopologyDefinition} from '@sb/types/Types';
+import {ClabSchema, TopologyDefinition} from '@sb/types/Types';
 
 import './NodeEditDialog.sass';
 import {NotificationController} from '@sb/lib/NotificationController';
@@ -15,6 +15,8 @@ import {Button} from 'primereact/button';
 import {If} from '@sb/types/control';
 import {NodeEditor} from '@sb/lib/NodeEditor';
 import {TopologyManager} from '@sb/lib/TopologyManager';
+import {DeviceManager} from '@sb/lib/DeviceManager';
+import {Image} from 'primereact/image';
 
 interface NodeEditDialogProps {
   notificationController: NotificationController;
@@ -23,9 +25,9 @@ interface NodeEditDialogProps {
   editingNode: string | null;
   isOpen: boolean;
   clabSchema: ClabSchema;
-  deviceLookup: Map<string, DeviceInfo>;
 
   topologyManager: TopologyManager;
+  deviceManager: DeviceManager;
 
   onClose: () => void;
 }
@@ -48,8 +50,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
     props.editingTopology,
     props.notificationController,
   ]);
-
-  const [kindError, setKindError] = useState<string | null>(null);
 
   const kindList = useMemo(() => {
     return props.clabSchema['definitions']['node-config']['properties']['kind'][
@@ -76,16 +76,24 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
         <If condition={nodeEditor !== null}>
           <div className="sb-dialog-header">
             <div className="sb-dialog-header-title">
+              <Image
+                src={props.deviceManager.getNodeIcon(nodeEditor!.getNode())}
+                width="45px"
+              />
               <span>Edit Node</span>
             </div>
             <div className="sb-dialog-header-close">
-              <Button outlined icon="pi pi-times" size="large" />
+              <Button
+                outlined
+                icon="pi pi-times"
+                size="large"
+                onClick={onClose}
+              />
             </div>
           </div>
 
           <div className="sb-dialog-content w-full">
             <div className="flex flex-column gap-2">
-              <span className="sb-dialog-heading">General</span>
               <SBInput
                 id="sb-node-name"
                 label="Name"

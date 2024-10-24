@@ -3,12 +3,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Button} from 'primereact/button';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
 
-import {
-  ClabSchema,
-  DeviceInfo,
-  Topology,
-  TopologyDefinition,
-} from '@sb/types/Types';
+import {ClabSchema, Topology, TopologyDefinition} from '@sb/types/Types';
 import {Choose, Otherwise, When} from '@sb/types/control';
 import NodeEditor from './NodeEditor/NodeEditor';
 import MonacoWrapper, {MonacoWrapperRef} from './MonacoWrapper/MonacoWrapper';
@@ -21,6 +16,7 @@ import {Tooltip} from 'primereact/tooltip';
 import YAML from 'yaml';
 import {TopologyEditReport, TopologyManager} from '@sb/lib/TopologyManager';
 import {validate} from 'jsonschema';
+import {DeviceManager} from '@sb/lib/DeviceManager';
 
 export enum ValidationState {
   Working,
@@ -37,7 +33,7 @@ interface TopologyEditorProps {
 
   clabSchema: ClabSchema;
 
-  deviceLookup: Map<string, DeviceInfo>;
+  deviceManager: DeviceManager;
   topologyManager: TopologyManager;
 
   onSaveTopology: () => void;
@@ -113,6 +109,8 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     setNodeEditDialogOpen(true);
     setCurrentlyEditedNode(nodeName);
   }
+
+  function onAddNode() {}
 
   return (
     <>
@@ -218,9 +216,10 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   minSize={10}
                 >
                   <NodeEditor
+                    onAddNode={onAddNode}
                     onEditNode={onNodeEdit}
                     openTopology={openTopology}
-                    deviceLookup={props.deviceLookup}
+                    deviceManager={props.deviceManager}
                     topologyManager={props.topologyManager}
                     notificationController={props.notificationController}
                   />
@@ -279,7 +278,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
         onClose={() => setNodeEditDialogOpen(false)}
         clabSchema={props.clabSchema}
         notificationController={props.notificationController}
-        deviceLookup={props.deviceLookup}
+        deviceManager={props.deviceManager}
       />
     </>
   );

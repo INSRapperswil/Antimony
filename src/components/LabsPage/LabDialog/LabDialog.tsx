@@ -1,63 +1,34 @@
 import React, {useEffect, useState} from 'react';
 import {APIConnector} from '@sb/lib/APIConnector';
 import YAML from 'yaml';
-import {DeviceInfo, Lab, Topology, TopologyDefinition} from '@sb/types/Types';
+import {Lab, Topology, TopologyDefinition} from '@sb/types/Types';
 import {Edge, Node} from 'vis';
 import {Network} from 'vis-network';
 import Graph from 'react-graph-vis';
 import {NetworkOptions} from '@sb/components/AdminPage/TopologyEditor/NodeEditor/network.conf';
 import {Button} from 'primereact/button';
+import {DeviceManager} from '@sb/lib/DeviceManager';
 
 interface LabDialogProps {
   lab: Lab;
   topologies: Topology[];
-  devices: DeviceInfo[];
+  deviceManager: DeviceManager;
   apiConnector: APIConnector;
 }
 const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
-  const IconMap = new Map([
-    ['VM', 'virtualserver'],
-    ['Generic', 'generic'],
-    ['Router', 'router'],
-    ['Switch', 'switch'],
-    ['Container', 'computer'],
-  ]);
-
-  const [deviceInfoMap, setDeviceInfoMap] = useState<Map<string, DeviceInfo>>(
-    new Map()
-  );
 
   useEffect(() => {
     getTopology(props.lab.topologyId);
   }, [network, props.lab]);
 
   const getTopology = (id: string): void => {
-    for (let topology of props.topologies) {
+    for (const topology of props.topologies) {
       if (topology.id === id) {
         generateGraph(topology.definition);
       }
     }
   };
-
-  useEffect(() => {
-    setDeviceInfoMap(
-      new Map(props.devices.map(device => [device.kind, device]))
-    );
-  }, []);
-
-  function getNodeIcon(kind: string) {
-    let iconName;
-    const deviceInfo = deviceInfoMap.get(kind);
-    if (deviceInfo) {
-      iconName = IconMap.get(deviceInfo?.type);
-    } else {
-      iconName = 'generic';
-    }
-    if (!iconName) iconName = 'generic';
-
-    return './icons/' + iconName + '.svg';
-  }
 
   function generateGraph(topology: string) {
     if (!topology) return;
@@ -76,7 +47,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       nodes.push({
         id: index,
         label: nodeName,
-        image: getNodeIcon(node.kind),
+        image: props.deviceManager.getNodeIcon(node),
       });
     }
 

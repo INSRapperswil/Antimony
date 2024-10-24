@@ -250,6 +250,10 @@ export class NodeEditor {
     return this.editingTopology;
   }
 
+  public getNode(): TopologyNode {
+    return this.editingTopology.topology.nodes[this.editingNode];
+  }
+
   private validateAndSetTopology(
     topology: TopologyDefinition,
     customErrorMessage: string | null = null

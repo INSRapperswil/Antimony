@@ -1,14 +1,24 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+
 import {APIConnector} from '@sb/lib/APIConnector';
-import {DeviceInfo, Lab, Topology, TopologyDefinition} from '@sb/types/Types';
+import {
+  DeviceInfo,
+  Lab,
+  Topology,
+  TopologyDefinition,
+  TopologyOut,
+} from '@sb/types/Types';
 import {Edge, Node} from 'vis';
 import {Network} from 'vis-network';
 import Graph from 'react-graph-vis';
 import {NetworkOptions} from '@sb/components/AdminPage/TopologyEditor/NodeEditor/network.conf';
 import {Button} from 'primereact/button';
 import {useResource} from '@sb/lib/Hooks';
-import useResizeObserver from '@react-hook/resize-observer/src';
+import useResizeObserver from '@react-hook/resize-observer';
 import {IconMap} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
+import {DeviceManager} from '@sb/lib/DeviceManager';
+import {TopologyManager} from '@sb/lib/TopologyManager';
+import './LabDialog.sass';
 
 type GraphDefinition = {
   nodes?: Node[];
@@ -17,6 +27,7 @@ type GraphDefinition = {
 interface LabDialogProps {
   lab: Lab;
   apiConnector: APIConnector;
+  deviceManager: DeviceManager;
 }
 
 const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
@@ -24,11 +35,18 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const [topologyDefinition, setTopologyDefinition] =
     useState<TopologyDefinition | null>(null);
   const containerRef = useRef(null);
-  const [topologies] = useResource<Topology[]>(
-    `/topologies`,
-    props.apiConnector,
-    []
+
+  const [topologies, topologyFetchState, fetchTopologies] = useResource<
+    Topology[]
+  >('/topologies', props.apiConnector, [], topologies =>
+    TopologyManager.parseTopologies(topologies as TopologyOut[])
   );
+
+  useResizeObserver(containerRef, () => {
+    if (network) {
+      network.redraw();
+    }
+  });
 
   const [devices] = useResource<DeviceInfo[]>(
     '/devices',
@@ -80,7 +98,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       nodes.push({
         id: index,
         label: nodeName,
-        image: getNodeIcon(node.kind),
+        image: props.deviceManager.getNodeIcon(node),
       });
     }
 
@@ -96,61 +114,31 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   }, [topologyDefinition, getNodeIcon]);
 
   useEffect(() => {
-    getTopology(props.lab.id);
+    getTopology(props.lab.topologyId);
+    console.log('graph: ', graph);
     network?.setData(graph);
   }, [network, graph, props.lab]);
 
-  useResizeObserver(containerRef, () => {
-    if (network) {
-      network.redraw();
-    }
-  });
-
   return (
-    <div className="height-100">
+    <div className="height-100 topology-container">
       <div className="height-100">
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '1em',
-          }}
-        >
-          <strong style={{textAlign: 'left'}}>Topology</strong>
+        <div className="topology-header">
+          <strong className="topology-title">Topology</strong>
           <Button
-            onClick={() => console.log('EdgeShark Clicked')} // Replace with your handler
-            style={{
-              backgroundColor: '#4DB6AC',
-              color: 'black',
-              border: 'none',
-              padding: '0.5em 1em',
-              cursor: 'pointer',
-              borderRadius: '4px',
-              fontSize: '1em',
-            }}
+            onClick={() => console.log('EdgeShark Clicked')} // Replace with handler
+            className="topology-button"
           >
             🦈 Start EdgeShark
           </Button>
         </div>
-        <div>
+        <div className="height-100 topology-graph-container">
           <Graph
             graph={{nodes: [], edges: []}}
             options={NetworkOptions}
             getNetwork={setNetwork}
           />
         </div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            position: 'absolute',
-            bottom: '1em',
-            left: '1em',
-            right: '1em',
-            width: 'calc(100% - 2em)',
-          }}
-        >
+        <div className="topology-footer">
           <Button style={{alignSelf: 'flex-start'}}>Reset</Button>
           <Button style={{alignSelf: 'flex-end'}}>Abort</Button>
         </div>

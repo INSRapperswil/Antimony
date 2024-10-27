@@ -13,22 +13,22 @@ import {Node, Edge, Position} from 'vis';
 import {Network} from 'vis-network';
 import Graph from 'react-graph-vis';
 
-import {DeviceInfo, TopologyDefinition} from '@sb/types/Types';
+import {TopologyDefinition} from '@sb/types/Types';
 import {NetworkOptions} from './network.conf';
 
 import {ContextMenu} from 'primereact/contextmenu';
 import {NotificationController} from '@sb/lib/NotificationController';
-import {IconMap} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
 import useResizeObserver from '@react-hook/resize-observer';
 
 import './NodeEditor.sass';
 import {TopologyManager} from '@sb/lib/TopologyManager';
+import {DeviceManager} from '@sb/lib/DeviceManager';
 
 interface NodeEditorProps {
   notificationController: NotificationController;
 
   openTopology: TopologyDefinition | null;
-  deviceLookup: Map<string, DeviceInfo>;
+  deviceManager: DeviceManager;
 
   onEditNode: (nodeName: string) => void;
   onAddNode: () => void;
@@ -53,13 +53,6 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const nodeConnectDestination = useRef<Position | null>(null);
   const nodeConnecting = useRef(false);
 
-  useEffect(() => {
-    if (!network) return;
-    network.on('beforeDrawing', drawGrid);
-
-    return () => network.off('beforeDrawing', drawGrid);
-  }, [network]);
-
   useResizeObserver(containerRef, () => {
     if (network) {
       network.redraw();
@@ -76,22 +69,6 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     );
   }, [props.openTopology]);
 
-  const getNodeIcon = useCallback(
-    (kind: string) => {
-      let iconName: string;
-      const deviceInfo = props.deviceLookup.get(kind);
-      if (deviceInfo) {
-        iconName = IconMap.get(deviceInfo?.type) ?? 'generic';
-      } else {
-        iconName = 'generic';
-      }
-      if (!iconName) iconName = 'generic';
-
-      return '/assets/icons/' + iconName + '.svg';
-    },
-    [props.deviceLookup]
-  );
-
   const graph: GraphDefinition = useMemo(() => {
     if (!props.openTopology) return {nodes: [], edges: []};
 
@@ -107,7 +84,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       nodes.push({
         id: index,
         label: nodeName,
-        image: getNodeIcon(node.kind),
+        image: props.deviceManager.getNodeIcon(node),
       });
     }
 
@@ -120,7 +97,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     ];
 
     return {nodes: nodes, edges: edges};
-  }, [props.openTopology, getNodeIcon]);
+  }, [props.openTopology, props.deviceManager]);
 
   /*
    * Passing this through the graph's prop directly was causing a weird error. We need to take the imperative way here.
@@ -131,76 +108,90 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
 
   const networkCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
 
-  function drawGrid(ctx: CanvasRenderingContext2D) {
-    networkCanvasContext.current = ctx;
-
-    const width = window.outerWidth;
-    const height = window.outerHeight;
-    const gridSpacing = 30;
-    const gridExtent = 4;
-
-    // ctx.globalCompositeOperation = 'destination-over';
-    ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
-    ctx.beginPath();
-
-    for (
-      let x = -width * gridExtent;
-      x <= width * gridExtent;
-      x += gridSpacing
-    ) {
-      ctx.beginPath();
-      if (x % 4 === 0) {
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'rgb(41,61,67)';
-      } else {
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'rgb(39,58,64)';
+  const drawConnectionLine = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      if (
+        !network ||
+        !nodeConnectTarget.current ||
+        !nodeConnectDestination.current
+      ) {
+        return;
       }
-      ctx.moveTo(x, height * gridExtent);
-      ctx.lineTo(x, -height * gridExtent);
+
+      const target = nodeConnectTarget.current;
+      const destination = getMousePosition(
+        ctx.canvas,
+        nodeConnectDestination.current
+      );
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgb(66 181 172)';
+      ctx.moveTo(target.x, target.y);
+      ctx.lineTo(destination.x, destination.y);
       ctx.stroke();
-    }
-    for (
-      let y = -height * gridExtent;
-      y <= height * gridExtent;
-      y += gridSpacing
-    ) {
+    },
+    [network]
+  );
+
+  const drawGrid = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      networkCanvasContext.current = ctx;
+
+      const width = window.outerWidth;
+      const height = window.outerHeight;
+      const gridSpacing = 30;
+      const gridExtent = 4;
+
+      // ctx.globalCompositeOperation = 'destination-over';
+      ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
       ctx.beginPath();
-      if (y % 4 === 0) {
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'rgb(41,61,67)';
-      } else {
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'rgb(39,58,64)';
+
+      for (
+        let x = -width * gridExtent;
+        x <= width * gridExtent;
+        x += gridSpacing
+      ) {
+        ctx.beginPath();
+        if (x % 4 === 0) {
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = 'rgb(41,61,67)';
+        } else {
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'rgb(39,58,64)';
+        }
+        ctx.moveTo(x, height * gridExtent);
+        ctx.lineTo(x, -height * gridExtent);
+        ctx.stroke();
       }
-      ctx.moveTo(width * gridExtent, y);
-      ctx.lineTo(-width * gridExtent, y);
-      ctx.stroke();
-    }
+      for (
+        let y = -height * gridExtent;
+        y <= height * gridExtent;
+        y += gridSpacing
+      ) {
+        ctx.beginPath();
+        if (y % 4 === 0) {
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = 'rgb(41,61,67)';
+        } else {
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'rgb(39,58,64)';
+        }
+        ctx.moveTo(width * gridExtent, y);
+        ctx.lineTo(-width * gridExtent, y);
+        ctx.stroke();
+      }
 
-    drawConnectionLine(ctx);
-  }
+      drawConnectionLine(ctx);
+    },
+    [drawConnectionLine]
+  );
 
-  function drawConnectionLine(ctx: CanvasRenderingContext2D) {
-    if (
-      !nodeConnectTarget.current ||
-      !nodeConnectDestination.current ||
-      !network
-    )
-      return;
+  useEffect(() => {
+    if (!network) return;
+    network.on('beforeDrawing', drawGrid);
 
-    const target = nodeConnectTarget.current;
-    const destination = getMousePosition(
-      ctx.canvas,
-      nodeConnectDestination.current
-    );
-
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgb(66 181 172)';
-    ctx.moveTo(target.x, target.y);
-    ctx.lineTo(destination.x, destination.y);
-    ctx.stroke();
-  }
+    return () => network.off('beforeDrawing', drawGrid);
+  }, [network, drawGrid]);
 
   function onMouseMove(event: MouseEvent<HTMLDivElement>) {
     if (!nodeConnecting.current || !network) return;

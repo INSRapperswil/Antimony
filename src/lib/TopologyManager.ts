@@ -1,7 +1,13 @@
-import {ClabSchema, Topology, TopologyDefinition} from '@sb/types/Types';
+import {
+  ClabSchema,
+  Topology,
+  TopologyDefinition,
+  TopologyOut,
+} from '@sb/types/Types';
 import _, {clone} from 'lodash';
 import {Binding} from '@sb/lib/Binding';
 import cloneDeep from 'lodash.clonedeep';
+import YAML from 'yaml';
 
 export type TopologyEditReport = {
   updatedTopology: Topology;
@@ -157,6 +163,22 @@ export class TopologyManager {
   public hasEdits() {
     if (!this.editingTopology || !this.originalTopology) return false;
     return !_.isEqual(this.editingTopology, this.originalTopology);
+  }
+
+  public static parseTopologies(input: TopologyOut[]) {
+    const topologies: Topology[] = [];
+    for (const topology of input) {
+      try {
+        topologies.push({
+          ...topology,
+          definition: YAML.parse((topology as TopologyOut).definition),
+        });
+      } catch (e) {
+        console.error('[NET] Failed to parse incoming topology: ', topology);
+      }
+    }
+
+    return topologies;
   }
 }
 

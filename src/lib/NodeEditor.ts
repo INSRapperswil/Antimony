@@ -212,18 +212,27 @@ export class NodeEditor {
     );
   }
 
+  public getAvailableProperties(): string[] {
+    const allProperties = new Set(
+      Object.keys(this.clabSchema.definitions['node-config'].properties)
+    );
+    const usedProperties = new Set(Object.keys(this.editingNode));
+
+    return [...allProperties.difference(usedProperties)].filter(
+      property => !(property in IgnoredGenericProperties)
+    );
+  }
+
   /**
    * Returns all the properties of the currently edited node.
    */
   public getProperties(): NodeProperty[] {
-    console.log('GET PROPERTIES');
-
     const properties: NodeProperty[] = [];
 
     for (const [index, [key, value]] of Object.entries(
       this.editingTopology.topology.nodes[this.editingNode]
     ).entries()) {
-      if (key in IgnoredProperties) continue;
+      if (key in IgnoredGenericProperties) continue;
 
       properties.push({
         key,
@@ -273,4 +282,5 @@ export class NodeEditor {
   }
 }
 
-const IgnoredProperties = ['kind', 'image'];
+// These properties are ignored in generic properties due to being covered individually
+const IgnoredGenericProperties = ['kind', 'image', 'env', 'labels'];

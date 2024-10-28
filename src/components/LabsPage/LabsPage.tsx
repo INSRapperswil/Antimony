@@ -1,5 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {useReady, useResource} from '@sb/lib/Hooks';
+import {useReady, useResource} from '@sb/lib/Utils/Hooks';
 import {DeviceInfo, Group, Lab, LabState, Topology} from '@sb/types/Types';
 import {APIConnector} from '@sb/lib/APIConnector';
 import {InputText} from 'primereact/inputtext';

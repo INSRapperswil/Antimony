@@ -1,19 +1,17 @@
 .p-button
   transition: all 0.1s ease-in
-  color: black
-  background-color: var(--primary-color-border)
-  border-radius: 3px
-  border-color: var(--primary-color-border)
+  //color: var(--primary-color-border)
+  //border-radius: 3px
 
   &.p-button-outlined
     color: var(--primary-color-border)
     background-color: transparent
 
-  &:hover
-    filter: brightness(0.8)
-
-  &:active
-    filter: brightness(0.6)
+  //&:hover
+  //  filter: brightness(0.8)
+  //
+  //&:active
+  //  filter: brightness(0.6)
 
 .p-tooltip
   transition: opacity 0.2s ease-in-out !important
@@ -97,3 +95,19 @@
 .p-contextmenu
   max-height: 300px
   overflow-y: auto
+
+.p-dropdown-panel
+  background-color: var(--overlay-color)
+
+  .p-dropdown-item
+    background-color: transparent
+
+    &:focus-visible
+      outline: none
+
+    &:hover
+      backdrop-filter: brightness(1.2)
+
+  .p-dropdown-header
+    background-color: transparent
+    border: none

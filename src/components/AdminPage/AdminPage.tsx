@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import YAML from 'yaml';
+import classNames from 'classnames';
 import {confirmDialog, ConfirmDialog} from 'primereact/confirmdialog';
 
 import {
@@ -8,7 +9,7 @@ import {
   useReady,
   useResource,
   useSingleton,
-} from '@sb/lib/Hooks';
+} from '@sb/lib/Utils/Hooks';
 import {
   ClabSchema,
   DeviceInfo,
@@ -16,16 +17,15 @@ import {
   Topology,
   TopologyOut,
 } from '@sb/types/Types';
+import {If} from '@sb/types/control';
 import {APIConnector} from '@sb/lib/APIConnector';
+import {DeviceManager} from '@sb/lib/DeviceManager';
+import {TopologyManager} from '@sb/lib/TopologyManager';
 import {NotificationController} from '@sb/lib/NotificationController';
 import TopologyEditor from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
 import TopologyExplorer from '@sb/components/AdminPage/TopologyExplorer/TopologyExplorer';
 
 import './AdminPage.sass';
-import {TopologyManager} from '@sb/lib/TopologyManager';
-import {If} from '@sb/types/control';
-import classNames from 'classnames';
-import {DeviceManager} from '@sb/lib/DeviceManager';
 
 interface AdminPageProps {
   apiConnector: APIConnector;
@@ -33,32 +33,29 @@ interface AdminPageProps {
 }
 
 const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
-  // const [selectedTopology, setSelectedTopology] = useState<Topology | null>(
-  //   null
-  // );
-
   const [editingTopologyId, setEditingTopologyId] = useState<string | null>(
     null
   );
 
   const [isMaximized, setMaximized] = useState(false);
 
-  const [topologies, topologyFetchState, fetchTopologies] = useResource<
-    Topology[]
-  >('/topologies', props.apiConnector, [], topologies =>
-    mapTopologies(topologies as TopologyOut[])
+  const topologyManager = useSingleton(
+    TopologyManager as Instantiatable<TopologyManager>,
+    props.apiConnector,
+    props.notificationController
+  );
+
+  const [topologies, , fetchTopologies] = useResource<Topology[]>(
+    '/topologies',
+    props.apiConnector,
+    [],
+    topologies => mapTopologies(topologies as TopologyOut[])
   );
 
   const [devices] = useResource<DeviceInfo[]>(
     '/devices',
     props.apiConnector,
     []
-  );
-
-  const topologyManager = useSingleton(
-    TopologyManager as Instantiatable<TopologyManager>,
-    props.apiConnector,
-    props.notificationController
   );
 
   const [clabSchema] = useResource<ClabSchema | null>(
@@ -69,7 +66,11 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
     true
   );
 
-  const [groups] = useResource<Group[]>('/groups', props.apiConnector, []);
+  const [groups, groupsFetchState] = useResource<Group[]>(
+    '/groups',
+    props.apiConnector,
+    []
+  );
 
   const topologyLookup = useMemo(() => {
     if (!topologies) return null;
@@ -81,17 +82,11 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
     return new DeviceManager(devices);
   }, [devices]);
 
-  const isReady = useReady(
-    topologyManager,
-    deviceManager,
-    topologyLookup,
-    clabSchema,
-    groups
-  );
-
   const onTopologyOpen = useCallback((topology: Topology) => {
     setEditingTopologyId(topology.id);
   }, []);
+
+  const isReady = useReady(topologyManager, deviceManager, topologyLookup);
 
   useEffect(() => {
     if (!topologyManager) return;
@@ -102,17 +97,15 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
   }, [topologyManager, onTopologyOpen]);
 
   useEffect(() => {
-    if (!topologyLookup) return;
+    if (!topologyLookup || !topologies || !topologyManager) return;
 
     /// #if DEBUG
-    if (topologies && topologies.length > 0 && topologyManager) {
+    if (topologies && topologies.length > 0) {
       topologyManager.open(topologies[0]);
-      // setSelectedTopology(topologies[0]);
     }
     /// #endif
 
-    // Refresh currently selected topology when topologies are reloaded and topology was open before
-    if (topologyManager && topologyManager.editingTopologyId) {
+    if (topologyManager.editingTopologyId) {
       if (topologyLookup.has(topologyManager.editingTopologyId)) {
         topologyManager.open(
           topologyLookup.get(topologyManager.editingTopologyId)!
@@ -140,15 +133,9 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
   }
 
   function onSelectTopology(id: string) {
-    if (!topologyManager || !topologyLookup) return;
-
-    console.log('dasdds:', id);
-    console.log(topologyLookup);
-    if (!topologyLookup.has(id)) return false;
-    console.log('dasdds:', id);
+    if (!topologyManager || !topologyLookup || !topologyLookup.has(id)) return;
 
     if (topologyManager.hasEdits()) {
-      console.log('penidng edits', id);
       confirmDialog({
         message: "Are you sure you wan't to leave?",
         header: 'Unsaved Changes',
@@ -158,8 +145,6 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
         accept: () => onSelectConfirm(id),
       });
     } else {
-      console.log('no   penidng edits', id);
-
       onSelectConfirm(id);
     }
   }
@@ -199,7 +184,7 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
           groups={groups}
           topologies={topologies}
           devices={devices}
-          fetchState={topologyFetchState}
+          fetchState={groupsFetchState}
         />
       </div>
       <div
@@ -211,7 +196,7 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
           <TopologyEditor
             onSaveTopology={onSaveTopology}
             topologyManager={topologyManager!}
-            clabSchema={clabSchema!}
+            clabSchema={clabSchema}
             apiConnector={props.apiConnector}
             deviceManager={deviceManager!}
             isMaximized={isMaximized}

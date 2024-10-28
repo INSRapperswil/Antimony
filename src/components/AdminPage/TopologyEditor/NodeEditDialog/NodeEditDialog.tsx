@@ -1,6 +1,5 @@
-import NodeEnvironmentTable from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEnvironmentTable/NodeEnvironmentTable';
 import {Accordion, AccordionTab} from 'primereact/accordion';
-import React, {useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Dialog} from 'primereact/dialog';
 
@@ -24,7 +23,7 @@ interface NodeEditDialogProps {
   editingTopology: TopologyDefinition | null;
   editingNode: string | null;
   isOpen: boolean;
-  clabSchema: ClabSchema;
+  clabSchema: ClabSchema | null;
 
   topologyManager: TopologyManager;
   deviceManager: DeviceManager;
@@ -35,8 +34,12 @@ interface NodeEditDialogProps {
 const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   props: NodeEditDialogProps
 ) => {
+  const [nodeKind, setNodeKind] = useState('');
+
   const nodeEditor = useMemo(() => {
-    if (!props.editingNode || !props.editingTopology) return null;
+    if (!props.editingNode || !props.editingTopology || !props.clabSchema) {
+      return null;
+    }
 
     return new NodeEditor(
       props.clabSchema,
@@ -52,10 +55,27 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   ]);
 
   const kindList = useMemo(() => {
+    if (!props.clabSchema) return;
+
     return props.clabSchema['definitions']['node-config']['properties']['kind'][
       'enum'
     ]!.map(kind => ({value: kind}));
   }, [props.clabSchema]);
+
+  const onTopologyUpdate = useCallback(() => {
+    if (!nodeEditor) return;
+
+    setNodeKind(nodeEditor.getNode().kind);
+  }, [nodeEditor]);
+
+  useEffect(() => {
+    if (!nodeEditor) return;
+
+    nodeEditor.onEdit.register(onTopologyUpdate);
+    onTopologyUpdate();
+
+    return () => nodeEditor.onEdit.unregister(onTopologyUpdate);
+  }, [nodeEditor, onTopologyUpdate]);
 
   function onClose() {
     if (!nodeEditor) return;
@@ -98,27 +118,90 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
                 id="sb-node-name"
                 label="Name"
                 defaultValue={props.editingNode!}
-                onValueSubmit={nodeEditor!.onNameUpdate}
+                onValueSubmit={nodeEditor!.onUpdateName}
               />
               <div className="flex flex-column gap-2">
                 <label htmlFor="sb-node-kind">Kind</label>
                 <Dropdown
                   id="sb-node-kind"
-                  value={
-                    nodeEditor!.getTopology().topology.nodes[props.editingNode!]
-                      ?.kind
-                  }
+                  value={nodeKind}
                   optionLabel="value"
                   options={kindList}
+                  onChange={event =>
+                    nodeEditor!.updatePropertyValue('kind', '', event.value)
+                  }
                 />
               </div>
             </div>
             <Accordion multiple>
-              <AccordionTab header="Environment Variables">
-                <NodeEnvironmentTable nodeEditor={nodeEditor!} />
+              <AccordionTab header="Node Properties">
+                <NodePropertyTable
+                  hasPropertyList={true}
+                  nodeEditor={nodeEditor!}
+                  objectKey=""
+                  schemaKey="node-config"
+                />
               </AccordionTab>
-              <AccordionTab header="Additional Properties">
-                <NodePropertyTable nodeEditor={nodeEditor!} />
+              <AccordionTab header="Environment Variables">
+                <NodePropertyTable
+                  keyHeader="Key"
+                  hideType={true}
+                  isKeyEditable={true}
+                  hasPropertyList={false}
+                  addText="Add Label"
+                  nodeEditor={nodeEditor!}
+                  objectKey="env"
+                  schemaKey="node-config.env"
+                />
+              </AccordionTab>
+              <AccordionTab header="Certificates">
+                <NodePropertyTable
+                  isKeyEditable={true}
+                  hasPropertyList={true}
+                  nodeEditor={nodeEditor!}
+                  objectKey="certificate"
+                  schemaKey="certificate-config"
+                />
+              </AccordionTab>
+              <AccordionTab header="Healthcheck">
+                <NodePropertyTable
+                  isKeyEditable={true}
+                  hasPropertyList={true}
+                  nodeEditor={nodeEditor!}
+                  objectKey="healthcheck"
+                  schemaKey="healthcheck-config"
+                />
+              </AccordionTab>
+              <AccordionTab header="DNS Configuration">
+                <NodePropertyTable
+                  isKeyEditable={true}
+                  hasPropertyList={true}
+                  nodeEditor={nodeEditor!}
+                  objectKey="dns"
+                  schemaKey="dns-config"
+                />
+              </AccordionTab>
+              <AccordionTab header="Extras">
+                <NodePropertyTable
+                  isKeyEditable={true}
+                  hasPropertyList={true}
+                  nodeEditor={nodeEditor!}
+                  objectKey="extras"
+                  schemaKey="extras-config"
+                />
+              </AccordionTab>
+              <AccordionTab header="Labels">
+                <NodePropertyTable
+                  keyHeader="Label"
+                  valueHeader="Value"
+                  addText="Add Variable"
+                  hideType={true}
+                  isKeyEditable={true}
+                  hasPropertyList={false}
+                  nodeEditor={nodeEditor!}
+                  objectKey="labels"
+                  schemaKey="node-config.labels"
+                />
               </AccordionTab>
             </Accordion>
           </div>

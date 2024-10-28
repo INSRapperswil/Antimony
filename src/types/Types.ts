@@ -110,21 +110,47 @@ export interface ClabSchema {
   definitions: {
     'node-config': {
       properties: {
-        [key: string]: PropertyDefinition;
+        [key: string]: PropertySchema;
       };
     };
   };
 }
 
-export interface PropertyDefinition {
-  type?: 'string' | 'array' | 'boolean' | 'integer';
-  description: string;
+export type FieldType = string | string[] | boolean | number;
+
+export type PropertyType =
+  | 'string'
+  | 'number'
+  | 'integer'
+  | 'boolean'
+  | 'array'
+  | 'object';
+
+export interface PropertySchema {
+  type?: PropertyType;
   enum?: string[];
   minItems?: number;
-  items?: PropertyDefinition;
+  items?: PropertySchema;
+  description: string;
   uniqueItems?: boolean;
-  anyOf?: PropertyDefinition[];
+  anyOf?: PropertySchema[];
 }
+
+export interface PatternPropertyDefinition {
+  '.*'?: {
+    oneOf: PropertySchema[];
+  };
+
+  '.+'?: {
+    anyOf: PropertySchema[];
+  };
+}
+
+export type OptionGroupOptions = {
+  optionGroup: {
+    value: string;
+  };
+};
 
 export enum LabState {
   Scheduled,
@@ -135,7 +161,7 @@ export enum LabState {
 }
 
 export enum FetchState {
-  Fetching,
+  Pending,
   Done,
   NetworkError,
 }

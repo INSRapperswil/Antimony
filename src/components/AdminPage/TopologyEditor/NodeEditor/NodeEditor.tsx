@@ -1,5 +1,3 @@
-import classNames from 'classnames';
-import {Menubar} from 'primereact/menubar';
 import React, {
   MouseEvent,
   useCallback,
@@ -317,13 +315,13 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       ref={containerRef}
       onMouseMove={onMouseMove}
     >
-      <Menubar
-        className={classNames({
-          'sb-node-editor-menubar': true,
-          'sb-node-editor-menubar-disabled': selectedNode === null,
-        })}
-        model={topbarItems}
-      />
+      {/*<Menubar*/}
+      {/*  className={classNames({*/}
+      {/*    'sb-node-editor-menubar': true,*/}
+      {/*    'sb-node-editor-menubar-disabled': selectedNode === null,*/}
+      {/*  })}*/}
+      {/*  model={topbarItems}*/}
+      {/*/>*/}
       <Graph
         graph={{nodes: [], edges: []}}
         options={NetworkOptions}

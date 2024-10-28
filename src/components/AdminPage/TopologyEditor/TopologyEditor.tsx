@@ -4,7 +4,7 @@ import {Button} from 'primereact/button';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
 
 import {ClabSchema, Topology, TopologyDefinition} from '@sb/types/Types';
-import {Choose, Otherwise, When} from '@sb/types/control';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
 import NodeEditor from './NodeEditor/NodeEditor';
 import MonacoWrapper, {MonacoWrapperRef} from './MonacoWrapper/MonacoWrapper';
 
@@ -31,7 +31,7 @@ interface TopologyEditorProps {
   isMaximized: boolean;
   setMaximized: (isMinimized: boolean) => void;
 
-  clabSchema: ClabSchema;
+  clabSchema: ClabSchema | null;
 
   deviceManager: DeviceManager;
   topologyManager: TopologyManager;
@@ -203,13 +203,16 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   minSize={10}
                   size={30}
                 >
-                  <MonacoWrapper
-                    ref={monacoWrapperRef}
-                    openTopology={openTopology}
-                    language="yaml"
-                    setContent={onContentChange}
-                    setValidationError={onSetValidationError}
-                  />
+                  <If condition={props.clabSchema}>
+                    <MonacoWrapper
+                      ref={monacoWrapperRef}
+                      openTopology={openTopology}
+                      schema={props.clabSchema!}
+                      language="yaml"
+                      setContent={onContentChange}
+                      setValidationError={onSetValidationError}
+                    />
+                  </If>
                 </SplitterPanel>
                 <SplitterPanel
                   className="flex align-items-center justify-content-center"

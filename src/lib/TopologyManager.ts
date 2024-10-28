@@ -1,6 +1,6 @@
-import {ClabSchema, Topology, TopologyDefinition} from '@sb/types/Types';
+import {Topology, TopologyDefinition} from '@sb/types/Types';
 import _, {clone} from 'lodash';
-import {Binding} from '@sb/lib/Binding';
+import {Binding} from '@sb/lib/Utils/Binding';
 import cloneDeep from 'lodash.clonedeep';
 
 export type TopologyEditReport = {
@@ -11,17 +11,13 @@ export type TopologyEditReport = {
 };
 
 export class TopologyManager {
-  private clabSchema: ClabSchema;
-
   private editingTopology: Topology | null = null;
   private originalTopology: Topology | null = null;
 
   public readonly onOpen: Binding<Topology> = new Binding();
   public readonly onEdit: Binding<TopologyEditReport> = new Binding();
 
-  constructor(clabSchema: ClabSchema) {
-    this.clabSchema = clabSchema;
-
+  constructor() {
     this.onEdit.register(
       updateReport => (this.editingTopology = updateReport.updatedTopology)
     );
@@ -159,11 +155,3 @@ export class TopologyManager {
     return !_.isEqual(this.editingTopology, this.originalTopology);
   }
 }
-
-export type FieldType =
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | string[]
-  | number[]
-  | boolean[];

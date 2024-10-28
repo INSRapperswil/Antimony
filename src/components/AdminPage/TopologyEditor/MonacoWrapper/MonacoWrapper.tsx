@@ -14,8 +14,8 @@ import {Monaco} from '@monaco-editor/react';
 import MonacoEditor from 'react-monaco-editor';
 import {configureMonacoYaml} from 'monaco-yaml';
 
-import {TopologyDefinition} from '@sb/types/Types';
 import {MonacoOptions, AntimonyTheme} from './monaco.conf';
+import {ClabSchema, TopologyDefinition} from '@sb/types/Types';
 
 import './MonacoWrapper.sass';
 
@@ -29,6 +29,7 @@ window.MonacoEnvironment = {
 
 interface MonacoWrapperProps {
   openTopology: TopologyDefinition | null;
+  schema: ClabSchema;
 
   setContent: (content: string) => void;
   setValidationError: (error: string | null) => void;
@@ -113,10 +114,11 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
       });
 
       configureMonacoYaml(monaco, {
-        enableSchemaRequest: true,
+        enableSchemaRequest: false,
         schemas: [
           {
             fileMatch: ['**/*.yaml'],
+            schema: props.schema,
             uri: process.env.SB_CLAB_SCHEMA_URL!,
           },
         ],

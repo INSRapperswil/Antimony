@@ -13,7 +13,7 @@ export function useResource<T>(
   isExternal = false
 ): [T, FetchState, () => void] {
   const [data, setData] = useState<T>(defaultValue);
-  const [fetchState, setFetchState] = useState<FetchState>(FetchState.Fetching);
+  const [fetchState, setFetchState] = useState<FetchState>(FetchState.Pending);
 
   const fetchData = useCallback(() => {
     apiConnector.get<T>(path, isExternal).then(data => {
@@ -27,7 +27,7 @@ export function useResource<T>(
   }, [apiConnector, isExternal, mapper, path]);
 
   useEffect(() => {
-    if (fetchState === FetchState.Fetching) fetchData();
+    if (fetchState === FetchState.Pending) fetchData();
   }, [fetchState, fetchData]);
 
   return [data, fetchState, fetchData];

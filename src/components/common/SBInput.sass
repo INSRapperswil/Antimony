@@ -1,14 +1,20 @@
-.sb-input-disabled
-  background-color: transparent
-  border: 1px solid transparent
-  cursor: pointer
+.sb-input
+  text-overflow: ellipsis
+
+  &:placeholder-shown
+    font-weight: 200
+    font-style: italic
+
+  &.sb-input-small
+    padding: 8px 12px
+
+  &.sb-input-disabled
+    background-color: transparent
+    border: 1px solid transparent
+    cursor: pointer
 
   &:focus
     box-shadow: none
 
-.sb-input-error
-  border: 1px solid var(--danger-color)
-
-.sb-input-edited
-  font-weight: 800
-  letter-spacing: -0.8px
+  &.sb-input-error
+    border: 1px solid var(--danger-color)

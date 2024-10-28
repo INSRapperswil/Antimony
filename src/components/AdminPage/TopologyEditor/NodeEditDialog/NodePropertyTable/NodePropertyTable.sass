@@ -2,30 +2,36 @@
   background-color: var(--overlay-color)
   border-color: var(--primary-color-border)
 
-  &::before
-    border-top-color: var(--primary-color-border)
+  .p-inputtext
+    width: 100%
 
   .p-listbox
     border: none
-    max-height: 390px
-    overflow-y: auto
     width: auto !important
     margin-top: 12px
     border-radius: 0
     background-color: transparent
 
+    .p-listbox-list-wrapper
+      height: 310px
+      width: 260px
+      overflow-y: auto
+
     .p-listbox-empty-message
-      padding-left: 16px
+      padding-left: 12px
 
     .p-listbox-item-group
       background-color: transparent
-      padding-left: 12px
+      border: 1px solid transparent
+      padding: 0
       margin-right: 12px
       user-select: none
       font-weight: 400
-      border: 1px solid transparent
       cursor: pointer
       border-radius: 2px
+
+      div
+        padding: 12px
 
       &:hover
         backdrop-filter: brightness(1.2)
@@ -35,3 +41,31 @@
 
     .p-listbox-list
       padding: 0
+
+.sb-property-table-key
+  width: 270px
+  display: flex
+  align-items: center
+  gap: 8px
+  padding-right: 4px
+
+  .p-inline-message
+    padding: 4px
+    margin-top: 1px
+
+    .p-inline-message-text
+      font-size: 12px
+
+    .p-inline-message-icon
+      display: none
+
+.sb-property-table-value
+  width: 100%
+
+.sb-property-table-type
+  // For some reason width doesn't work here with table-layout: auto.
+  min-width: 90px
+  max-width: 90px
+
+.sb-property-table-actions
+  width: 100px

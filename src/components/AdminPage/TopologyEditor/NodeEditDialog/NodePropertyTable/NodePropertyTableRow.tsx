@@ -1,87 +1,131 @@
-import {Choose, Otherwise, When} from '@sb/types/control';
-import {PropertyDefinition} from '@sb/types/Types';
-import {Dropdown} from 'primereact/dropdown';
+import {Tooltip} from 'primereact/tooltip';
 import React, {useMemo} from 'react';
 
+import {Button} from 'primereact/button';
+import {Message} from 'primereact/message';
+import {Checkbox} from 'primereact/checkbox';
+
+import {PropertyIO} from '@sb/lib/NodeEditor';
 import SBInput from '@sb/components/common/SBInput';
+import SBDropdown from '@sb/components/common/SBDropdown';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
+import NodePropertyArray from './NodePropertyArray/NodePropertyArray';
 
 interface NodePropertyTableRowProps {
   propertyKey: string;
-  propertyValue: string;
+  property: PropertyIO;
 
-  propertyDefinition: PropertyDefinition;
-
-  wasEdited: boolean;
-
-  onUpdateValue: (value: string) => string | null;
+  showType?: boolean;
+  isKeyEditable?: boolean;
 }
 
 const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
   props: NodePropertyTableRowProps
 ) => {
-  const propertyType = useMemo(() => {
-    if (props.propertyDefinition.type) {
-      // For now, we only support string arrays
-      if (props.propertyDefinition.type === 'array') return 'string';
-      return props.propertyDefinition.type;
-    }
-
-    const types =
-      props.propertyDefinition.anyOf?.map(entry => entry.type) ?? [];
-    if ('string' in types) return 'string';
-    if ('number' in types) return 'number';
-    if ('boolean' in types) return 'boolean';
-
-    return 'string';
-  }, [props.propertyDefinition]);
-
-  const allowedValues = useMemo(() => {
-    if (propertyType === 'boolean') {
-      return [{value: 'true'}, {value: 'false'}];
-    }
-    if (!props.propertyDefinition.enum) return null;
-
-    return props.propertyDefinition.enum.map(value => ({value}));
-  }, [props.propertyDefinition, propertyType]);
-
-  function getDisplayType() {
-    if (props.propertyDefinition.enum) {
-      return 'enum';
-    }
-    return (
-      propertyType + (props.propertyDefinition.type === 'array' ? '[]' : '')
-    );
-  }
+  const dropdownOptions = useMemo(
+    () =>
+      props.property.availableValues?.map(value => ({
+        value,
+      })) ?? null,
+    [props.property]
+  );
 
   return (
     <tr>
-      <td>{props.propertyKey}</td>
-      <td className="small-padding">
+      <td className="sb-property-table-key">
         <Choose>
-          <When condition={allowedValues}>
-            <Dropdown
-              value={props.propertyValue}
-              onChange={e => props.onUpdateValue(e.value)}
-              options={allowedValues!}
+          <When condition={props.property.wasAdded}>
+            <Message severity="info" text="New" />
+          </When>
+          <When condition={props.property.wasEdited}>
+            <Message severity="warn" text="Edited" />
+          </When>
+        </Choose>
+        <Choose>
+          <When condition={props.isKeyEditable}>
+            <SBInput
+              key={props.property.key}
+              onValueSubmit={props.property.onUpdateKey}
+              defaultValue={props.property.key}
+              placeholder="Empty"
+              isHidden={true}
+              tooltip={props.property.description}
+            />
+          </When>
+          <Otherwise>
+            <span
+              id={props.propertyKey}
+              data-pr-tooltip={props.property.description}
+              data-pr-position="right"
+            >
+              {props.propertyKey}
+            </span>
+            <Tooltip target={'#' + props.propertyKey} />
+          </Otherwise>
+        </Choose>
+      </td>
+      <td>
+        <Choose>
+          <When condition={dropdownOptions}>
+            <SBDropdown
+              value={props.property.value as string}
+              options={dropdownOptions!}
               optionLabel="value"
-              placeholder="Value..."
-              className="w-full md:w-14rem"
+              isHidden={true}
+              hasFilter={false}
+              onValueSubmit={props.property.onUpdateValue}
+            />
+          </When>
+          <When condition={props.property.type === 'boolean'}>
+            <Checkbox
+              onChange={e => props.property.onUpdateValue(e.checked!)}
+              checked={props.property.value as boolean}
+            ></Checkbox>
+          </When>
+          <When condition={props.property.isArray}>
+            <NodePropertyArray
+              entries={props.property.value as string[]}
+              onUpdateValue={props.property.onUpdateValue}
             />
           </When>
           <Otherwise>
             <SBInput
-              onValueSubmit={props.onUpdateValue}
-              wasEdited={props.wasEdited}
-              defaultValue={props.propertyValue}
-              isTextArea={props.propertyDefinition.type === 'array'}
+              key={props.property.value as string}
+              onValueSubmit={props.property.onUpdateValue}
+              defaultValue={props.property.value as string}
+              placeholder="Empty"
+              keyfilter={props.property.type === 'number' ? 'int' : undefined}
               isHidden={true}
-              rows={5}
-              cols={30}
             />
           </Otherwise>
         </Choose>
       </td>
-      <td className="font-italic">{getDisplayType()}</td>
+      <If condition={props.showType}>
+        <td className="sb-property-table-type">
+          {dropdownOptions ? 'enum' : props.property.type}
+        </td>
+      </If>
+      <td className="flex justify-content-center">
+        <Button
+          icon="pi pi-undo"
+          severity="secondary"
+          rounded
+          text
+          onClick={props.property.onReset}
+          tooltip="Revert property"
+          tooltipOptions={{showDelay: 500}}
+          disabled={!props.property.wasEdited}
+        />
+        <Button
+          icon="pi pi-trash"
+          severity="danger"
+          rounded
+          text
+          tooltip="Remove property"
+          tooltipOptions={{showDelay: 500}}
+          onClick={props.property.onDelete}
+        />
+      </td>
     </tr>
   );
 };

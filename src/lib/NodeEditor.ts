@@ -1,25 +1,53 @@
-import {FieldType} from '@sb/lib/TopologyManager';
-import {ClabSchema, TopologyDefinition, TopologyNode} from '@sb/types/Types';
+import {Binding} from '@sb/lib/Utils/Binding';
+import {arrayOf, filterSchemaEnum} from '@sb/lib/Utils/Utils';
+import {
+  ClabSchema,
+  PatternPropertyDefinition,
+  TopologyDefinition,
+  TopologyNode,
+  PropertyType,
+  PropertySchema,
+  FieldType,
+} from '@sb/types/Types';
 import cloneDeep from 'lodash.clonedeep';
 import {validate} from 'jsonschema';
 import {NotificationController} from '@sb/lib/NotificationController';
 import _ from 'lodash';
 
-export type NodeProperty = {
+import objectPath from 'object-path';
+
+/*
+ * Object used by the view to communicate with the Node Editor.
+ */
+export type PropertyIO = PropertyDefinition & {
   key: string;
-  value: string;
+  value: FieldType;
+  wasEdited: boolean;
+  wasAdded: boolean;
+
+  onReset: () => void;
+  onDelete: () => void;
+  onUpdateValue: (value: FieldType) => string | null;
+  onUpdateKey: (value: string) => string | null;
+};
+
+export type PropertyDefinition = {
   type: FieldType;
-  index: number;
+  isArray?: boolean;
+  description?: string;
+  availableValues?: string[];
+  minItems?: number;
 };
 
 export class NodeEditor {
-  private readonly editingNode: string;
   private readonly originalTopology: TopologyDefinition;
   private readonly notifications: NotificationController;
-
-  private editingTopology: TopologyDefinition;
-
   public readonly clabSchema: ClabSchema;
+
+  public readonly onEdit: Binding<TopologyDefinition> = new Binding();
+
+  private editingNode: string;
+  private editingTopology: TopologyDefinition;
 
   constructor(
     clabSchema: ClabSchema,
@@ -33,16 +61,16 @@ export class NodeEditor {
     this.originalTopology = originalTopology;
     this.editingTopology = cloneDeep(originalTopology);
 
-    this.onNameUpdate = this.onNameUpdate.bind(this);
-    this.onPropertyKeyUpdate = this.onPropertyKeyUpdate.bind(this);
-    this.onPropertyValueUpdate = this.onPropertyValueUpdate.bind(this);
-    this.onPropertyTypeUpdate = this.onPropertyTypeUpdate.bind(this);
-    this.onPropertyIsListUpdate = this.onPropertyIsListUpdate.bind(this);
-    this.onEnvironmentKeyUpdate = this.onEnvironmentKeyUpdate.bind(this);
-    this.onEnvironmentValueUpdate = this.onEnvironmentValueUpdate.bind(this);
+    this.onUpdateName = this.onUpdateName.bind(this);
+    this.getObjectProperties = this.getObjectProperties.bind(this);
   }
 
-  public onNameUpdate(value: string): string | null {
+  /**
+   * Replaces the current node's name with a new one.
+   *
+   * @param value The new name for the node.
+   */
+  public onUpdateName(value: string): string | null {
     if (value === this.editingNode) {
       return null;
     }
@@ -53,216 +81,478 @@ export class NodeEditor {
     }
 
     const node = this.editingTopology.topology.nodes[this.editingNode];
-    delete this.editingTopology.topology.nodes[this.editingNode];
 
+    delete this.editingTopology.topology.nodes[this.editingNode];
     this.editingTopology.topology.nodes[value] = node;
+
+    delete this.originalTopology.topology.nodes[this.editingNode];
+    this.originalTopology.topology.nodes[value] = node;
+
+    this.editingNode = value;
 
     return null;
   }
 
-  public onPropertyKeyUpdate(key: string, newKey: string): string | null {
-    if (key === newKey) {
-      return null;
-    }
-
-    if (newKey in this.editingTopology.topology.nodes[this.editingNode]) {
-      this.notifications.error('Duplicate key', 'YAML Syntax Error');
-      return 'Duplicate key';
-    }
-
-    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
-    const value =
-      updatedTopology.topology.nodes[this.editingNode][
-        key as keyof TopologyNode
-      ];
-
-    delete updatedTopology.topology.nodes[this.editingNode][
-      key as keyof TopologyNode
-    ];
-
-    updatedTopology.topology.nodes[this.editingNode] = Object.assign(
-      updatedTopology.topology.nodes[this.editingNode],
-      {[newKey]: value}
-    );
-
-    return this.validateAndSetTopology(updatedTopology);
-  }
-
-  public onPropertyValueUpdate(
-    key: string,
-    value: string | string[],
-    type: FieldType
-  ): string | null {
-    const isList = Array.isArray(value);
-    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
-
-    switch (type) {
-      case 'boolean':
-        updatedTopology.topology.nodes[this.editingNode] = Object.assign(
-          updatedTopology.topology.nodes[this.editingNode],
-          isList ? {[key]: [Boolean(value)]} : {[key]: Boolean(value)}
-        );
-        break;
-      case 'string':
-        updatedTopology.topology.nodes[this.editingNode] = Object.assign(
-          updatedTopology.topology.nodes[this.editingNode],
-          isList ? {[key]: [value]} : {[key]: value}
-        );
-        break;
-      case 'number':
-        updatedTopology.topology.nodes[this.editingNode] = Object.assign(
-          updatedTopology.topology.nodes[this.editingNode],
-          isList ? {[key]: [Number(value)]} : {[key]: Number(value)}
-        );
-        break;
-    }
-
-    return this.validateAndSetTopology(
-      updatedTopology,
-      `Invalid value for property '${key}'`
-    );
-  }
-
-  public onPropertyTypeUpdate(
-    key: string,
-    value: string,
-    type: FieldType
-  ): string | null {
-    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
-
-    switch (type) {
-      case 'string':
-        updatedTopology.topology.nodes[this.editingNode] = Object.assign(
-          updatedTopology.topology.nodes[this.editingNode],
-          {[key]: value}
-        );
-        break;
-      case 'number':
-        updatedTopology.topology.nodes[this.editingNode] = Object.assign(
-          updatedTopology.topology.nodes[this.editingNode],
-          {[key]: Number(value)}
-        );
-        break;
-      case 'boolean':
-        updatedTopology.topology.nodes[this.editingNode] = Object.assign(
-          updatedTopology.topology.nodes[this.editingNode],
-          {[key]: Boolean(value)}
-        );
-        break;
-    }
-
-    return this.validateAndSetTopology(
-      updatedTopology,
-      `Schema does not allow '${type}' here.`
-    );
-  }
-
-  public onPropertyIsListUpdate(
-    key: string,
-    value: string | string[],
-    toList: boolean
-  ): string | null {
-    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
-
-    if (toList) {
-      updatedTopology.topology.nodes[this.editingNode] = Object.assign(
-        updatedTopology.topology.nodes[this.editingNode],
-        {[key]: [(value as string).split('\n')]}
-      );
-    } else {
-      updatedTopology.topology.nodes[this.editingNode] = Object.assign(
-        updatedTopology.topology.nodes[this.editingNode],
-        {[key]: (value as string[]).join('\n')}
-      );
-    }
-
-    return this.validateAndSetTopology(
-      updatedTopology,
-      toList
-        ? 'Schema does not allow list value.'
-        : 'Schema does not allow single value.'
-    );
-  }
-
   /**
-   * Checks whether a property of the currently edited node was changed. This includes the property keu, value and the
-   * type of the value.
+   * Generates PropertyIO objects for all properties of a given object of the
+   * current node.
    *
-   * @param key The key of the property.
-   * @param originalValue The original value of the property.
-   * @param originalType The original type of the property.
+   * Returns the root node properties by default.
+   *
+   * @param objectKey The key path to the object in the topology.
+   * @param schemaKey The key path to the schema definition of the object.
    */
-  public wasPropertyEdited(
-    key: string,
-    originalValue: string,
-    originalType: FieldType
-  ): boolean {
-    if (!(key in this.originalTopology!.topology.nodes[this.editingNode!])) {
-      return true;
-    }
+  public getObjectProperties(
+    objectKey: string = '',
+    schemaKey: string = 'node-config'
+  ): PropertyIO[] {
+    const properties: PropertyIO[] = [];
 
-    const currentValue =
-      this.originalTopology!.topology.nodes[this.editingNode!][
-        key as keyof TopologyNode
-      ];
-    const currentType: FieldType = typeof currentValue as FieldType;
-    return (
-      !_.isEqual(currentValue, originalValue) ||
-      typeof currentType !== originalType
+    const obj = objectPath.get(
+      this.editingTopology.topology.nodes[this.editingNode],
+      objectKey
     );
-  }
 
-  public getAvailableProperties(): string[] {
-    const allProperties = new Set(
-      Object.keys(this.clabSchema.definitions['node-config'].properties)
-    );
-    const usedProperties = new Set(Object.keys(this.editingNode));
+    if (!obj) return [];
 
-    return [...allProperties.difference(usedProperties)].filter(
-      property => !(property in IgnoredGenericProperties)
-    );
-  }
+    for (const [propertyKey, value] of Object.entries(obj)) {
+      if (propertyKey in IgnoredGenericProperties) continue;
 
-  /**
-   * Returns all the properties of the currently edited node.
-   */
-  public getProperties(): NodeProperty[] {
-    const properties: NodeProperty[] = [];
+      const propertyType = this.getPropertyType(propertyKey, schemaKey);
 
-    for (const [index, [key, value]] of Object.entries(
-      this.editingTopology.topology.nodes[this.editingNode]
-    ).entries()) {
-      if (key in IgnoredGenericProperties) continue;
+      // Skip object properties as they are handled manually.
+      if (propertyType.type === 'object') continue;
 
       properties.push({
-        key,
-        value,
-        index,
-        type: typeof value as FieldType,
+        key: propertyKey,
+        value: value as FieldType,
+        wasEdited: this.wasPropertyEdited(propertyKey, objectKey, schemaKey),
+        wasAdded: this.wasPropertyAdded(propertyKey, objectKey),
+        ...propertyType,
+        onReset: () => {
+          this.setPropertyDefault(propertyKey, objectKey, schemaKey);
+        },
+        onDelete: () => {
+          this.deleteProperty(propertyKey, objectKey);
+        },
+        onUpdateValue: value => {
+          return this.updatePropertyValue(propertyKey, objectKey, value);
+        },
+        onUpdateKey: value => {
+          return this.updatePropertyKey(propertyKey, objectKey, value);
+        },
       });
     }
 
     return properties;
   }
 
-  public onEnvironmentKeyUpdate(key: string, newKey: string): string | null {
-    console.log('Key: ', key, 'Value:', newKey);
-    return null;
+  /**
+   * Returns a list of available non-set property keys of an object of the node.
+   *
+   * Returns null if there are no restrictions on properties.
+   *
+   * @param objectKey The key path to the object in the topology.
+   * @param schemaKey The key path to the schema definition of the object.
+   */
+  public getAvailableProperties(
+    objectKey: string = '',
+    schemaKey: string = 'node-config'
+  ): string[] | null {
+    const schemaProperties = objectPath.get(
+      this.clabSchema.definitions,
+      schemaKey
+    )?.properties;
+    if (!schemaProperties) return null;
+
+    const schemaPropertyKeys = new Set(Object.keys(schemaProperties));
+
+    const setProperties = objectPath.get(
+      this.editingTopology.topology.nodes[this.editingNode],
+      objectKey
+    );
+    if (!setProperties) return [...schemaPropertyKeys];
+
+    const setPropertyKeys = new Set(Object.keys(setProperties));
+
+    return [...schemaPropertyKeys.difference(setPropertyKeys)].filter(
+      property => !(property in IgnoredGenericProperties)
+    );
   }
 
-  public onEnvironmentValueUpdate(key: string, value: string): string | null {
-    console.log('Key: ', key, 'Value:', value);
-    return null;
+  /**
+   * Adds a new property to an object of the current node.
+   *
+   * @param propertyKey The key of the property.
+   * @param objectRootPath The key path of the property's parent.
+   * @param schemaRootPath The key path of the property's parent in the schema.
+   */
+  public addProperty(
+    propertyKey: string,
+    objectRootPath: string,
+    schemaRootPath: string
+  ): string | null {
+    return this.setPropertyDefault(
+      propertyKey,
+      objectRootPath,
+      schemaRootPath,
+      false
+    );
   }
 
+  /**
+   * Returns the current topology.
+   */
   public getTopology(): TopologyDefinition {
     return this.editingTopology;
   }
 
+  /**
+   * Returns the current node.
+   */
   public getNode(): TopologyNode {
     return this.editingTopology.topology.nodes[this.editingNode];
   }
 
+  /**
+   * Updates the value of a property of an object of the current node.
+   *
+   * @param propertyKey The key of the property.
+   * @param objectRootPath The key path of the property's parent.
+   * @param value The new value of the property.
+   */
+  public updatePropertyValue(
+    propertyKey: string,
+    objectRootPath: string,
+    value: FieldType
+  ): string | null {
+    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
+
+    objectPath.set(
+      updatedTopology.topology.nodes[this.editingNode],
+      NodeEditor.combinePathAndKey(objectRootPath, propertyKey),
+      value
+    );
+
+    return this.validateAndSetTopology(
+      updatedTopology,
+      `Invalid value for property '${objectRootPath}/${propertyKey}'`
+    );
+  }
+
+  /**
+   * Updates the value of a property of an object of the current node.
+   *
+   * @param propertyKey The key of the property.
+   * @param objectRootPath The key path of the property's parent.
+   * @param newKey The new key of the property.
+   */
+  private updatePropertyKey(
+    propertyKey: string,
+    objectRootPath: string,
+    newKey: string
+  ): string | null {
+    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
+
+    const value = objectPath.get(
+      updatedTopology.topology.nodes[this.editingNode],
+      NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+    );
+
+    objectPath.del(
+      updatedTopology.topology.nodes[this.editingNode],
+      NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+    );
+
+    objectPath.set(
+      updatedTopology.topology.nodes[this.editingNode],
+      NodeEditor.combinePathAndKey(objectRootPath, newKey),
+      value
+    );
+
+    return this.validateAndSetTopology(
+      updatedTopology,
+      `Invalid value for property '${objectRootPath}/${propertyKey}'`
+    );
+  }
+
+  /**
+   * Deletes a property of an object of the current node.
+   *
+   * @param propertyKey The key of the property.
+   * @param objectRootPath The key path of the property's parent.
+   */
+  private deleteProperty(propertyKey: string, objectRootPath: string) {
+    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
+
+    objectPath.del(
+      updatedTopology.topology.nodes[this.editingNode],
+      NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+    );
+
+    return this.validateAndSetTopology(
+      updatedTopology,
+      'Unable to remove property.'
+    );
+  }
+
+  /**
+   * Adds a new or resets an existing property to an object of the current node.
+   *
+   * @param propertyKey The key of the property.
+   * @param objectRootPath The key path of the property's parent.
+   * @param schemaRootPath The key path of the property's parent in the schema.
+   * @param searchOriginal Whether to look in the original object for a default value first.
+   */
+  private setPropertyDefault(
+    propertyKey: string,
+    objectRootPath: string,
+    schemaRootPath: string,
+    searchOriginal: boolean = true
+  ) {
+    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
+
+    objectPath.set(
+      updatedTopology.topology.nodes[this.editingNode],
+      NodeEditor.combinePathAndKey(objectRootPath, propertyKey),
+      this.getPropertyDefault(
+        propertyKey,
+        objectRootPath,
+        schemaRootPath,
+        searchOriginal
+      )
+    );
+
+    return this.validateAndSetTopology(
+      updatedTopology,
+      `Failed to add property '${propertyKey}'.`
+    );
+  }
+
+  /**
+   * Checks whether a property has been added.
+   *
+   * @param propertyKey The key of the property.
+   * @param objectRootPath The key path of the property's parent.
+   */
+  private wasPropertyAdded(
+    propertyKey: string,
+    objectRootPath: string
+  ): boolean {
+    return !objectPath.has(
+      this.originalTopology!.topology.nodes[this.editingNode!],
+      NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+    );
+  }
+
+  /**
+   * Checks whether the value of an existing property was changed.
+   *
+   * @param propertyKey The key of the property.
+   * @param objectRootPath The key path of the property's parent.
+   * @param schemaRootPath The key path of the property's parent in the schema.
+   */
+  private wasPropertyEdited(
+    propertyKey: string,
+    objectRootPath: string,
+    schemaRootPath: string
+  ): boolean {
+    const currentValue = objectPath.get(
+      this.editingTopology!.topology.nodes[this.editingNode!],
+      NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+    );
+
+    const originalValue =
+      objectPath.get(
+        this.originalTopology!.topology.nodes[this.editingNode!],
+        NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+      ) ?? this.getPropertyDefault(propertyKey, objectRootPath, schemaRootPath);
+
+    return !_.isEqual(currentValue, originalValue);
+  }
+
+  /**
+   * Returns the default value of a property. If searchOriginal is set to true,
+   * for existing properties, this is the original property value.
+   * Otheriwse and for newly added properties, this is either
+   * the first value of their enum or their type's default value.
+   *
+   * @param propertyKey The key of the property.
+   * @param objectRootPath The key path of the property's parent.
+   * @param schemaRootPath The key path of the property's parent in the schema.
+   * @param searchOriginal Whether to look in the original object for a default value first.
+   * @private
+   */
+  private getPropertyDefault(
+    propertyKey: string,
+    objectRootPath: string,
+    schemaRootPath: string,
+    searchOriginal: boolean = true
+  ) {
+    if (searchOriginal) {
+      const originalValue = objectPath.get(
+        this.originalTopology.topology.nodes[this.editingNode],
+        NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+      );
+
+      if (originalValue) return originalValue;
+    }
+
+    const propertyType = this.getPropertyType(propertyKey, schemaRootPath);
+
+    console.log('TYPE:', propertyType);
+
+    const defaultEnumValue = propertyType.availableValues
+      ? propertyType.availableValues[0]
+      : '';
+
+    if (propertyType.isArray) {
+      return arrayOf(defaultEnumValue, propertyType.minItems ?? 0);
+    }
+
+    switch (propertyType.type) {
+      case 'integer':
+      case 'number':
+        return 0;
+      case 'boolean':
+        return false;
+      default:
+        return defaultEnumValue;
+    }
+  }
+
+  /**
+   * Gets information about a property of an object in the current node.
+   *
+   * @param propertyKey The key of the property.
+   * @param schemaRootPath The key path of the property's parent in the schema.
+   */
+  private getPropertyType(
+    propertyKey: string,
+    schemaRootPath: string
+  ): PropertyDefinition {
+    const regularDefinition: PropertySchema | undefined = objectPath.get(
+      this.clabSchema.definitions,
+      schemaRootPath + '.properties.' + propertyKey
+    );
+
+    if (regularDefinition) {
+      return this.getRegularPropertyType(regularDefinition);
+    }
+
+    const patternDefinition: PatternPropertyDefinition | undefined =
+      objectPath.get(
+        this.clabSchema.definitions,
+        schemaRootPath + '.patternProperties'
+      );
+
+    if (patternDefinition) {
+      return this.getPatternPropertyType(patternDefinition);
+    }
+
+    return {type: 'string'};
+  }
+
+  /**
+   * Returns the property type of a regular property (i.e. no pattern properties).
+   *
+   * @param propertyDefinition The schema definition of the property.
+   */
+  private getRegularPropertyType(
+    propertyDefinition: PropertySchema
+  ): PropertyDefinition {
+    return this.getMostSignificantType(
+      propertyDefinition.anyOf ?? [propertyDefinition]
+    );
+  }
+
+  /**
+   * Returns the property type of a pattern property.
+   *
+   * @param patternPropertyDefinition The schema definition of the property.
+   */
+  private getPatternPropertyType(
+    patternPropertyDefinition: PatternPropertyDefinition
+  ): PropertyDefinition {
+    const typeArray =
+      patternPropertyDefinition['.*']?.oneOf ??
+      patternPropertyDefinition['.+']?.anyOf;
+    return this.getMostSignificantType(typeArray ?? []);
+  }
+
+  /**
+   * Returns the most significant type of a list of property definitions.
+   * Returns string as default, if the type could not be found.
+   *
+   * Order: array -> string -> number -> boolean
+   * Fallback: string
+   *
+   * @param propertyList The list of properties.
+   */
+  private getMostSignificantType(
+    propertyList: PropertySchema[]
+  ): PropertyDefinition {
+    const availableTypes = new Map(
+      propertyList.map(entry => [entry.type, entry])
+    );
+
+    if (availableTypes.has('object')) return {type: 'object'};
+
+    if (availableTypes.has('array')) {
+      const type = availableTypes.get('array')!;
+      return {
+        type: 'string',
+        isArray: true,
+        availableValues: filterSchemaEnum(type.enum),
+        description: type.description,
+        minItems: type.minItems,
+      };
+    }
+
+    let type: PropertyType = 'string';
+
+    if (availableTypes.has('string')) {
+      const type = availableTypes.get('string')!;
+      return {
+        type: 'string',
+        description: type.description,
+        availableValues: filterSchemaEnum(type?.enum),
+      };
+    } else if (availableTypes.has('number')) {
+      const type = availableTypes.get('number')!;
+      return {
+        type: 'number',
+        description: type.description,
+        availableValues: filterSchemaEnum(type?.enum),
+      };
+    } else if (availableTypes.has('integer')) {
+      const type = availableTypes.get('integer')!;
+      return {
+        type: 'number',
+        description: type.description,
+        availableValues: filterSchemaEnum(type?.enum),
+      };
+    } else if (availableTypes.has('boolean')) {
+      const type = availableTypes.get('boolean')!;
+      return {
+        type: 'boolean',
+        description: type.description,
+        availableValues: filterSchemaEnum(type?.enum),
+      };
+    }
+
+    return {type};
+  }
+
+  /**
+   * Validates and replaces the current topology with the updated one if the
+   * validation was successful. Returns an error message and shows a
+   * notification to the user if the validation was not successful.
+   *
+   * @param topology The updated topology
+   * @param customErrorMessage An optional custom error message to show to the user.
+   * @private
+   */
   private validateAndSetTopology(
     topology: TopologyDefinition,
     customErrorMessage: string | null = null
@@ -271,14 +561,34 @@ export class NodeEditor {
 
     if (validation.errors.length < 1) {
       this.editingTopology = topology;
+      this.onEdit.update(topology);
       return null;
     } else {
+      console.error(
+        `[YAML] Failed to apply node edit: ${validation}`,
+        topology
+      );
       this.notifications.error(
         customErrorMessage ?? validation.errors[0].message,
         'YAML Schema Error'
       );
       return validation.errors[0].message;
     }
+  }
+
+  /**
+   * Combines the root path and key of a property to a path.
+   *
+   * If the root path is empty, only the key will be returned. This is needed
+   * because objectPath doesn't skip empty values and will instead create
+   * a new object with an empty key.
+   *
+   * @param root The root path of the property.
+   * @param key The key of the property.
+   */
+  private static combinePathAndKey(root: string, key: string): string[] {
+    if (!root) return [key];
+    return [root, key];
   }
 }
 

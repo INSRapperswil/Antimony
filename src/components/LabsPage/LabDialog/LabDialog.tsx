@@ -1,45 +1,98 @@
-import React, {useEffect, useState} from 'react';
-import {APIConnector} from '@sb/lib/APIConnector';
-import YAML from 'yaml';
-import {Lab, Topology, TopologyDefinition} from '@sb/types/Types';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+
 import {Edge, Node} from 'vis';
 import {Network} from 'vis-network';
 import Graph from 'react-graph-vis';
-import {NetworkOptions} from '@sb/components/AdminPage/TopologyEditor/NodeEditor/network.conf';
 import {Button} from 'primereact/button';
-import {DeviceManager} from '@sb/lib/DeviceManager';
+import useResizeObserver from '@react-hook/resize-observer';
 
+import {
+  DeviceInfo,
+  Lab,
+  Topology,
+  TopologyDefinition,
+  TopologyOut,
+} from '@sb/types/Types';
+import {useResource} from '@sb/lib/Utils/Hooks';
+import {APIConnector} from '@sb/lib/APIConnector';
+import {DeviceManager} from '@sb/lib/DeviceManager';
+import {TopologyManager} from '@sb/lib/TopologyManager';
+import {IconMap} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
+import {NetworkOptions} from '@sb/components/AdminPage/TopologyEditor/NodeEditor/network.conf';
+import './LabDialog.sass';
+
+type GraphDefinition = {
+  nodes?: Node[];
+  edges?: Edge[];
+};
 interface LabDialogProps {
   lab: Lab;
-  topologies: Topology[];
-  deviceManager: DeviceManager;
   apiConnector: APIConnector;
+  deviceManager: DeviceManager;
 }
+
 const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
+  const [topologyDefinition, setTopologyDefinition] =
+    useState<TopologyDefinition | null>(null);
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    getTopology(props.lab.topologyId);
-  }, [network, props.lab]);
+  const [topologies] = useResource<Topology[]>(
+    '/topologies',
+    props.apiConnector,
+    [],
+    topologies => TopologyManager.parseTopologies(topologies as TopologyOut[])
+  );
+
+  useResizeObserver(containerRef, () => {
+    if (network) {
+      network.redraw();
+    }
+  });
+
+  const [devices] = useResource<DeviceInfo[]>(
+    '/devices',
+    props.apiConnector,
+    []
+  );
+
+  const deviceLookup = useMemo(
+    () => new Map(devices.map(device => [device.kind, device])),
+    [devices]
+  );
 
   const getTopology = (id: string): void => {
-    for (const topology of props.topologies) {
+    for (const topology of topologies) {
       if (topology.id === id) {
-        generateGraph(topology.definition);
+        setTopologyDefinition(topology.definition);
       }
     }
   };
 
-  function generateGraph(topology: string) {
-    if (!topology) return;
-    const obj = YAML.parse(topology) as TopologyDefinition;
-    const nodeMap = new Map<string, number>();
+  const getNodeIcon = useCallback(
+    (kind: string) => {
+      let iconName: string;
+      const deviceInfo = deviceLookup.get(kind);
+      if (deviceInfo) {
+        iconName = IconMap.get(deviceInfo?.type) ?? 'generic';
+      } else {
+        iconName = 'generic';
+      }
+      if (!iconName) iconName = 'generic';
 
+      return '/assets/icons/' + iconName + '.svg';
+    },
+    [deviceLookup]
+  );
+
+  const graph: GraphDefinition = useMemo(() => {
+    if (!topologyDefinition) return {nodes: [], edges: []};
+
+    const nodeMap = new Map<string, number>();
     const nodes: Node[] = [];
-    const edges: Edge[] = [];
 
     for (const [index, [nodeName, node]] of Object.entries(
-      obj.topology.nodes
+      topologyDefinition.topology.nodes
     ).entries()) {
       if (!node) continue;
 
@@ -51,77 +104,46 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       });
     }
 
-    for (const [index, link] of obj.topology.links.entries()) {
-      edges.push({
+    const edges: Edge[] = [
+      ...topologyDefinition.topology.links.entries().map(([index, link]) => ({
         id: index,
         from: nodeMap.get(link.endpoints[0].split(':')[0]),
         to: nodeMap.get(link.endpoints[1].split(':')[0]),
-      });
-    }
+      })),
+    ];
 
-    network?.setData({nodes: nodes, edges: edges});
-  }
+    return {nodes: nodes, edges: edges};
+  }, [topologyDefinition, getNodeIcon]);
+
+  useEffect(() => {
+    getTopology(props.lab.topologyId);
+    console.log('graph: ', graph);
+    network?.setData(graph);
+  }, [network, graph, props.lab]);
+
   return (
-    <div
-      style={{
-        flexGrow: 1, // Allow this div to grow to fill available space
-        flexShrink: 1,
-        flexBasis: 'auto',
-        height: '100%', // Make this container take the available height
-        overflow: 'hidden', // Prevent overflow issues
-        justifyContent: 'space-between',
-      }}
-    >
-      <div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '1em',
-          }}
-        >
-          <strong style={{textAlign: 'left'}}>Topology</strong>
+    <div className="height-100 topology-container">
+      <div className="height-100">
+        <div className="topology-header">
+          <strong className="topology-title">Topology</strong>
           <Button
-            onClick={() => console.log('EdgeShark Clicked')} // Replace with your handler
-            style={{
-              backgroundColor: '#4DB6AC',
-              color: 'black',
-              border: 'none',
-              padding: '0.5em 1em',
-              cursor: 'pointer',
-              borderRadius: '4px',
-              fontSize: '1em',
-            }}
+            onClick={() => console.log('EdgeShark Clicked')} // Replace with handler
+            className="topology-button"
           >
             🦈 Start EdgeShark
           </Button>
         </div>
-        <div>
+        <div className="height-100 topology-graph-container">
           <Graph
             graph={{nodes: [], edges: []}}
             options={NetworkOptions}
             getNetwork={setNetwork}
-            style={{
-              width: '100%',
-              height: '300px',
-            }}
           />
         </div>
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          position: 'absolute',
-          bottom: '1em',
-          left: '1em',
-          right: '1em',
-          width: 'calc(100% - 2em)',
-        }}
-      >
-        <Button style={{alignSelf: 'flex-start'}}>Reset</Button>
-        <Button style={{alignSelf: 'flex-end'}}>Abort</Button>
+        <div className="topology-footer">
+          <Button style={{alignSelf: 'flex-start'}}>Reset</Button>
+          <Button style={{alignSelf: 'flex-end'}}>Abort</Button>
+        </div>
       </div>
     </div>
   );

@@ -1,38 +1,39 @@
-import React, {useMemo, useState} from 'react';
-import {useReady, useResource} from '@sb/lib/Utils/Hooks';
-import {DeviceInfo, Group, Lab, LabState, Topology} from '@sb/types/Types';
-import {APIConnector} from '@sb/lib/APIConnector';
+import React, {useEffect, useMemo, useState} from 'react';
+
 import {InputText} from 'primereact/inputtext';
 import {Dialog} from 'primereact/dialog';
-import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 import {Chip} from 'primereact/chip';
+import {Button} from 'primereact/button';
+
+import {APIConnector} from '@sb/lib/APIConnector';
+import {DeviceManager} from '@sb/lib/DeviceManager';
+import {useReady, useResource} from '@sb/lib/Utils/Hooks';
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
-import {DeviceManager} from '@sb/lib/DeviceManager';
+import {DeviceInfo, Group, Lab, LabState, RawLab} from '@sb/types/Types';
+import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
+
+import './LabsPage.sass';
 
 interface LabsPageProps {
   apiConnector: APIConnector;
 }
 
 const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
-  const [labs] = useResource<Lab[]>('/labs', props.apiConnector, []);
-
   const [LabDialogVisible, setLabDialogVisible] = useState<boolean>(false);
   const [FilterDialogVisible, setFilterDialogVisible] =
     useState<boolean>(false);
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
+  const [labs, setLabs] = useState<Lab[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<LabState[]>([
     LabState.Scheduled,
     LabState.Deploying,
     LabState.Running,
     LabState.Failed,
   ]);
-
-  const [topologies] = useResource<Topology[]>(
-    '/topologies',
-    props.apiConnector,
-    []
-  );
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(0);
+  const [pageSize] = useState<number>(8);
   const [groups] = useResource<Group[]>('/groups', props.apiConnector, []);
 
   const [devices] = useResource<DeviceInfo[]>(
@@ -41,12 +42,23 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
     []
   );
 
-  const deviceManager = useMemo(() => {
-    if (!devices) return null;
-    return new DeviceManager(devices);
-  }, [devices]);
+  const defaultLabQuery: RawLab = {
+    item_Count: 0,
+    labs: [],
+  };
 
-  const isReady = useReady(deviceManager);
+  const [labquery] = useResource<RawLab>(
+    '/labs',
+    props.apiConnector,
+    defaultLabQuery
+  );
+
+  useEffect(() => {
+    console.log(labquery);
+    console.log(labquery.item_Count);
+    setTotalAmountOfEntries(labquery.item_Count);
+    setLabs(labquery.labs);
+  }, [selectedFilters, totalAmountOfEntries, labquery]);
 
   function getGroupById(groupId?: String): String {
     const group = groups.find(group => group.id === groupId);
@@ -57,108 +69,62 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
   }
 
   const getFilteredLabs = () => {
-    console.log(labs);
-    console.log(selectedFilters);
     return labs.filter(lab => selectedFilters.includes(lab.state));
   };
 
+  const handleNextPage = () => {
+    if (totalAmountOfEntries / pageSize >= currentPage + 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const deviceManager = useMemo(() => {
+    if (!devices) return null;
+    return new DeviceManager(devices);
+  }, [devices]);
+  const isReady = useReady(deviceManager, labs);
+
   return (
     <If condition={isReady}>
-      <div className="bg-primary font-bold height-100 width-100 sb-card overflow-y-scroll overflow-x-hidden">
-        <div
-          className="search-bar"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            marginBottom: '1em',
-            width: '100%',
-            border: '1px solid #4DB6AC',
-            borderRadius: '4px',
-            backgroundColor: '#263238',
-          }}
-        >
-          {/* Search Icon as a Separate Element */}
-          <span
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 0.75em',
-            }}
-          >
-            <i
-              className="pi pi-search"
-              style={{
-                color: '#C3E4E9',
-                fontSize: '1.2em',
-              }}
-            />
+      <div className="bg-primary font-bold height-100 width-100 sb-card overflow-y-auto overflow-x-hidden">
+        <div className="search-bar">
+          <span className="search-bar-icon">
+            <i className="pi pi-search" />
           </span>
           <InputText
             placeholder="Search here..."
-            style={{
-              flex: 1,
-              width: '100%',
-              backgroundColor: '#263238',
-              color: '#C3E4E9',
-              border: 'none',
-              padding: '0.75em 0',
-            }}
+            className="search-bar-input"
           />
 
-          {/* Filter Icon as a Separate Element */}
           <span
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 0.75em',
-              cursor: 'pointer',
-            }}
+            className="search-bar-icon"
+            style={{cursor: 'pointer'}}
+            onClick={() => setFilterDialogVisible(true)}
           >
-            <i
-              className="pi pi-filter"
-              style={{
-                color: '#C3E4E9',
-                fontSize: '1.2em',
-              }}
-              onClick={() => {
-                setFilterDialogVisible(true);
-              }}
-            />
+            <i className="pi pi-filter" />
           </span>
+
           <Dialog
             header={
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  padding: '0 1em',
-                }}
-              >
-                <div>
-                  <strong>Set Filters</strong>
-                </div>
+              <div className="dialog-header">
+                <strong>Set Filters</strong>
               </div>
             }
             visible={FilterDialogVisible}
-            style={{
-              width: '80%',
-              height: '70%',
-              backgroundColor: '#1B2B34',
-              color: '#C3E4E9',
-              display: 'flex', // Flexbox for the dialog content
-              flexDirection: 'column', // Ensure the dialog content is arranged in columns
-            }}
+            className="dialog-content"
             onHide={() => setFilterDialogVisible(false)}
           >
             <div>
               <FilterDialog
                 filters={selectedFilters}
                 setFilters={setSelectedFilters}
-              ></FilterDialog>
+              />
             </div>
           </Dialog>
         </div>
@@ -173,17 +139,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
                   prevFilters.filter(f => f !== filter)
                 )
               }
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0.5em 1em',
-                margin: '0.25em',
-                cursor: 'pointer',
-                borderRadius: '16px',
-                backgroundColor: '#4DB6AC',
-                color: '#FFFFFF',
-                fontWeight: 'bold',
-              }}
+              className="chip"
             />
           ))}
         </div>
@@ -195,63 +151,53 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
                   <div
                     key={lab.id}
                     className="lab-item-card"
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      backgroundColor: '#1B2B34',
-                      padding: '1em',
-                      marginBottom: '1em',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                    }}
                     onClick={() => {
                       setLabDialogVisible(true);
                       setSelectedLab(lab);
                     }}
                   >
                     {/* Group */}
-                    <div style={{flex: 1}}>
-                      <p style={{margin: 0, fontWeight: 'bold'}}>
-                        {getGroupById(lab.groupId)}
-                      </p>
+                    <div className="lab-group">
+                      <p>{getGroupById(lab.groupId)}</p>
                     </div>
 
                     {/* Lab Name */}
-                    <div style={{flex: 2, textAlign: 'center'}}>
-                      <p style={{margin: 0, fontWeight: 'bold'}}>{lab.name}</p>
+                    <div className="lab-name">
+                      <p>{lab.name}</p>
                     </div>
 
                     {/* State */}
-                    <div style={{flex: 1, textAlign: 'right'}}>
-                      <span
-                        style={{
-                          backgroundColor: '#4DB6AC',
-                          padding: '0.5em 1em',
-                          borderRadius: '4px',
-                          color: '#FFFFFF',
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        {lab.state}
+                    <div className="lab-state">
+                      <span className="lab-state-label">
+                        {LabState[lab.state]}
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
 
+              <div className="pagination-controls">
+                <Button
+                  label="Previous"
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                  className="pagination-button"
+                />
+                <span className="pagination-info">
+                  Page {currentPage + 1} of{' '}
+                  {Math.ceil(totalAmountOfEntries / pageSize)}
+                </span>
+                <Button
+                  label="Next"
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalAmountOfEntries / pageSize}
+                  className="pagination-button"
+                />
+              </div>
               {/* Dialog for Lab Details */}
               <Dialog
                 header={
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      padding: '0 1em',
-                    }}
-                  >
+                  <div className="dialog-header">
                     <div style={{flex: 1, textAlign: 'left'}}>
                       <strong>{getGroupById(selectedLab?.groupId)}</strong>{' '}
                     </div>
@@ -261,26 +207,18 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
                   </div>
                 }
                 visible={LabDialogVisible}
-                style={{
-                  width: '80%',
-                  height: '70%',
-                  backgroundColor: '#1B2B34',
-                  color: '#C3E4E9',
-                  display: 'flex', // Flexbox for the dialog content
-                  flexDirection: 'column', // Ensure the dialog content is arranged in columns
-                }}
+                className="dialog-lab-details"
                 onHide={() => setLabDialogVisible(false)}
               >
-                {selectedLab && (
-                  <div>
+                <If condition={selectedLab}>
+                  <div className="height-100">
                     <LabDialog
-                      lab={selectedLab}
+                      lab={selectedLab!}
                       apiConnector={props.apiConnector}
-                      topologies={topologies}
                       deviceManager={deviceManager!}
-                    ></LabDialog>
+                    />
                   </div>
-                )}
+                </If>
               </Dialog>
             </When>
             <Otherwise>

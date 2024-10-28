@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
-import YAML from 'yaml';
 import classNames from 'classnames';
 import {confirmDialog, ConfirmDialog} from 'primereact/confirmdialog';
 
@@ -49,7 +48,7 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
     '/topologies',
     props.apiConnector,
     [],
-    topologies => mapTopologies(topologies as TopologyOut[])
+    topologies => TopologyManager.parseTopologies(topologies as TopologyOut[])
   );
 
   const [devices] = useResource<DeviceInfo[]>(
@@ -115,22 +114,6 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
       }
     }
   }, [topologies, topologyLookup, topologyManager]);
-
-  function mapTopologies(input: TopologyOut[]) {
-    const topologies: Topology[] = [];
-    for (const topology of input) {
-      try {
-        topologies.push({
-          ...topology,
-          definition: YAML.parse((topology as TopologyOut).definition),
-        });
-      } catch (e) {
-        console.error('[NET] Failed to parse incoming topology: ', topology);
-      }
-    }
-
-    return topologies;
-  }
 
   function onSelectTopology(id: string) {
     if (!topologyManager || !topologyLookup || !topologyLookup.has(id)) return;

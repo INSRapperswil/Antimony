@@ -1,5 +1,7 @@
 {
-    "payload": [
+  "payload": {
+    "item_Count": 6,
+    "labs":[
       {
         "id": "94ec1976-2cef-486c-a1e2-30257a7a0392",
         "name": "Lab1-01",
@@ -19,7 +21,7 @@
         "edgesharkLink": "edgeshark.example.com/whatever",
         "runnerId": "6308b71e-c496-46a2-8d00-ba7e513a4aa3",
         "latestStateChange": "2024-09-26T11:46:38Z",
-        "state": 4
+        "state": 1
       },
       {
         "id": "5a266a9a-d309-4a43-891c-6a01bec6e379",
@@ -82,7 +84,7 @@
         "edgesharkLink": "edgeshark.example.com/whatever",
         "runnerId": "6308b71e-c496-46a2-8d00-ba7e513a4aa3",
         "latestStateChange": "2024-09-26T11:46:38Z",
-        "state": 0
+        "state": 4
       },
       {
         "id": "603027eb-cff6-4c29-9c0a-6067f6525b73",
@@ -107,3 +109,4 @@
       }
     ]
   }
+}

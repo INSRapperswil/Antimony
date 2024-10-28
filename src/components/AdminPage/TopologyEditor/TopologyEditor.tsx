@@ -1,22 +1,22 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 
+import YAML from 'yaml';
+import {validate} from 'jsonschema';
 import {Button} from 'primereact/button';
+import {Tooltip} from 'primereact/tooltip';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
 
-import {ClabSchema, Topology, TopologyDefinition} from '@sb/types/Types';
-import {Choose, If, Otherwise, When} from '@sb/types/control';
 import NodeEditor from './NodeEditor/NodeEditor';
+import {APIConnector} from '@sb/lib/APIConnector';
+import {DeviceManager} from '@sb/lib/DeviceManager';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
+import {NotificationController} from '@sb/lib/NotificationController';
+import {ClabSchema, Topology, TopologyDefinition} from '@sb/types/Types';
+import {TopologyEditReport, TopologyManager} from '@sb/lib/TopologyManager';
 import MonacoWrapper, {MonacoWrapperRef} from './MonacoWrapper/MonacoWrapper';
+import NodeEditDialog from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEditDialog';
 
 import './TopologyEditor.sass';
-import {APIConnector} from '@sb/lib/APIConnector';
-import NodeEditDialog from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEditDialog';
-import {NotificationController} from '@sb/lib/NotificationController';
-import {Tooltip} from 'primereact/tooltip';
-import YAML from 'yaml';
-import {TopologyEditReport, TopologyManager} from '@sb/lib/TopologyManager';
-import {validate} from 'jsonschema';
-import {DeviceManager} from '@sb/lib/DeviceManager';
 
 export enum ValidationState {
   Working,
@@ -286,13 +286,5 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     </>
   );
 };
-
-export const IconMap = new Map<string, string>([
-  ['VM', 'virtualserver'],
-  ['Generic', 'generic'],
-  ['Router', 'router'],
-  ['Switch', 'switch'],
-  ['Container', 'computer'],
-]);
 
 export default TopologyEditor;

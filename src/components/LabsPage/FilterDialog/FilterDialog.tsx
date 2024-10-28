@@ -1,8 +1,10 @@
 import React, {useState, useEffect} from 'react';
 
-import {Button} from 'primereact/button';
-import {LabState} from '@sb/types/Types';
 import {Chip} from 'primereact/chip';
+import {Button} from 'primereact/button';
+
+import {LabState} from '@sb/types/Types';
+
 import './FilterDialog.sass';
 
 interface FilterDialogProps {

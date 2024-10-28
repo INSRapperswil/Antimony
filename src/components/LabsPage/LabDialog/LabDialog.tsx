@@ -6,19 +6,13 @@ import Graph from 'react-graph-vis';
 import {Button} from 'primereact/button';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import {
-  DeviceInfo,
-  Lab,
-  Topology,
-  TopologyDefinition,
-  TopologyOut,
-} from '@sb/types/Types';
 import {useResource} from '@sb/lib/Utils/Hooks';
 import {APIConnector} from '@sb/lib/APIConnector';
 import {DeviceManager} from '@sb/lib/DeviceManager';
 import {TopologyManager} from '@sb/lib/TopologyManager';
-import {IconMap} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
+import {Lab, Topology, TopologyDefinition, TopologyOut} from '@sb/types/Types';
 import {NetworkOptions} from '@sb/components/AdminPage/TopologyEditor/NodeEditor/network.conf';
+
 import './LabDialog.sass';
 
 type GraphDefinition = {
@@ -50,39 +44,15 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     }
   });
 
-  const [devices] = useResource<DeviceInfo[]>(
-    '/devices',
-    props.apiConnector,
-    []
-  );
-
-  const deviceLookup = useMemo(
-    () => new Map(devices.map(device => [device.kind, device])),
-    [devices]
-  );
-
-  const getTopology = (id: string): void => {
-    for (const topology of topologies) {
-      if (topology.id === id) {
-        setTopologyDefinition(topology.definition);
+  const getTopology = useCallback(
+    (id: string): void => {
+      for (const topology of topologies) {
+        if (topology.id === id) {
+          setTopologyDefinition(topology.definition);
+        }
       }
-    }
-  };
-
-  const getNodeIcon = useCallback(
-    (kind: string) => {
-      let iconName: string;
-      const deviceInfo = deviceLookup.get(kind);
-      if (deviceInfo) {
-        iconName = IconMap.get(deviceInfo?.type) ?? 'generic';
-      } else {
-        iconName = 'generic';
-      }
-      if (!iconName) iconName = 'generic';
-
-      return '/assets/icons/' + iconName + '.svg';
     },
-    [deviceLookup]
+    [topologies]
   );
 
   const graph: GraphDefinition = useMemo(() => {
@@ -113,13 +83,12 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     ];
 
     return {nodes: nodes, edges: edges};
-  }, [topologyDefinition, getNodeIcon]);
+  }, [topologyDefinition, props.deviceManager]);
 
   useEffect(() => {
     getTopology(props.lab.topologyId);
-    console.log('graph: ', graph);
     network?.setData(graph);
-  }, [network, graph, props.lab]);
+  }, [network, graph, props.lab, getTopology]);
 
   return (
     <div className="height-100 topology-container">

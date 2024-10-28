@@ -1,16 +1,18 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {TreeNode} from 'primereact/treenode';
+
 import {
   Tree,
   TreeEventNodeEvent,
   TreeExpandedKeysType,
   TreeSelectionEvent,
 } from 'primereact/tree';
-import {ContextMenu} from 'primereact/contextmenu';
-import {DeviceInfo, FetchState, Group, Topology} from '@sb/types/Types';
-import {Choose, Otherwise, When} from '@sb/types/control';
-import {ProgressSpinner} from 'primereact/progressspinner';
 import {Tooltip} from 'primereact/tooltip';
+import {TreeNode} from 'primereact/treenode';
+import {ContextMenu} from 'primereact/contextmenu';
+import {ProgressSpinner} from 'primereact/progressspinner';
+
+import {Choose, Otherwise, When} from '@sb/types/control';
+import {DeviceInfo, FetchState, Group, Topology} from '@sb/types/Types';
 
 interface TopologyBrowserProps {
   groups: Group[];

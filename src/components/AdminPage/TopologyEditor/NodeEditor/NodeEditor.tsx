@@ -7,20 +7,20 @@ import React, {
   useState,
 } from 'react';
 
-import {Node, Edge, Position} from 'vis';
 import {Network} from 'vis-network';
 import Graph from 'react-graph-vis';
-
-import {TopologyDefinition} from '@sb/types/Types';
-import {NetworkOptions} from './network.conf';
+import {Node, Edge, Position} from 'vis';
 
 import {ContextMenu} from 'primereact/contextmenu';
-import {NotificationController} from '@sb/lib/NotificationController';
 import useResizeObserver from '@react-hook/resize-observer';
+import {NotificationController} from '@sb/lib/NotificationController';
+
+import {NetworkOptions} from './network.conf';
+import {TopologyDefinition} from '@sb/types/Types';
+import {DeviceManager} from '@sb/lib/DeviceManager';
+import {TopologyManager} from '@sb/lib/TopologyManager';
 
 import './NodeEditor.sass';
-import {TopologyManager} from '@sb/lib/TopologyManager';
-import {DeviceManager} from '@sb/lib/DeviceManager';
 
 interface NodeEditorProps {
   notificationController: NotificationController;
@@ -194,8 +194,6 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   function onMouseMove(event: MouseEvent<HTMLDivElement>) {
     if (!nodeConnecting.current || !network) return;
 
-    console.log('ov mouse over');
-
     nodeConnectDestination.current = {x: event.clientX, y: event.clientY};
     network?.redraw();
   }
@@ -258,25 +256,23 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     }
   }, [selectedNode, onNodeConnect, onNodeDelete, onNodeEdit, props]);
 
-  const topbarItems = useMemo(() => {
-    if (selectedNode !== null && nodeLookup.has(selectedNode)) {
-      return [
-        {
-          label: `Edit '${nodeLookup.get(selectedNode)}'`,
-          icon: 'pi pi-pen-to-square',
-        },
-        {
-          label: `Delete '${nodeLookup.get(selectedNode)}'`,
-          icon: 'pi pi-trash',
-        },
-      ];
-    }
-    return [];
-  }, [selectedNode, nodeLookup]);
+  // const topbarItems = useMemo(() => {
+  //   if (selectedNode !== null && nodeLookup.has(selectedNode)) {
+  //     return [
+  //       {
+  //         label: `Edit '${nodeLookup.get(selectedNode)}'`,
+  //         icon: 'pi pi-pen-to-square',
+  //       },
+  //       {
+  //         label: `Delete '${nodeLookup.get(selectedNode)}'`,
+  //         icon: 'pi pi-trash',
+  //       },
+  //     ];
+  //   }
+  //   return [];
+  // }, [selectedNode, nodeLookup]);
 
   function onNetworkClick(selectData: NodeClickEvent) {
-    console.log('Selected: ', selectData);
-
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
     if (targetNode !== undefined) {
       setSelectedNode(targetNode as number);

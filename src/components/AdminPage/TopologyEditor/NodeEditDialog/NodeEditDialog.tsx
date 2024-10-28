@@ -1,21 +1,21 @@
-import {Accordion, AccordionTab} from 'primereact/accordion';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
+import {Image} from 'primereact/image';
 import {Dialog} from 'primereact/dialog';
-
-import {ClabSchema, TopologyDefinition} from '@sb/types/Types';
-
-import './NodeEditDialog.sass';
-import {NotificationController} from '@sb/lib/NotificationController';
-import NodePropertyTable from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodePropertyTable/NodePropertyTable';
-import SBInput from '@sb/components/common/SBInput';
-import {Dropdown} from 'primereact/dropdown';
 import {Button} from 'primereact/button';
+import {Dropdown} from 'primereact/dropdown';
+import {Accordion, AccordionTab} from 'primereact/accordion';
+
 import {If} from '@sb/types/control';
 import {NodeEditor} from '@sb/lib/NodeEditor';
-import {TopologyManager} from '@sb/lib/TopologyManager';
 import {DeviceManager} from '@sb/lib/DeviceManager';
-import {Image} from 'primereact/image';
+import SBInput from '@sb/components/common/SBInput';
+import {TopologyManager} from '@sb/lib/TopologyManager';
+import {ClabSchema, TopologyDefinition} from '@sb/types/Types';
+import NodePropertyTable from './NodePropertyTable/NodePropertyTable';
+import {NotificationController} from '@sb/lib/NotificationController';
+
+import './NodeEditDialog.sass';
 
 interface NodeEditDialogProps {
   notificationController: NotificationController;
@@ -133,7 +133,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
                 />
               </div>
             </div>
-            <Accordion multiple>
+            <Accordion multiple activeIndex={0}>
               <AccordionTab header="Node Properties">
                 <NodePropertyTable
                   hasPropertyList={true}

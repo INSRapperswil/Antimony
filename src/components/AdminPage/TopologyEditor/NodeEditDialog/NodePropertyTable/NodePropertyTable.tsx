@@ -1,4 +1,3 @@
-import {If} from '@sb/types/control';
 import React, {
   MouseEvent,
   ReactElement,
@@ -17,8 +16,10 @@ import {InputText} from 'primereact/inputtext';
 import {SelectItem} from 'primereact/selectitem';
 import {OverlayPanel} from 'primereact/overlaypanel';
 
-import {matchesSearch} from '@sb/lib/Utils/Utils';
+import {If} from '@sb/types/control';
 import {NodeEditor} from '@sb/lib/NodeEditor';
+import {matchesSearch} from '@sb/lib/Utils/Utils';
+import {OptionGroupOptions} from '@sb/types/Types';
 import NodePropertyTableRow from './NodePropertyTableRow';
 
 import './NodePropertyTable.sass';

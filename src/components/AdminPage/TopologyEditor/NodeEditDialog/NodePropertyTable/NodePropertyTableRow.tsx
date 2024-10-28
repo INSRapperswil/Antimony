@@ -1,8 +1,8 @@
-import {Tooltip} from 'primereact/tooltip';
 import React, {useMemo} from 'react';
 
 import {Button} from 'primereact/button';
 import {Message} from 'primereact/message';
+import {Tooltip} from 'primereact/tooltip';
 import {Checkbox} from 'primereact/checkbox';
 
 import {PropertyIO} from '@sb/lib/NodeEditor';

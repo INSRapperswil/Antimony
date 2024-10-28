@@ -8,7 +8,7 @@ import {Topology, TopologyDefinition, TopologyOut} from '@sb/types/Types';
 export type TopologyEditReport = {
   updatedTopology: Topology;
 
-  // Wether the topology is different to the saved one
+  // Whether the topology is different to the saved one
   isEdited: boolean;
 };
 
@@ -143,8 +143,6 @@ export class TopologyManager {
    */
   public addNode(kind: string) {
     if (!this.editingTopology) return;
-
-    console.log('Add node', kind);
 
     this.apply(this.editingTopology.definition);
   }

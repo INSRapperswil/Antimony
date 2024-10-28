@@ -1,9 +1,9 @@
 import React, {useEffect, useMemo, useState} from 'react';
 
-import {InputText} from 'primereact/inputtext';
-import {Dialog} from 'primereact/dialog';
 import {Chip} from 'primereact/chip';
 import {Button} from 'primereact/button';
+import {Dialog} from 'primereact/dialog';
+import {InputText} from 'primereact/inputtext';
 
 import {APIConnector} from '@sb/lib/APIConnector';
 import {DeviceManager} from '@sb/lib/DeviceManager';

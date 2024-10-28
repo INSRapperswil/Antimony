@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useState} from 'react';
 
-import {APIConnector} from '@sb/lib/APIConnector';
 import {FetchState} from '@sb/types/Types';
+import {APIConnector} from '@sb/lib/APIConnector';
 
 export type Instantiatable<T> = {new (...args: unknown[]): T};
 

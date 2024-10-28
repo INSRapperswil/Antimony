@@ -1,5 +1,8 @@
-import {Binding} from '@sb/lib/Utils/Binding';
-import {arrayOf, filterSchemaEnum} from '@sb/lib/Utils/Utils';
+import _ from 'lodash';
+import objectPath from 'object-path';
+import cloneDeep from 'lodash.clonedeep';
+import {validate} from 'jsonschema';
+
 import {
   ClabSchema,
   PatternPropertyDefinition,
@@ -9,12 +12,9 @@ import {
   PropertySchema,
   FieldType,
 } from '@sb/types/Types';
-import cloneDeep from 'lodash.clonedeep';
-import {validate} from 'jsonschema';
+import {Binding} from '@sb/lib/Utils/Binding';
+import {arrayOf, filterSchemaEnum} from '@sb/lib/Utils/Utils';
 import {NotificationController} from '@sb/lib/NotificationController';
-import _ from 'lodash';
-
-import objectPath from 'object-path';
 
 /*
  * Object used by the view to communicate with the Node Editor.
@@ -399,8 +399,6 @@ export class NodeEditor {
     }
 
     const propertyType = this.getPropertyType(propertyKey, schemaRootPath);
-
-    console.log('TYPE:', propertyType);
 
     const defaultEnumValue = propertyType.availableValues
       ? propertyType.availableValues[0]

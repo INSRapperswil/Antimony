@@ -1,9 +1,9 @@
-import {Dropdown, DropdownChangeEvent} from 'primereact/dropdown';
-import {SelectItem} from 'primereact/selectitem';
 import React from 'react';
+import classNames from 'classnames';
+import {SelectItem} from 'primereact/selectitem';
+import {Dropdown, DropdownChangeEvent} from 'primereact/dropdown';
 
 import {If} from '@sb/types/control';
-import classNames from 'classnames';
 
 import './SBDropdown.sass';
 

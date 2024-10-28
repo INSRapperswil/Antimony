@@ -1,18 +1,15 @@
-import SBInput from '@sb/components/common/SBInput';
-import {If} from '@sb/types/control';
-import {Button} from 'primereact/button';
 import React, {useMemo} from 'react';
+
+import {Button} from 'primereact/button';
+
+import {If} from '@sb/types/control';
+import SBInput from '@sb/components/common/SBInput';
 
 import './NodePropertyArray.sass';
 
 interface NodePropertyArrayProps {
   entries: string[];
   onUpdateValue: (entries: string[]) => string | null;
-}
-
-interface EntryDefinition {
-  value: string;
-  index: number;
 }
 
 const NodePropertyArray: React.FC<NodePropertyArrayProps> = (

@@ -1,12 +1,12 @@
 import React, {useState} from 'react';
 
+import classNames from 'classnames';
+import {InputTextareaProps} from 'primereact/inputtextarea';
 import {InputText, InputTextProps} from 'primereact/inputtext';
 
 import {If} from '@sb/types/control';
-import classNames from 'classnames';
 
 import './SBInput.sass';
-import {InputTextareaProps} from 'primereact/inputtextarea';
 
 type InputProps = InputTextProps & InputTextareaProps;
 

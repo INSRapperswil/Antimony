@@ -63,7 +63,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   }, [props.clabSchema]);
 
   const onTopologyUpdate = useCallback(() => {
-    if (!nodeEditor) return;
+    if (!nodeEditor || !nodeEditor.getNode()) return;
 
     setNodeKind(nodeEditor.getNode().kind);
   }, [nodeEditor]);

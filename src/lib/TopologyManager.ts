@@ -144,6 +144,8 @@ export class TopologyManager {
   public addNode(kind: string) {
     if (!this.editingTopology) return;
 
+    console.log('Add node:', kind);
+
     this.apply(this.editingTopology.definition);
   }
 

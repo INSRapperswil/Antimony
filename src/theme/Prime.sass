@@ -60,17 +60,24 @@
   background-color: var(--primary-color)
   border-radius: 4px
 
-.p-dialog
+.p-dialog:not(.p-confirm-dialog)
   border-radius: 4px
   border: var(--primary-color-border) solid 1px
 
-.p-dialog-content
-  border-radius: 4px
-  padding: 0
-  display: flex
-  flex-direction: column
-  align-items: stretch
-  overflow: hidden
+  .p-dialog-content
+    border-radius: 4px
+    padding: 0
+    display: flex
+    flex-direction: column
+    align-items: stretch
+    overflow: hidden
+
+.p-confirm-dialog
+  background-color: var(--overlay-color)
+  border: 1px solid var(--primary-color-border)
+
+  .border-circle
+    border: 1px solid var(--primary-color-border)
 
 .p-inputtextarea
   resize: none
@@ -111,3 +118,12 @@
   .p-dropdown-header
     background-color: transparent
     border: none
+
+.pi-severity-success
+  color: var(--success-color)
+
+.pi-severity-danger
+  color: var(--danger-color)
+
+.pi-severity-warning
+  color: var(--warning-color)

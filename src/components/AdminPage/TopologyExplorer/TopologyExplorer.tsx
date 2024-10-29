@@ -1,4 +1,8 @@
-import React, {useEffect, useRef, useState} from 'react';
+import SBConfirm from '@sb/components/common/SBConfirm';
+import SBInput from '@sb/components/common/SBInput';
+import {NotificationController} from '@sb/lib/NotificationController';
+import {Button} from 'primereact/button';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {
   Tree,
@@ -14,7 +18,11 @@ import {ProgressSpinner} from 'primereact/progressspinner';
 import {Choose, Otherwise, When} from '@sb/types/control';
 import {DeviceInfo, FetchState, Group, Topology} from '@sb/types/Types';
 
+import './TopologyExplorer.sass';
+
 interface TopologyBrowserProps {
+  notificationController: NotificationController;
+
   groups: Group[];
   topologies: Topology[];
   fetchState: FetchState;
@@ -42,18 +50,7 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
   function onRenameTopology() {}
   function onDeleteTopology() {}
 
-  useEffect(() => {
-    if (props.fetchState !== FetchState.Done) return;
-
-    const topologyTree = generateTopologyTree();
-    setTopologyTree(topologyTree);
-
-    setExpandedKeys(
-      Object.fromEntries(topologyTree.map(group => [group.key, true]))
-    );
-  }, [props.topologies]);
-
-  function generateTopologyTree() {
+  const generateTopologyTree = useCallback(() => {
     const topologyTree: TreeNode[] = [];
     const topologiesByGroup = new Map<string, Topology[]>();
 
@@ -83,7 +80,18 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
     }
 
     return topologyTree;
-  }
+  }, [props.groups, props.topologies]);
+
+  useEffect(() => {
+    if (props.fetchState !== FetchState.Done) return;
+
+    const topologyTree = generateTopologyTree();
+    setTopologyTree(topologyTree);
+
+    setExpandedKeys(
+      Object.fromEntries(topologyTree.map(group => [group.key, true]))
+    );
+  }, [generateTopologyTree, props.fetchState, props.topologies]);
 
   const groupContextMenu = [
     {
@@ -147,27 +155,113 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
     props.onTopologySelect(e.value as string);
   }
 
-  const TreeNodeTemplate = (node: TreeNode) => (
-    <span
-      className="tree-node p-treenode-label"
-      data-pr-position="right"
-      data-pr-my="left+10 center"
-      data-pr-showdelay={500}
-      data-pr-tooltip={node.label}
-    >
-      {node.label}
-    </span>
-  );
+  function onRenameGroup(uuid: string) {
+    console.log('Renaming group: ', uuid);
+    props.notificationController.success('Successfully renamed group.');
+
+    return null;
+  }
+
+  function onDeleteGroupRequest(uuid: string) {
+    props.notificationController.confirm({
+      message: 'This action cannot be undone!',
+      header: 'Delete Group?',
+      icon: 'pi pi-exclamation-triangle',
+      severity: 'danger',
+      onAccept: () => {
+        console.log('Deleting Group: ', uuid);
+        props.notificationController.success('Group was successfully deleted!');
+      },
+    });
+  }
+
+  function onDeleteTopologyRequest(uuid: string) {
+    props.notificationController.confirm({
+      message: 'This action cannot be undone!',
+      header: 'Delete Topology?',
+      icon: 'pi pi-exclamation-triangle',
+      severity: 'danger',
+      onAccept: () => {
+        console.log('Deleting Topology: ', uuid);
+        props.notificationController.success(
+          'Topology was successfully deleted!'
+        );
+      },
+    });
+  }
+
+  const TreeNodeTemplate = (node: TreeNode) => {
+    return (
+      <div className="flex align-self-stretch w-full align-items-center justify-content-between">
+        <Choose>
+          <When condition={node.leaf}>
+            <span
+              className="tree-node p-treenode-label"
+              data-pr-position="right"
+              data-pr-my="left+10 center"
+              data-pr-showdelay={500}
+              data-pr-tooltip={node.label}
+            >
+              {node.label}
+            </span>
+            <div className="sb-explorer-node-buttons">
+              <Button
+                icon="pi pi-trash"
+                severity="danger"
+                rounded
+                text
+                tooltip="Delete Topology"
+                tooltipOptions={{showDelay: 500}}
+                onClick={() => onDeleteTopologyRequest(node.key as string)}
+              />
+              <Button
+                icon="pi pi-play"
+                severity="success"
+                rounded
+                text
+                tooltip="Deploy Topology"
+                tooltipOptions={{showDelay: 500}}
+              />
+            </div>
+          </When>
+          <Otherwise>
+            <SBInput
+              defaultValue={node.label}
+              fullyTransparent={true}
+              doubleClick={true}
+              isHidden={true}
+              explicitSubmit={true}
+              onValueSubmit={onRenameGroup}
+            />
+            <div className="sb-explorer-node-buttons">
+              <Button
+                icon="pi pi-trash"
+                severity="danger"
+                rounded
+                text
+                tooltip="Delete Group"
+                tooltipOptions={{showDelay: 500}}
+                onClick={() => onDeleteGroupRequest(node.key as string)}
+              />
+              <Button
+                icon="pi pi-plus"
+                severity="success"
+                rounded
+                text
+                tooltip="Add Topology"
+                tooltipOptions={{showDelay: 500}}
+              />
+            </div>
+          </Otherwise>
+        </Choose>
+      </div>
+    );
+  };
 
   return (
     <>
       <Choose>
         <When condition={topologyTree.length > 0}>
-          <ContextMenu model={groupContextMenu} ref={groupContextMenuRef} />
-          <ContextMenu
-            model={topologyContextMenu}
-            ref={topologyContextMenuRef}
-          />
           <Tooltip target=".tree-node" />
           <Tree
             filter
@@ -184,6 +278,12 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
             onContextMenu={e => onContextMenu(e)}
             onToggle={e => setExpandedKeys(e.value)}
           />
+          <ContextMenu model={groupContextMenu} ref={groupContextMenuRef} />
+          <ContextMenu
+            model={topologyContextMenu}
+            ref={topologyContextMenuRef}
+          />
+          <SBConfirm />
         </When>
         <Otherwise>
           <div className="h-full flex align-items-center">

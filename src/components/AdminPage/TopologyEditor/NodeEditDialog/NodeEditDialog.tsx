@@ -136,7 +136,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
             <Accordion multiple activeIndex={0}>
               <AccordionTab header="Node Properties">
                 <NodePropertyTable
-                  hasPropertyList={true}
                   nodeEditor={nodeEditor!}
                   objectKey=""
                   schemaKey="node-config"
@@ -147,7 +146,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
                   keyHeader="Key"
                   hideType={true}
                   isKeyEditable={true}
-                  hasPropertyList={false}
                   addText="Add Variable"
                   nodeEditor={nodeEditor!}
                   objectKey="env"
@@ -157,7 +155,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
               <AccordionTab header="Certificates">
                 <NodePropertyTable
                   isKeyEditable={true}
-                  hasPropertyList={true}
                   nodeEditor={nodeEditor!}
                   objectKey="certificate"
                   schemaKey="certificate-config"
@@ -166,7 +163,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
               <AccordionTab header="Healthcheck">
                 <NodePropertyTable
                   isKeyEditable={true}
-                  hasPropertyList={true}
                   nodeEditor={nodeEditor!}
                   objectKey="healthcheck"
                   schemaKey="healthcheck-config"
@@ -175,7 +171,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
               <AccordionTab header="DNS Configuration">
                 <NodePropertyTable
                   isKeyEditable={true}
-                  hasPropertyList={true}
                   nodeEditor={nodeEditor!}
                   objectKey="dns"
                   schemaKey="dns-config"
@@ -184,7 +179,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
               <AccordionTab header="Extras">
                 <NodePropertyTable
                   isKeyEditable={true}
-                  hasPropertyList={true}
                   nodeEditor={nodeEditor!}
                   objectKey="extras"
                   schemaKey="extras-config"
@@ -197,7 +191,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
                   addText="Add Label"
                   hideType={true}
                   isKeyEditable={true}
-                  hasPropertyList={false}
                   nodeEditor={nodeEditor!}
                   objectKey="labels"
                   schemaKey="node-config.labels"

@@ -1,3 +1,4 @@
+import SBConfirm, {SBConfirmRef} from '@sb/components/common/SBConfirm';
 import React, {useRef, useState} from 'react';
 
 import {PrimeReactProvider} from 'primereact/api';
@@ -23,9 +24,10 @@ const App: React.FC = () => {
   const apiConnector = useSingleton(APIConnector);
 
   const toastRef = useRef<Toast>(null);
+  const confirmationRef = useRef<SBConfirmRef>(null);
 
   const [notificationController] = useState<NotificationController>(
-    new NotificationController(toastRef)
+    new NotificationController(toastRef, confirmationRef)
   );
 
   // This ensures that the page is only rendered after all the necessary singletons have been instantiated
@@ -51,6 +53,7 @@ const App: React.FC = () => {
           </div>
         </div>
       </If>
+      <SBConfirm ref={confirmationRef} />
       <Toast ref={toastRef} />
     </PrimeReactProvider>
   );

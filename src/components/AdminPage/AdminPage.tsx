@@ -1,7 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import classNames from 'classnames';
-import {confirmDialog, ConfirmDialog} from 'primereact/confirmdialog';
 
 import {
   Instantiatable,
@@ -119,13 +118,12 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
     if (!topologyManager || !topologyLookup || !topologyLookup.has(id)) return;
 
     if (topologyManager.hasEdits()) {
-      confirmDialog({
-        message: "Are you sure you wan't to leave?",
+      props.notificationController.confirm({
+        message: 'Discard unsaved changes?',
         header: 'Unsaved Changes',
         icon: 'pi pi-info-circle',
-        defaultFocus: 'reject',
-        acceptClassName: 'p-button-danger',
-        accept: () => onSelectConfirm(id),
+        severity: 'warning',
+        onAccept: () => onSelectConfirm(id),
       });
     } else {
       onSelectConfirm(id);
@@ -168,6 +166,7 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
           topologies={topologies}
           devices={devices}
           fetchState={groupsFetchState}
+          notificationController={props.notificationController}
         />
       </div>
       <div
@@ -188,7 +187,6 @@ const AdminPage: React.FC<AdminPageProps> = (props: AdminPageProps) => {
           />
         </div>
       </div>
-      <ConfirmDialog />
     </If>
   );
 };

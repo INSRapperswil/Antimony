@@ -42,7 +42,7 @@ export interface MonacoWrapperRef {
    * We need to have this imperative function here for the parent to tell the wrapper that a new
    * topology has been opened instead of just changing the content like in regular updates.
    */
-  openTopology: (toplogy: TopologyDefinition) => void;
+  openTopology: (topology: TopologyDefinition) => void;
   undo: () => void;
   redo: () => void;
 }

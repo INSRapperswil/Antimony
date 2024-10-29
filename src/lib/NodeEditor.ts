@@ -1,6 +1,6 @@
+import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
 import _ from 'lodash';
 import objectPath from 'object-path';
-import cloneDeep from 'lodash.clonedeep';
 import {validate} from 'jsonschema';
 
 import {
@@ -41,26 +41,27 @@ export type PropertyDefinition = {
 };
 
 export class NodeEditor {
-  private readonly originalTopology: TopologyDefinition;
+  private readonly originalTopology: YAMLDocument<TopologyDefinition>;
   private readonly notifications: NotificationController;
   public readonly clabSchema: ClabSchema;
 
-  public readonly onEdit: Binding<TopologyDefinition> = new Binding();
+  public readonly onEdit: Binding<YAMLDocument<TopologyDefinition>> =
+    new Binding();
 
   private editingNode: string;
-  private editingTopology: TopologyDefinition;
+  private editingTopology: YAMLDocument<TopologyDefinition>;
 
   constructor(
     clabSchema: ClabSchema,
     editingNode: string,
-    originalTopology: TopologyDefinition,
+    originalTopology: YAMLDocument<TopologyDefinition>,
     notifications: NotificationController
   ) {
     this.clabSchema = clabSchema;
     this.editingNode = editingNode;
     this.notifications = notifications;
     this.originalTopology = originalTopology;
-    this.editingTopology = cloneDeep(originalTopology);
+    this.editingTopology = originalTopology.clone();
 
     this.onUpdateName = this.onUpdateName.bind(this);
     this.getObjectProperties = this.getObjectProperties.bind(this);
@@ -76,18 +77,23 @@ export class NodeEditor {
       return null;
     }
 
-    if (value in this.editingTopology.topology.nodes) {
+    if (this.editingTopology.getIn(this.propertyPath(value))) {
       this.notifications.error('Duplicate node name.', 'Schema Error');
       return 'Duplicate node name.';
     }
 
-    const node = this.editingTopology.topology.nodes[this.editingNode];
+    this.editingTopology.setIn(
+      ['topology', 'nodes', value],
+      this.editingTopology.getIn(['topology', 'nodes', this.editingNode])
+    );
 
-    delete this.editingTopology.topology.nodes[this.editingNode];
-    this.editingTopology.topology.nodes[value] = node;
+    this.originalTopology.setIn(
+      ['topology', 'nodes', value],
+      this.originalTopology.getIn(['topology', 'nodes', this.editingNode])
+    );
 
-    delete this.originalTopology.topology.nodes[this.editingNode];
-    this.originalTopology.topology.nodes[value] = node;
+    this.editingTopology.deleteIn(['topology', 'nodes', this.editingNode]);
+    this.originalTopology.deleteIn(['topology', 'nodes', this.editingNode]);
 
     this.editingNode = value;
 
@@ -110,7 +116,7 @@ export class NodeEditor {
     const properties: PropertyIO[] = [];
 
     const obj = objectPath.get(
-      this.editingTopology.topology.nodes[this.editingNode],
+      this.editingTopology.toJS().topology.nodes[this.editingNode],
       objectKey
     );
 
@@ -169,7 +175,7 @@ export class NodeEditor {
     const schemaPropertyKeys = new Set(Object.keys(schemaProperties));
 
     const setProperties = objectPath.get(
-      this.editingTopology.topology.nodes[this.editingNode],
+      this.editingTopology.toJS().topology.nodes[this.editingNode],
       objectKey
     );
     if (!setProperties) return [...schemaPropertyKeys];
@@ -204,7 +210,7 @@ export class NodeEditor {
   /**
    * Returns the current topology.
    */
-  public getTopology(): TopologyDefinition {
+  public getTopology(): YAMLDocument<TopologyDefinition> {
     return this.editingTopology;
   }
 
@@ -212,7 +218,7 @@ export class NodeEditor {
    * Returns the current node.
    */
   public getNode(): TopologyNode {
-    return this.editingTopology.topology.nodes[this.editingNode];
+    return this.editingTopology.toJS().topology.nodes[this.editingNode];
   }
 
   /**
@@ -227,11 +233,10 @@ export class NodeEditor {
     objectRootPath: string,
     value: FieldType
   ): string | null {
-    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
+    const updatedTopology = this.editingTopology.clone();
 
-    objectPath.set(
-      updatedTopology.topology.nodes[this.editingNode],
-      NodeEditor.combinePathAndKey(objectRootPath, propertyKey),
+    updatedTopology.setIn(
+      this.propertyPath(objectRootPath, propertyKey),
       value
     );
 
@@ -253,23 +258,14 @@ export class NodeEditor {
     objectRootPath: string,
     newKey: string
   ): string | null {
-    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
+    const updatedTopology = this.editingTopology.clone();
 
-    const value = objectPath.get(
-      updatedTopology.topology.nodes[this.editingNode],
-      NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+    updatedTopology.setIn(
+      this.propertyPath(objectRootPath, newKey),
+      this.editingTopology.getIn(this.propertyPath(objectRootPath, propertyKey))
     );
 
-    objectPath.del(
-      updatedTopology.topology.nodes[this.editingNode],
-      NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
-    );
-
-    objectPath.set(
-      updatedTopology.topology.nodes[this.editingNode],
-      NodeEditor.combinePathAndKey(objectRootPath, newKey),
-      value
-    );
+    updatedTopology.deleteIn(this.propertyPath(objectRootPath, propertyKey));
 
     return this.validateAndSetTopology(
       updatedTopology,
@@ -284,12 +280,9 @@ export class NodeEditor {
    * @param objectRootPath The key path of the property's parent.
    */
   private deleteProperty(propertyKey: string, objectRootPath: string) {
-    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
+    const updatedTopology = this.editingTopology.clone();
 
-    objectPath.del(
-      updatedTopology.topology.nodes[this.editingNode],
-      NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
-    );
+    updatedTopology.deleteIn(this.propertyPath(objectRootPath, propertyKey));
 
     /*
      * Remove the object if it's now empty. Note that this only works on
@@ -297,15 +290,12 @@ export class NodeEditor {
      * for the node object.
      */
     const obj = objectPath.get(
-      updatedTopology.topology.nodes[this.editingNode],
+      updatedTopology.toJS().topology.nodes[this.editingNode],
       objectRootPath
     );
 
     if (_.isEmpty(obj)) {
-      objectPath.del(
-        updatedTopology.topology.nodes[this.editingNode],
-        objectRootPath
-      );
+      updatedTopology.deleteIn(this.propertyPath(objectRootPath));
     }
 
     return this.validateAndSetTopology(
@@ -328,11 +318,10 @@ export class NodeEditor {
     schemaRootPath: string,
     searchOriginal: boolean = true
   ) {
-    const updatedTopology: TopologyDefinition = cloneDeep(this.editingTopology);
+    const updatedTopology = this.editingTopology.clone();
 
-    objectPath.set(
-      updatedTopology.topology.nodes[this.editingNode],
-      NodeEditor.combinePathAndKey(objectRootPath, propertyKey),
+    updatedTopology.setIn(
+      this.propertyPath(objectRootPath, propertyKey),
       this.getPropertyDefault(
         propertyKey,
         objectRootPath,
@@ -357,9 +346,8 @@ export class NodeEditor {
     propertyKey: string,
     objectRootPath: string
   ): boolean {
-    return !objectPath.has(
-      this.originalTopology!.topology.nodes[this.editingNode!],
-      NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+    return !this.originalTopology.getIn(
+      this.propertyPath(objectRootPath, propertyKey)
     );
   }
 
@@ -375,15 +363,13 @@ export class NodeEditor {
     objectRootPath: string,
     schemaRootPath: string
   ): boolean {
-    const currentValue = objectPath.get(
-      this.editingTopology!.topology.nodes[this.editingNode!],
-      NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+    const currentValue = this.editingTopology.getIn(
+      this.propertyPath(objectRootPath, propertyKey)
     );
 
     const originalValue =
-      objectPath.get(
-        this.originalTopology!.topology.nodes[this.editingNode!],
-        NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+      this.originalTopology.getIn(
+        this.propertyPath(objectRootPath, propertyKey)
       ) ?? this.getPropertyDefault(propertyKey, objectRootPath, schemaRootPath);
 
     return !_.isEqual(currentValue, originalValue);
@@ -408,9 +394,8 @@ export class NodeEditor {
     searchOriginal: boolean = true
   ) {
     if (searchOriginal) {
-      const originalValue = objectPath.get(
-        this.originalTopology.topology.nodes[this.editingNode],
-        NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
+      const originalValue = this.originalTopology.getIn(
+        this.propertyPath(objectRootPath, propertyKey)
       );
 
       if (originalValue) return originalValue;
@@ -571,10 +556,10 @@ export class NodeEditor {
    * @private
    */
   private validateAndSetTopology(
-    topology: TopologyDefinition,
+    topology: YAMLDocument<TopologyDefinition>,
     customErrorMessage: string | null = null
   ): string | null {
-    const validation = validate(topology, this.clabSchema);
+    const validation = validate(topology.toJS(), this.clabSchema);
 
     if (validation.errors.length < 1) {
       this.editingTopology = topology;
@@ -600,12 +585,14 @@ export class NodeEditor {
    * because objectPath doesn't skip empty values and will instead create
    * a new object with an empty key.
    *
-   * @param root The root path of the property.
-   * @param key The key of the property.
+   * @param root The path to the root of the object.
+   * @param key The path to the property.
    */
-  private static combinePathAndKey(root: string, key: string): string[] {
-    if (!root) return [key];
-    return [root, key];
+  private propertyPath(root: string, ...key: string[]): string[] {
+    const prefix = 'topology.nodes.' + this.editingNode + '.';
+    if (!root) return (prefix + key.join('.')).split('.');
+
+    return (prefix + root + '.' + key.join('.')).split('.');
   }
 }
 

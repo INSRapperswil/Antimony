@@ -54,7 +54,7 @@ const NodePropertyArray: React.FC<NodePropertyArrayProps> = (
               placeholder="Empty"
               isHidden={true}
             />
-            <If condition={props.entries.length >= props.minItems}>
+            <If condition={props.entries.length > props.minItems}>
               <Button
                 icon="pi pi-trash"
                 severity="danger"

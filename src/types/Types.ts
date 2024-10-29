@@ -1,3 +1,5 @@
+import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
+
 export type uuid4 = string;
 
 export type ErrorResponse = {
@@ -50,7 +52,7 @@ export type TopologyOut = {
 
 export type Topology = {
   id: uuid4;
-  definition: TopologyDefinition;
+  definition: YAMLDocument<TopologyDefinition>;
   groupId: uuid4;
   creatorId: uuid4;
 };

@@ -40,7 +40,7 @@
     "vis-data": "^7.1.9",
     "vis-network": "^9.1.9",
     "webpack-merge": "^6.0.1",
-    "yaml": "^2.5.1"
+    "yaml": "^2.6.0"
   },
   "scripts": {
     "start": "webpack serve --config webpack.dev.cjs",

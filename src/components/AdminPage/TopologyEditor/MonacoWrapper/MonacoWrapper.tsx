@@ -7,7 +7,7 @@ import React, {
   useRef,
 } from 'react';
 
-import YAML from 'yaml';
+import {Document} from 'yaml';
 import {editor} from 'monaco-editor';
 import * as monaco from 'monaco-editor';
 import {Monaco} from '@monaco-editor/react';
@@ -15,7 +15,7 @@ import MonacoEditor from 'react-monaco-editor';
 import {configureMonacoYaml} from 'monaco-yaml';
 
 import {MonacoOptions, AntimonyTheme} from './monaco.conf';
-import {ClabSchema, TopologyDefinition} from '@sb/types/Types';
+import {ClabSchema} from '@sb/types/Types';
 
 import './MonacoWrapper.sass';
 
@@ -28,7 +28,7 @@ window.MonacoEnvironment = {
 };
 
 interface MonacoWrapperProps {
-  openTopology: TopologyDefinition | null;
+  openTopology: Document | null;
   schema: ClabSchema;
 
   setContent: (content: string) => void;
@@ -42,7 +42,7 @@ export interface MonacoWrapperRef {
    * We need to have this imperative function here for the parent to tell the wrapper that a new
    * topology has been opened instead of just changing the content like in regular updates.
    */
-  openTopology: (topology: TopologyDefinition) => void;
+  openTopology: (topology: Document) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -53,9 +53,9 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
     const monacoEditorRef = useRef<Monaco | null>(null);
 
     useImperativeHandle(ref, () => ({
-      openTopology: (toplogy: TopologyDefinition) => {
+      openTopology: (topology: Document) => {
         if (textModelRef.current) {
-          textModelRef.current.setValue(YAML.stringify(toplogy));
+          textModelRef.current.setValue(topology.toString());
         }
       },
       undo: onTriggerUndo,
@@ -77,7 +77,7 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
 
     const content = useMemo(() => {
       if (props.openTopology) {
-        return YAML.stringify(props.openTopology);
+        return props.openTopology.toString();
       }
       return '';
     }, [props.openTopology]);

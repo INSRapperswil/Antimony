@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 
-import YAML from 'yaml';
+import {Document, parseDocument} from 'yaml';
 import {validate} from 'jsonschema';
 import {Button} from 'primereact/button';
 import {Tooltip} from 'primereact/tooltip';
@@ -11,7 +11,7 @@ import {APIConnector} from '@sb/lib/APIConnector';
 import {DeviceManager} from '@sb/lib/DeviceManager';
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 import {NotificationController} from '@sb/lib/NotificationController';
-import {ClabSchema, Topology, TopologyDefinition} from '@sb/types/Types';
+import {ClabSchema, Topology} from '@sb/types/Types';
 import {TopologyEditReport, TopologyManager} from '@sb/lib/TopologyManager';
 import MonacoWrapper, {MonacoWrapperRef} from './MonacoWrapper/MonacoWrapper';
 import NodeEditDialog from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEditDialog';
@@ -49,9 +49,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
   const [hasPendingEdits, setPendingEdits] = useState(false);
   const [isNodeEditDialogOpen, setNodeEditDialogOpen] = useState(false);
-  const [openTopology, setOpenTopology] = useState<TopologyDefinition | null>(
-    null
-  );
+  const [openTopology, setOpenTopology] = useState<Document | null>(null);
   const [currentlyEditedNode, setCurrentlyEditedNode] = useState<string | null>(
     null
   );
@@ -80,9 +78,9 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
   function onContentChange(content: string) {
     try {
-      const obj = YAML.parse(content) as TopologyDefinition;
+      const obj = parseDocument(content);
 
-      if (validate(obj, props.clabSchema).errors.length === 0) {
+      if (validate(obj.toJS(), props.clabSchema).errors.length === 0) {
         setValidationState(ValidationState.Done);
         props.topologyManager.apply(obj);
       } else {

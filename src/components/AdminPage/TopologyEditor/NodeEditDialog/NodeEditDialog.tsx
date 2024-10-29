@@ -1,3 +1,4 @@
+import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Image} from 'primereact/image';
@@ -20,7 +21,7 @@ import './NodeEditDialog.sass';
 interface NodeEditDialogProps {
   notificationController: NotificationController;
 
-  editingTopology: TopologyDefinition | null;
+  editingTopology: YAMLDocument<TopologyDefinition> | null;
   editingNode: string | null;
   isOpen: boolean;
   clabSchema: ClabSchema | null;

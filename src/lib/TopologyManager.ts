@@ -1,5 +1,6 @@
-import YAML from 'yaml';
-import _, {clone} from 'lodash';
+import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
+import {parseDocument} from 'yaml';
+import _ from 'lodash';
 import cloneDeep from 'lodash.clonedeep';
 
 import {Binding} from '@sb/lib/Utils/Binding';
@@ -78,7 +79,7 @@ export class TopologyManager {
    *
    * @param updatedTopology The updated topology.
    */
-  public apply(updatedTopology: TopologyDefinition) {
+  public apply(updatedTopology: YAMLDocument<TopologyDefinition>) {
     if (!this.editingTopology) return;
 
     this.onEdit.update({
@@ -86,7 +87,10 @@ export class TopologyManager {
         ...this.editingTopology,
         definition: updatedTopology,
       },
-      isEdited: !_.isEqual(updatedTopology, this.originalTopology?.definition),
+      isEdited: !_.isEqual(
+        updatedTopology.toJS(),
+        this.originalTopology?.definition.toJS()
+      ),
     });
   }
 
@@ -97,14 +101,14 @@ export class TopologyManager {
     if (!this.editingTopology) return;
 
     const updatedTopology = {
-      name: this.editingTopology.definition.name,
+      name: this.editingTopology.definition.toJS().name,
       topology: {
         nodes: {},
         links: [],
       },
     };
 
-    this.apply(updatedTopology);
+    this.apply(new YAMLDocument(updatedTopology));
   }
 
   /**
@@ -113,11 +117,15 @@ export class TopologyManager {
    * @param nodeName The name of the node to delete.
    */
   public deleteNode(nodeName: string) {
-    if (!this.editingTopology?.definition.topology.nodes[nodeName]) return;
+    if (!this.editingTopology) return;
 
-    const updatedTopology = clone(this.editingTopology?.definition);
-
-    delete updatedTopology?.topology.nodes[nodeName];
+    const updatedTopology = this.editingTopology.definition.clone();
+    const wasDeleted = updatedTopology.deleteIn([
+      'topology',
+      'nodes',
+      nodeName,
+    ]);
+    if (!wasDeleted) return;
 
     this.apply(updatedTopology);
   }
@@ -154,16 +162,22 @@ export class TopologyManager {
    */
   public hasEdits() {
     if (!this.editingTopology || !this.originalTopology) return false;
-    return !_.isEqual(this.editingTopology, this.originalTopology);
+    return !_.isEqual(
+      this.editingTopology.definition.toJS(),
+      this.originalTopology.definition.toJS()
+    );
   }
 
   public static parseTopologies(input: TopologyOut[]) {
     const topologies: Topology[] = [];
     for (const topology of input) {
       try {
+        const definition = parseDocument((topology as TopologyOut).definition, {
+          keepSourceTokens: true,
+        });
         topologies.push({
           ...topology,
-          definition: YAML.parse((topology as TopologyOut).definition),
+          definition: definition,
         });
       } catch (e) {
         console.error('[NET] Failed to parse incoming topology: ', topology);

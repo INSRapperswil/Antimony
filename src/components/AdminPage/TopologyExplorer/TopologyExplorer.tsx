@@ -52,7 +52,7 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
         leaf: false,
         children: topologiesByGroup.get(group.id)?.map(topology => ({
           key: topology.id,
-          label: topology.definition.name,
+          label: topology.definition.getIn(['name']) as string,
           icon: 'pi pi-file',
           leaf: true,
           selectable: true,

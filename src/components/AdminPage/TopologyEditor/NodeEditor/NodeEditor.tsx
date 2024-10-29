@@ -1,3 +1,5 @@
+import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
+import {TopologyDefinition} from '@sb/types/Types';
 import React, {
   MouseEvent,
   useCallback,
@@ -16,7 +18,6 @@ import useResizeObserver from '@react-hook/resize-observer';
 import {NotificationController} from '@sb/lib/NotificationController';
 
 import {NetworkOptions} from './network.conf';
-import {TopologyDefinition} from '@sb/types/Types';
 import {DeviceManager} from '@sb/lib/DeviceManager';
 import {TopologyManager} from '@sb/lib/TopologyManager';
 
@@ -25,7 +26,7 @@ import './NodeEditor.sass';
 interface NodeEditorProps {
   notificationController: NotificationController;
 
-  openTopology: TopologyDefinition | null;
+  openTopology: YAMLDocument<TopologyDefinition> | null;
   deviceManager: DeviceManager;
 
   onEditNode: (nodeName: string) => void;
@@ -61,7 +62,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     if (!props.openTopology) return new Map();
 
     return new Map(
-      Object.entries(props.openTopology.topology.nodes)
+      Object.entries(props.openTopology.toJS().topology.nodes)
         .entries()
         .map(([index, [nodeName]]) => [index, nodeName])
     );
@@ -74,7 +75,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     const nodes: Node[] = [];
 
     for (const [index, [nodeName, node]] of Object.entries(
-      props.openTopology.topology.nodes
+      props.openTopology.toJS().topology.nodes
     ).entries()) {
       if (!node) continue;
 
@@ -87,11 +88,14 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     }
 
     const edges: Edge[] = [
-      ...props.openTopology.topology.links.entries().map(([index, link]) => ({
-        id: index,
-        from: nodeMap.get(link.endpoints[0].split(':')[0]),
-        to: nodeMap.get(link.endpoints[1].split(':')[0]),
-      })),
+      ...props.openTopology
+        .toJS()
+        .topology.links.entries()
+        .map(([index, link]) => ({
+          id: index,
+          from: nodeMap.get(link.endpoints[0].split(':')[0]),
+          to: nodeMap.get(link.endpoints[1].split(':')[0]),
+        })),
     ];
 
     return {nodes: nodes, edges: edges};

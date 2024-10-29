@@ -84,12 +84,11 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
       if (validate(obj, props.clabSchema).errors.length === 0) {
         setValidationState(ValidationState.Done);
+        props.topologyManager.apply(obj);
       } else {
         // Set this to working until the monaco worker has finished and generated the error
         setValidationState(ValidationState.Working);
       }
-
-      props.topologyManager.apply(obj);
     } catch (e) {
       setValidationState(ValidationState.Working);
     }

@@ -30,6 +30,14 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
     [props.property]
   );
 
+  function onTextInputSubmit(value: string): string | null {
+    if (props.property.type === 'number') {
+      return props.property.onUpdateValue(Number(value));
+    } else {
+      return props.property.onUpdateValue(value);
+    }
+  }
+
   return (
     <tr>
       <td className="sb-property-table-key">
@@ -86,12 +94,14 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
             <NodePropertyArray
               entries={props.property.value as string[]}
               onUpdateValue={props.property.onUpdateValue}
+              minItems={props.property.minItems ?? 0}
+              uniqueItems={props.property.uniqueItems}
             />
           </When>
           <Otherwise>
             <SBInput
               key={props.property.value as string}
-              onValueSubmit={props.property.onUpdateValue}
+              onValueSubmit={onTextInputSubmit}
               defaultValue={props.property.value as string}
               placeholder="Empty"
               keyfilter={props.property.type === 'number' ? 'int' : undefined}

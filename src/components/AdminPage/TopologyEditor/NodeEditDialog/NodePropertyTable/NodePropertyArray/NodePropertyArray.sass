@@ -14,6 +14,9 @@
     padding: 4px
     gap: 4px
 
+    &:last-child
+      margin-bottom: 8px
+
     & > div
       width: 100%
 
@@ -28,3 +31,20 @@
 
   .p-button-icon-only:focus
     box-shadow: none
+
+.sb-property-array-add-button
+  vertical-align: baseline
+  padding: 6px 12px
+  color: rgba(255, 255, 255, 0.87)
+  background: transparent
+  border: 1px solid var(--primary-color-border)
+  border-radius: 4px
+
+  .p-button-label
+    flex: revert
+
+  &:focus
+    box-shadow: none
+
+  &:hover
+    filter: brightness(1)

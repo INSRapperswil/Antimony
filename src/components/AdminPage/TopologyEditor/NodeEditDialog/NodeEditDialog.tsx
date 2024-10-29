@@ -148,7 +148,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
                   hideType={true}
                   isKeyEditable={true}
                   hasPropertyList={false}
-                  addText="Add Label"
+                  addText="Add Variable"
                   nodeEditor={nodeEditor!}
                   objectKey="env"
                   schemaKey="node-config.env"
@@ -194,7 +194,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
                 <NodePropertyTable
                   keyHeader="Label"
                   valueHeader="Value"
-                  addText="Add Variable"
+                  addText="Add Label"
                   hideType={true}
                   isKeyEditable={true}
                   hasPropertyList={false}

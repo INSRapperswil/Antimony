@@ -32,7 +32,6 @@ interface NodePropertyTableProps {
 
   hideType?: boolean;
   isKeyEditable?: boolean;
-  hasPropertyList: boolean;
 
   keyHeader?: string;
   valueHeader?: string;
@@ -42,12 +41,17 @@ interface NodePropertyTableProps {
 const NodePropertyTable: React.FC<NodePropertyTableProps> = (
   props: NodePropertyTableProps
 ) => {
+  // List of available properties or null, if property does not have any restrictions.
   const [availableProperties, setAvailableProperties] = useState<
     SelectItem[] | null
   >([]);
   const [propertyQuery, setPropertyQuery] = useState('');
+  const [propertyTable, setPropertyTable] = useState<ReactElement[]>([]);
 
-  const propertyList: SelectItem[] | null = useMemo(() => {
+  const newPropertyOverlayRef = useRef<OverlayPanel>(null);
+  const newPropertyInputRef = useRef<HTMLInputElement>(null);
+
+  const availablePropertiesFiltered: SelectItem[] | null = useMemo(() => {
     if (!availableProperties) return null;
     if (!propertyQuery) return availableProperties;
 
@@ -55,8 +59,6 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
       matchesSearch(property.value!, propertyQuery)
     );
   }, [availableProperties, propertyQuery]);
-
-  const [propertyTable, setPropertyTable] = useState<ReactElement[]>([]);
 
   const onTopologyUpdate = useCallback(() => {
     setPropertyTable([
@@ -73,32 +75,6 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
           />
         )),
     ]);
-  }, [
-    props.isKeyEditable,
-    props.nodeEditor,
-    props.objectKey,
-    props.schemaKey,
-    props.hideType,
-  ]);
-
-  const newPropertyOverlayRef = useRef<OverlayPanel>(null);
-  const newPropertyInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    props.nodeEditor.onEdit.register(onTopologyUpdate);
-    onTopologyUpdate();
-
-    return () => props.nodeEditor.onEdit.unregister(onTopologyUpdate);
-  }, [props.nodeEditor, onTopologyUpdate]);
-
-  function onAddPropertyOpen(event: MouseEvent<HTMLButtonElement>) {
-    if (!newPropertyOverlayRef) return;
-
-    // If object does not have property list, add new property directly
-    if (!props.hasPropertyList) {
-      onAddProperty('');
-      return;
-    }
 
     setAvailableProperties(
       props.nodeEditor
@@ -107,6 +83,30 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
           value: property,
         })) ?? null
     );
+  }, [
+    props.isKeyEditable,
+    props.nodeEditor,
+    props.objectKey,
+    props.schemaKey,
+    props.hideType,
+  ]);
+
+  useEffect(() => {
+    props.nodeEditor.onEdit.register(onTopologyUpdate);
+    onTopologyUpdate();
+
+    return () => props.nodeEditor.onEdit.unregister(onTopologyUpdate);
+  }, [props.nodeEditor, onTopologyUpdate]);
+
+  function onAddPropertyClicked(event: MouseEvent<HTMLButtonElement>) {
+    if (!newPropertyOverlayRef) return;
+
+    // If object does not have property list, add new empy property directly
+    if (availableProperties === null) {
+      onAddProperty('');
+      return;
+    }
+
     setPropertyQuery('');
     newPropertyOverlayRef.current?.show(event, event.target);
     newPropertyInputRef.current?.focus();
@@ -131,31 +131,40 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
 
   return (
     <>
-      <table className="sb-table">
-        <thead>
-          <tr>
-            <td className="sb-property-table-key">
-              {props.keyHeader ?? 'Property'}
-            </td>
-            <td className="sb-property-table-value">
-              {props.valueHeader ?? 'Value'}
-            </td>
-            <If condition={props.hideType}>
-              <td className="sb-property-table-type">Type</td>
-            </If>
-            <td className="sb-property-table-actions"></td>
-          </tr>
-        </thead>
-        <tbody>{propertyTable}</tbody>
-      </table>
+      <If condition={propertyTable.length > 0}>
+        <table className="sb-table sb-property-table">
+          <thead>
+            <tr>
+              <td className="sb-property-table-key">
+                {props.keyHeader ?? 'Property'}
+              </td>
+              <td className="sb-property-table-value">
+                {props.valueHeader ?? 'Value'}
+              </td>
+              <If condition={props.hideType}>
+                <td className="sb-property-table-type">Type</td>
+              </If>
+              <td className="sb-property-table-actions"></td>
+            </tr>
+          </thead>
+          <tbody>{propertyTable}</tbody>
+        </table>
+      </If>
+
       <div className="flex justify-content-center">
-        <Button
-          label={props.addText ?? 'Add Property'}
-          icon="pi pi-plus"
-          className="sb-table-add-button"
-          onClick={onAddPropertyOpen}
-        />
-        <If condition={propertyList}>
+        <If
+          condition={
+            availableProperties === null || availableProperties.length > 0
+          }
+        >
+          <Button
+            label={props.addText ?? 'Add Property'}
+            icon="pi pi-plus"
+            className="sb-property-table-add-button"
+            onClick={onAddPropertyClicked}
+          />
+        </If>
+        <If condition={availableProperties}>
           <OverlayPanel
             ref={newPropertyOverlayRef}
             className="sb-node-new-property-overlay"
@@ -177,7 +186,7 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
               />
             </IconField>
             <ListBox
-              options={propertyList!}
+              options={availablePropertiesFiltered!}
               className="w-full md:w-14rem"
               emptyMessage="No matching properties found"
               optionGroupLabel="value"

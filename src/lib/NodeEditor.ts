@@ -37,6 +37,7 @@ export type PropertyDefinition = {
   description?: string;
   availableValues?: string[];
   minItems?: number;
+  uniqueItems?: boolean;
 };
 
 export class NodeEditor {
@@ -290,6 +291,23 @@ export class NodeEditor {
       NodeEditor.combinePathAndKey(objectRootPath, propertyKey)
     );
 
+    /*
+     * Remove the object if it's now empty. Note that this only works on
+     * child objects and not the node itself, as the objectRootPath is empty
+     * for the node object.
+     */
+    const obj = objectPath.get(
+      updatedTopology.topology.nodes[this.editingNode],
+      objectRootPath
+    );
+
+    if (_.isEmpty(obj)) {
+      objectPath.del(
+        updatedTopology.topology.nodes[this.editingNode],
+        objectRootPath
+      );
+    }
+
     return this.validateAndSetTopology(
       updatedTopology,
       'Unable to remove property.'
@@ -504,6 +522,7 @@ export class NodeEditor {
         availableValues: filterSchemaEnum(type.enum),
         description: type.description,
         minItems: type.minItems,
+        uniqueItems: type.uniqueItems,
       };
     }
 

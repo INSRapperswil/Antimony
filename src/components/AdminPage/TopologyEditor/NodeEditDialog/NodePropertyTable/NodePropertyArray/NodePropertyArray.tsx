@@ -9,6 +9,9 @@ import './NodePropertyArray.sass';
 
 interface NodePropertyArrayProps {
   entries: string[];
+  minItems: number;
+  uniqueItems?: boolean;
+
   onUpdateValue: (entries: string[]) => string | null;
 }
 
@@ -23,6 +26,10 @@ const NodePropertyArray: React.FC<NodePropertyArrayProps> = (
   }, [props.entries]);
 
   function onEntryEdited(value: string, index: number): string | null {
+    if (props.uniqueItems && props.entries.includes(value)) {
+      return 'Array does not allow duplicate entries.';
+    }
+
     props.entries[index] = value;
     return props.onUpdateValue(props.entries);
   }
@@ -41,13 +48,13 @@ const NodePropertyArray: React.FC<NodePropertyArrayProps> = (
         {entries.map(entry => (
           <div key={entry.index}>
             <SBInput
-              key={entry.index}
+              key={entry.value}
               onValueSubmit={value => onEntryEdited(value, entry.index)}
               defaultValue={entry.value}
               placeholder="Empty"
               isHidden={true}
             />
-            <If condition={props.entries.length > 1}>
+            <If condition={props.entries.length >= props.minItems}>
               <Button
                 icon="pi pi-trash"
                 severity="danger"
@@ -63,9 +70,8 @@ const NodePropertyArray: React.FC<NodePropertyArrayProps> = (
         ))}
       </div>
       <Button
-        label="Add"
         icon="pi pi-plus"
-        className="sb-table-add-button"
+        className="sb-property-array-add-button"
         onClick={onAddEntry}
       />
     </>

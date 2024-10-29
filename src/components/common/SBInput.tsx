@@ -1,16 +1,14 @@
 import React, {useState} from 'react';
 
 import classNames from 'classnames';
-import {InputTextareaProps} from 'primereact/inputtextarea';
-import {InputText, InputTextProps} from 'primereact/inputtext';
+import {InputText} from 'primereact/inputtext';
+import {KeyFilterType} from 'primereact/keyfilter';
 
 import {If} from '@sb/types/control';
 
 import './SBInput.sass';
 
-type InputProps = InputTextProps & InputTextareaProps;
-
-interface SBInputProps extends InputProps {
+interface SBInputProps {
   id?: string;
   label?: string;
   isHidden?: boolean;
@@ -18,6 +16,8 @@ interface SBInputProps extends InputProps {
   wasEdited?: boolean;
   defaultValue?: string;
   placeholder?: string;
+  keyfilter?: KeyFilterType;
+  tooltip?: string;
 
   onValueSubmit?: (value: string) => string | null;
 }
@@ -57,9 +57,10 @@ const SBInput = (props: SBInputProps) => {
           'sb-input-error': !!validationError,
           'sb-input-small': props.isHidden,
         })}
+        keyfilter={props.keyfilter}
         placeholder={props.placeholder}
         readOnly={!isEditing && props.isHidden}
-        tooltip={validationError ?? undefined}
+        tooltip={validationError ?? props.tooltip ?? undefined}
         onBlur={e => onValueSubmit(e.target.value)}
         onKeyDown={e => {
           if (e.key === 'Enter') (e.target as HTMLElement).blur();

@@ -28,24 +28,6 @@ build_frontend:
   script:
     - gcloud builds submit --config build.dev.yaml
 
-deploy_mockserver:
-  stage: deploy
-  image: google/cloud-sdk:latest
-  before_script:
-    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
-    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
-    - gcloud config set project antimony-438914
-  script:
-    - >-
-      gcloud run deploy antimony-mockserver
-      --image ghcr.io/smocker-dev/smocker:latest
-      --allow-unauthenticated
-      --region=europe-west1
-      --memory=2Gi
-      --ingress=all
-      --port 8080
-      --cpu=1
-
 deploy_frontend:
   stage: deploy
   image: google/cloud-sdk:latest

@@ -1,4 +1,4 @@
-import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
+import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Image} from 'primereact/image';

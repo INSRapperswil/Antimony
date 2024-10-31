@@ -7,7 +7,7 @@ import {
   useReady,
   useResource,
   useSingleton,
-} from '@sb/lib/Utils/Hooks';
+} from '@sb/lib/utils/Hooks';
 import {
   ClabSchema,
   DeviceInfo,

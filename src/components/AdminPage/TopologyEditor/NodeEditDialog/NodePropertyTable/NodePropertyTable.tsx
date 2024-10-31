@@ -18,7 +18,7 @@ import {OverlayPanel} from 'primereact/overlaypanel';
 
 import {If} from '@sb/types/control';
 import {NodeEditor} from '@sb/lib/NodeEditor';
-import {matchesSearch} from '@sb/lib/Utils/Utils';
+import {matchesSearch} from '@sb/lib/utils/Utils';
 import {OptionGroupOptions} from '@sb/types/Types';
 import NodePropertyTableRow from './NodePropertyTableRow';
 

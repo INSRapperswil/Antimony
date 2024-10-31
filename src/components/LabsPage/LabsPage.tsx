@@ -7,7 +7,7 @@ import {InputText} from 'primereact/inputtext';
 
 import {APIConnector} from '@sb/lib/APIConnector';
 import {DeviceManager} from '@sb/lib/DeviceManager';
-import {useReady, useResource} from '@sb/lib/Utils/Hooks';
+import {useReady, useResource} from '@sb/lib/utils/Hooks';
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
 import {DeviceInfo, Group, Lab, LabState, RawLab} from '@sb/types/Types';

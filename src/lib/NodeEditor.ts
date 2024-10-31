@@ -1,4 +1,4 @@
-import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
+import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 import _ from 'lodash';
 import objectPath from 'object-path';
 import {validate} from 'jsonschema';
@@ -12,8 +12,8 @@ import {
   PropertySchema,
   FieldType,
 } from '@sb/types/Types';
-import {Binding} from '@sb/lib/Utils/Binding';
-import {arrayOf, filterSchemaEnum} from '@sb/lib/Utils/Utils';
+import {Binding} from '@sb/lib/utils/Binding';
+import {arrayOf, filterSchemaEnum} from '@sb/lib/utils/Utils';
 import {NotificationController} from '@sb/lib/NotificationController';
 
 /*

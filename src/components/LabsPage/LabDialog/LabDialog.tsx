@@ -6,7 +6,7 @@ import Graph from 'react-graph-vis';
 import {Button} from 'primereact/button';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import {useResource} from '@sb/lib/Utils/Hooks';
+import {useResource} from '@sb/lib/utils/Hooks';
 import {APIConnector} from '@sb/lib/APIConnector';
 import {DeviceManager} from '@sb/lib/DeviceManager';
 import {TopologyManager} from '@sb/lib/TopologyManager';

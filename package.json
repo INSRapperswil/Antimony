@@ -50,7 +50,8 @@
     "clean": "gts clean",
     "compile": "tsc",
     "fix": "gts fix '**/*.ts'",
-    "startmock": "npx smoke server"
+    "startmock": "cd server && sh ./start.sh",
+    "stopmock": "cd server && sh ./stop.sh"
   },
   "devDependencies": {
     "@babel/core": "^7.23.3",
@@ -89,7 +90,6 @@
     "postcss-loader": "^8.1.1",
     "sass": "^1.79.4",
     "sass-loader": "^16.0.2",
-    "smoke": "^3.1.1",
     "style-loader": "^3.3.3",
     "ts-loader": "^9.5.0",
     "typescript": "^5.4.3",

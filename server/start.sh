@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
+bash ./stop.sh
+
 docker run -d \
   --restart=always \
-  -p 8080:8080 \
+  -p 3000:8080 \
   -p 8081:8081 \
   --name smocker \
   ghcr.io/smocker-dev/smocker

@@ -3,8 +3,11 @@
     path: /groups
   response:
     status: 200
+    headers:
+      Content-Type: application/json
     body: |-
-      "payload": [
+      {
+        "payload": [
           {
             "id": "19c7d29d-fb89-4632-b021-c5625f96ba86",
             "name": "CN2",
@@ -26,3 +29,4 @@
             "public": true
           }
         ]
+      }

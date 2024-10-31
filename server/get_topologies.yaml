@@ -3,8 +3,11 @@
     path: /topologies
   response:
     status: 200
+    headers:
+      Content-Type: application/json
     body: |-
-      "payload": [
+      {
+        "payload": [
           {
             "id": "546975c8-3ac5-4cf9-9b9c-c5db53d383e5",
             "definition": "name: srlceos01\r\n\r\ntopology:\r\n  nodes:\r\n    srl:\r\n      kind: nokia_srlinux\r\n      image: ghcr.io\/nokia\/srlinux\r\n    ceos:\r\n      kind: ceos\r\n      image: ceos:4.32.0F\r\n\r\n  links:\r\n    - endpoints: [\"srl:e1-1\", \"ceos:eth1\"]",
@@ -58,3 +61,4 @@
             "creatorId": "abc"
           }
         ]
+      }

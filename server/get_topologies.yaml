@@ -1,0 +1,64 @@
+- request:
+    method: GET
+    path: /topologies
+  response:
+    status: 200
+    headers:
+      Content-Type: application/json
+    body: |-
+      {
+        "payload": [
+          {
+            "id": "546975c8-3ac5-4cf9-9b9c-c5db53d383e5",
+            "definition": "name: srlceos01\r\n\r\ntopology:\r\n  nodes:\r\n    srl:\r\n      kind: nokia_srlinux\r\n      image: ghcr.io\/nokia\/srlinux\r\n    ceos:\r\n      kind: ceos\r\n      image: ceos:4.32.0F\r\n\r\n  links:\r\n    - endpoints: [\"srl:e1-1\", \"ceos:eth1\"]",
+            "groupId": "19c7d29d-fb89-4632-b021-c5625f96ba86",
+            "creatorId": "abc"
+          },
+          {
+            "id": "9cf003be-a33d-48d3-a1f6-f547a3543613",
+            "name": "Topo02_OSPF",
+            "definition": "name: arp_lab\r\n\r\ntopology:\r\n  kinds:\r\n    ceos:\r\n      image: ceos:4.30.2f\r\n    linux:\r\n      image: insost\/network-ninja:latest\r\n\r\n  nodes:\r\n    r1:\r\n      kind: ceos\r\n      startup-config: config\/router1.conf\r\n    r2:\r\n      kind: ceos\r\n      startup-config: config\/router2.conf\r\n    sw1:\r\n      kind: ceos\r\n      startup-config: config\/switch.conf\r\n    sw2:\r\n      kind: ceos\r\n      startup-config: config\/switch.conf\r\n    \r\n    alice:\r\n      kind: linux\r\n      exec:\r\n        - \"ip address add 10.10.11.2\/24 dev eth1\"\r\n        - \"ip link set eth1 address aa:aa:aa:aa:aa:02\"\r\n        - \"route del default\"\r\n        - \"route add default gw 10.10.11.1\"\r\n    bob:\r\n      kind: linux\r\n      exec:\r\n        - \"ip address add 10.10.10.2\/24 dev eth1\"\r\n        - \"ip link set eth1 address aa:aa:aa:aa:aa:01\"\r\n        - \"route del default\"\r\n        - \"route add default gw 10.10.10.1\"\r\n    attacker:\r\n      kind: linux\r\n      image: network-ninja-scapy:latest\r\n      binds:\r\n        - \"attacker_data:\/data\"\r\n      exec:\r\n        - \"ip address add 10.10.11.3\/24 dev eth1\"\r\n        - \"ip link set eth1 address aa:aa:aa:aa:aa:03\"\r\n        - \"route del default\"\r\n        - \"route add default gw 10.10.11.1\"\r\n\r\n  links:\r\n    - endpoints: [\"r1:eth1\", \"r2:eth1\"]\r\n\r\n    - endpoints: [\"r1:eth2\", \"sw1:eth1\"]\r\n    - endpoints: [\"sw1:eth2\", \"bob:eth1\"]\r\n\r\n    - endpoints: [\"r2:eth2\", \"sw2:eth1\"]\r\n    - endpoints: [\"sw2:eth2\", \"alice:eth1\"]\r\n    - endpoints: [\"sw2:eth3\", \"attacker:eth1\"]",
+            "groupId": "19c7d29d-fb89-4632-b021-c5625f96ba86",
+            "creatorId": "abc"
+          },
+          {
+            "id": "abed2373-83a1-4eb6-8386-5b186c366f13",
+            "definition": "name: test",
+            "creatorId": "abc"
+          },
+          {
+            "id": "2c444b75-3302-44b2-a0ab-7fad40591d28",
+            "definition": "name: test",
+            "creatorId": "abc"
+          },
+          {
+            "id": "081f5461-a624-44c6-b143-c516dfa37b4b",
+            "definition": "name: test",
+            "creatorId": "abc"
+          },
+          {
+            "id": "e34605f8-87e0-48db-bdad-d1c1f4994c02",
+            "definition": "name: test",
+            "groupId": "db59b478-0241-40ae-b553-d16a24e34626",
+            "creatorId": "abc"
+          },
+          {
+            "id": "3197da11-3c60-4041-8b72-f3781d055f8b",
+            "definition": "name: test",
+            "groupId": "db59b478-0241-40ae-b553-d16a24e34626",
+            "creatorId": "abc"
+          },
+          {
+            "id": "b6c9269f-ef38-47d5-9fd7-c016b8c50e0f",
+            "definition": "name: routing_lab\r\n\r\ntopology:\r\n  kinds:\r\n    ceos:\r\n      image: ceos:4.30.2f\r\n    linux:\r\n      image: insost\/network-ninja:latest\r\n\r\n  nodes:\r\n    router1:\r\n      kind: ceos\r\n      startup-config: config\/router1.conf\r\n    router2:\r\n      kind: ceos\r\n      startup-config: config\/router2.conf\r\n    switch1:\r\n      kind: ceos\r\n      startup-config: config\/switch.conf\r\n    switch2:\r\n      kind: ceos\r\n      startup-config: config\/switch.conf\r\n    \r\n    client1:\r\n      kind: linux\r\n      exec:\r\n        - \"ip address add 10.101.0.10\/23 dev eth1\"\r\n        - \"route del default\"\r\n        - \"route add default gw 10.101.0.1\"\r\n    client2:\r\n      kind: linux\r\n      exec:\r\n        - \"ip address add 10.102.20.10\/25 dev eth1\"\r\n        - \"route del default\"\r\n        - \"route add default gw 10.102.20.1\"\r\n\r\n  links:\r\n    - endpoints: [\"router1:eth1\", \"router2:eth1\"]\r\n\r\n    - endpoints: [\"router1:eth2\", \"switch1:eth1\"]\r\n    - endpoints: [\"switch1:eth2\", \"client1:eth1\"]\r\n\r\n    - endpoints: [\"router2:eth2\", \"switch2:eth1\"]\r\n    - endpoints: [\"switch2:eth2\", \"client2:eth1\"]",
+            "groupId": "c7a61325-d71d-4aae-8a10-0adb66d8cde2",
+            "creatorId": "abc"
+          },
+          {
+            "id": "aa0c5a02-1cda-412f-9504-242d3751d2d8",
+            "definition": "name: routing_lab\r\n\r\ntopology:\r\n  kinds:\r\n    ceos:\r\n      image: ceos:4.30.2f\r\n    linux:\r\n      image: insost\/network-ninja:latest\r\n\r\n  nodes:\r\n    router1:\r\n      kind: ceos\r\n      startup-config: config\/router1.conf\r\n    router2:\r\n      kind: ceos\r\n      startup-config: config\/router2.conf\r\n    switch1:\r\n      kind: ceos\r\n      startup-config: config\/switch.conf\r\n    switch2:\r\n      kind: ceos\r\n      startup-config: config\/switch.conf\r\n    \r\n    client1:\r\n      kind: linux\r\n      exec:\r\n        - \"ip address add 10.101.0.10\/23 dev eth1\"\r\n        - \"route del default\"\r\n        - \"route add default gw 10.101.0.1\"\r\n    client2:\r\n      kind: linux\r\n      exec:\r\n        - \"ip address add 10.102.20.10\/25 dev eth1\"\r\n        - \"route del default\"\r\n        - \"route add default gw 10.102.20.1\"\r\n\r\n  links:\r\n    - endpoints: [\"router1:eth1\", \"router2:eth1\"]\r\n\r\n    - endpoints: [\"router1:eth2\", \"switch1:eth1\"]\r\n    - endpoints: [\"switch1:eth2\", \"client1:eth1\"]\r\n\r\n    - endpoints: [\"router2:eth2\", \"switch2:eth1\"]\r\n    - endpoints: [\"switch2:eth2\", \"client2:eth1\"]",
+            "groupId": "c7a61325-d71d-4aae-8a10-0adb66d8cde2",
+            "creatorId": "abc"
+          }
+        ]
+      }

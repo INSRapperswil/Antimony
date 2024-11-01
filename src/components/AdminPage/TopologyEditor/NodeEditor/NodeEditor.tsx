@@ -1,4 +1,4 @@
-import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
+import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 import {TopologyDefinition} from '@sb/types/Types';
 import React, {
   MouseEvent,

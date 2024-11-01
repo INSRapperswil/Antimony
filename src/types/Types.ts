@@ -1,4 +1,4 @@
-import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
+import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 
 export type uuid4 = string;
 

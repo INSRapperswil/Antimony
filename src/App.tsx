@@ -11,7 +11,7 @@ import 'primereact/resources/themes/lara-dark-blue/theme.css';
 import {APIConnector} from '@sb/lib/APIConnector';
 import {Toast} from 'primereact/toast';
 import {NotificationController} from '@sb/lib/NotificationController';
-import {useReady, useSingleton} from '@sb/lib/Utils/Hooks';
+import {useReady, useSingleton} from '@sb/lib/utils/Hooks';
 
 import './App.sass';
 import LabsPage from '@sb/components/LabsPage/LabsPage';

@@ -14,6 +14,7 @@ import {Lab, Topology, TopologyDefinition, TopologyOut} from '@sb/types/Types';
 import {NetworkOptions} from '@sb/components/AdminPage/TopologyEditor/NodeEditor/network.conf';
 
 import './LabDialog.sass';
+import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
 
 type GraphDefinition = {
   nodes?: Node[];
@@ -28,7 +29,7 @@ interface LabDialogProps {
 const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
   const [topologyDefinition, setTopologyDefinition] =
-    useState<TopologyDefinition | null>(null);
+    useState<YAMLDocument<TopologyDefinition> | null>(null);
   const containerRef = useRef(null);
 
   const [topologies] = useResource<Topology[]>(
@@ -62,7 +63,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     const nodes: Node[] = [];
 
     for (const [index, [nodeName, node]] of Object.entries(
-      topologyDefinition.topology.nodes
+      topologyDefinition.toJS().topology.nodes
     ).entries()) {
       if (!node) continue;
 
@@ -75,11 +76,14 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     }
 
     const edges: Edge[] = [
-      ...topologyDefinition.topology.links.entries().map(([index, link]) => ({
-        id: index,
-        from: nodeMap.get(link.endpoints[0].split(':')[0]),
-        to: nodeMap.get(link.endpoints[1].split(':')[0]),
-      })),
+      ...topologyDefinition
+        .toJS()
+        .topology.links.entries()
+        .map(([index, link]) => ({
+          id: index,
+          from: nodeMap.get(link.endpoints[0].split(':')[0]),
+          to: nodeMap.get(link.endpoints[1].split(':')[0]),
+        })),
     ];
 
     return {nodes: nodes, edges: edges};

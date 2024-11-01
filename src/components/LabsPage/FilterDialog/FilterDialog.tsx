@@ -32,7 +32,7 @@ const FilterDialog: React.FC<FilterDialogProps> = (
 
   return (
     <div className="filters-container">
-      <h3 className="filters-title">Select Filters</h3>
+      <p className="filters-title">Select Filters</p>
       <div className="filters-chips-container">
         {Object.values(LabState)
           .filter(value => typeof value === 'number')

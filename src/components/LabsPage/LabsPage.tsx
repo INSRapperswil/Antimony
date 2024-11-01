@@ -14,6 +14,8 @@ import {DeviceInfo, Group, Lab, LabState, RawLab} from '@sb/types/Types';
 import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 
 import './LabsPage.sass';
+import {IconField} from 'primereact/iconfield';
+import {InputIcon} from 'primereact/inputicon';
 
 interface LabsPageProps {
   apiConnector: APIConnector;
@@ -94,22 +96,16 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
     <If condition={isReady}>
       <div className="bg-primary font-bold height-100 width-100 sb-card overflow-y-auto overflow-x-hidden">
         <div className="search-bar">
-          <span className="search-bar-icon">
-            <i className="pi pi-search" />
-          </span>
-          <InputText
-            placeholder="Search here..."
-            className="search-bar-input"
-          />
-
+          <IconField className="search-bar-input" iconPosition="left">
+            <InputIcon className="pi pi-search"></InputIcon>
+            <InputText className="width-100" placeholder="Search here..." />
+          </IconField>
           <span
             className="search-bar-icon"
-            style={{cursor: 'pointer'}}
             onClick={() => setFilterDialogVisible(true)}
           >
             <i className="pi pi-filter" />
           </span>
-
           <Dialog
             header={
               <div className="dialog-header">

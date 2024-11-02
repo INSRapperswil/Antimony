@@ -17,7 +17,7 @@ import './App.sass';
 import LabsPage from '@sb/components/LabsPage/LabsPage';
 
 const App: React.FC = () => {
-  const [pageIndex, setPageIndex] = useState(1); //starting page
+  const [pageIndex, setPageIndex] = useState(0); //starting page
 
   const [isAuthenticated, setAuthenticated] = useState(false);
 

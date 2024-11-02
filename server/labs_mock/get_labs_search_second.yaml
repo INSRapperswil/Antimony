@@ -1,0 +1,68 @@
+- request:
+    method: GET
+    path: /labs
+    query_params:
+      limit:
+        matcher: ShouldEqual
+        value: "7"
+      offset:
+        matcher: ShouldEqual
+        value: "0"
+      stateFilter:
+        matcher: ShouldMatch
+        value: "([0-4])(,([0-4]))*"
+      searchQuery:
+        matcher: ShouldMatch
+        value: "CN2"
+  response:
+    status: 200
+    headers:
+      Content-Type: application/json
+      X-Item-Count: 10
+    body: |-
+      {
+        "payload": [
+          {
+            "id": "94ec1976-2cef-486c-a1e2-30257a7a0392",
+            "name": "Lab1-01",
+            "startDate": "2024-09-26T11:46:38Z",
+            "endDate": "2024-09-28T11:46:38Z",
+            "groupId": "19c7d29d-fb89-4632-b021-c5625f96ba86",
+            "topologyId": "546975c8-3ac5-4cf9-9b9c-c5db53d383e5",
+            "nodeMeta": [
+              {
+                "name": "srl/nokia_srlinux",
+                "user": "ins",
+                "host": "example.com",
+                "port": 9003,
+                "webSsh": "console.ltb3.network.garden/whatever/stuff"
+              }
+            ],
+            "edgesharkLink": "edgeshark.example.com/whatever",
+            "runnerId": "6308b71e-c496-46a2-8d00-ba7e513a4aa3",
+            "latestStateChange": "2024-09-26T11:46:38Z",
+            "state": 2
+          },
+          {
+            "id": "7dab7ac4-e486-4528-a4ec-e675bca8c1dc",
+            "name": "Lab2-03",
+            "startDate": "2024-09-26T11:46:38Z",
+            "endDate": "2024-09-28T11:46:38Z",
+            "groupId": "19c7d29d-fb89-4632-b021-c5625f96ba86",
+            "topologyId": "546975c8-3ac5-4cf9-9b9c-c5db53d383e5",
+            "nodeMeta": [
+              {
+                "name": "srl/nokia_srlinux",
+                "user": "ins",
+                "host": "example.com",
+                "port": 9003,
+                "webSsh": "console.ltb3.network.garden/whatever/stuff"
+              }
+            ],
+            "edgesharkLink": "edgeshark.example.com/whatever",
+            "runnerId": "6308b71e-c496-46a2-8d00-ba7e513a4aa3",
+            "latestStateChange": "2024-09-26T11:46:38Z",
+            "state": 1
+          }
+        ]
+      }

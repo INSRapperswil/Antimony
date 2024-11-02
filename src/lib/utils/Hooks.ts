@@ -30,6 +30,11 @@ export function useResource<T>(
     if (fetchState === FetchState.Pending) fetchData();
   }, [fetchState, fetchData]);
 
+  useEffect(() => {
+    console.log('fetchingdata');
+    fetchData();
+  }, [path]);
+
   return [data, fetchState, fetchData];
 }
 

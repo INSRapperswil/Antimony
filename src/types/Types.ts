@@ -33,11 +33,6 @@ export type Lab = {
   state: LabState;
 };
 
-export type RawLab = {
-  item_Count: number;
-  labs: Lab[];
-};
-
 export type TopologyIn = {
   name: string;
   definition: string;

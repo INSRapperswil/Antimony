@@ -10,11 +10,18 @@ import {useResource} from '@sb/lib/utils/Hooks';
 import {APIConnector} from '@sb/lib/APIConnector';
 import {DeviceManager} from '@sb/lib/DeviceManager';
 import {TopologyManager} from '@sb/lib/TopologyManager';
-import {Lab, Topology, TopologyDefinition, TopologyOut} from '@sb/types/Types';
+import {
+  Group,
+  Lab,
+  Topology,
+  TopologyDefinition,
+  TopologyOut,
+} from '@sb/types/Types';
 import {NetworkOptions} from '@sb/components/AdminPage/TopologyEditor/NodeEditor/network.conf';
 
 import './LabDialog.sass';
-import {YAMLDocument} from '@sb/lib/Utils/YAMLDocument';
+import {Dialog} from 'primereact/dialog';
+import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 
 type GraphDefinition = {
   nodes?: Node[];
@@ -24,6 +31,7 @@ interface LabDialogProps {
   lab: Lab;
   apiConnector: APIConnector;
   deviceManager: DeviceManager;
+  groupName: String;
 }
 
 const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
@@ -31,6 +39,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const [topologyDefinition, setTopologyDefinition] =
     useState<YAMLDocument<TopologyDefinition> | null>(null);
   const containerRef = useRef(null);
+  const [dialogVisible, setDialogVisible] = useState<boolean>(false);
 
   const [topologies] = useResource<Topology[]>(
     '/topologies',
@@ -114,8 +123,50 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
           />
         </div>
         <div className="topology-footer">
-          <Button style={{alignSelf: 'flex-start'}}>Reset</Button>
-          <Button style={{alignSelf: 'flex-end'}}>Abort</Button>
+          <Button className="p-component" style={{alignSelf: 'flex-start'}}>
+            Reset
+          </Button>
+          <Button
+            className="p-component"
+            style={{alignSelf: 'flex-end'}}
+            onClick={() => {
+              setDialogVisible(true);
+              console.log('got clicked');
+            }}
+          >
+            Abort
+          </Button>
+          <Dialog
+            header={
+              <div className="dialog-header">
+                <strong>Abort?</strong>
+              </div>
+            }
+            visible={dialogVisible}
+            className="dialog-content-second"
+            onHide={() => setDialogVisible(false)}
+          >
+            <div
+              className=""
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <p>do you really want to be abort This Scheduled Lab</p>
+              <p>Lab name: {props.lab.name}</p>
+              <p>Group name: {props.groupName}</p>
+              <div className="abort-buttons">
+                <Button
+                  className="p-button p-component"
+                  onClick={() => setDialogVisible(false)}
+                >
+                  Cancel
+                </Button>
+                <Button className="p-button p-component">Abort</Button>
+              </div>
+            </div>
+          </Dialog>
         </div>
       </div>
     </div>

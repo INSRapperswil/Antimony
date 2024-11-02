@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Chip} from 'primereact/chip';
 import {Button} from 'primereact/button';
@@ -10,7 +10,7 @@ import {DeviceManager} from '@sb/lib/DeviceManager';
 import {useReady, useResource} from '@sb/lib/utils/Hooks';
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
-import {DeviceInfo, Group, Lab, LabState, RawLab} from '@sb/types/Types';
+import {DeviceInfo, Group, Lab, LabState} from '@sb/types/Types';
 import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 
 import './LabsPage.sass';
@@ -20,6 +20,14 @@ import {InputIcon} from 'primereact/inputicon';
 interface LabsPageProps {
   apiConnector: APIConnector;
 }
+
+const statusIcons: Record<LabState, string> = {
+  [LabState.Scheduled]: 'pi pi-calendar',
+  [LabState.Deploying]: '',
+  [LabState.Running]: 'pi pi-sync',
+  [LabState.Failed]: 'pi pi-times-circle',
+  [LabState.Done]: 'pi pi-check',
+};
 
 const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
   const [LabDialogVisible, setLabDialogVisible] = useState<boolean>(false);
@@ -32,35 +40,27 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
     LabState.Deploying,
     LabState.Running,
     LabState.Failed,
+    LabState.Done,
   ]);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(0);
-  const [pageSize] = useState<number>(8);
+  const [pageSize] = useState<number>(7);
   const [groups] = useResource<Group[]>('/groups', props.apiConnector, []);
-
+  const searchQueryRef = useRef('');
+  const [searchQuery, setSearchQuery] = useState<String>('');
   const [devices] = useResource<DeviceInfo[]>(
     '/devices',
     props.apiConnector,
     []
   );
-
-  const defaultLabQuery: RawLab = {
-    item_Count: 0,
-    labs: [],
-  };
-
-  const [labquery] = useResource<RawLab>(
-    '/labs',
-    props.apiConnector,
-    defaultLabQuery
-  );
+  const labsPath = `/labs?limit=${pageSize}&offset=${currentPage * pageSize}&stateFilter=${selectedFilters.join(',')}&searchQuery=${searchQuery}`;
+  console.log(labsPath);
+  const [labQuery] = useResource<Lab[]>(labsPath, props.apiConnector, []);
 
   useEffect(() => {
-    console.log(labquery);
-    console.log(labquery.item_Count);
-    setTotalAmountOfEntries(labquery.item_Count);
-    setLabs(labquery.labs);
-  }, [selectedFilters, totalAmountOfEntries, labquery]);
+    setTotalAmountOfEntries(10); //useResource needs update for api header
+    setLabs(labQuery);
+  }, [selectedFilters, totalAmountOfEntries, labQuery, currentPage]);
 
   function getGroupById(groupId?: String): String {
     const group = groups.find(group => group.id === groupId);
@@ -81,10 +81,14 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
   };
 
   const handlePreviousPage = () => {
-    if (currentPage > 1) {
+    if (currentPage > 0) {
       setCurrentPage(currentPage - 1);
     }
   };
+
+  const handleSearch = useCallback(() => {
+    setSearchQuery(searchQueryRef.current);
+  }, []);
 
   const deviceManager = useMemo(() => {
     if (!devices) return null;
@@ -98,7 +102,25 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
         <div className="search-bar">
           <IconField className="search-bar-input" iconPosition="left">
             <InputIcon className="pi pi-search"></InputIcon>
-            <InputText className="width-100" placeholder="Search here..." />
+            <InputText
+              className="width-100"
+              placeholder="Search here..."
+              onChange={e => {
+                searchQueryRef.current = e.target.value;
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                }
+              }}
+            />
+            <Button
+              className="pi-button"
+              label="Reset"
+              onClick={() => {
+                setSearchQuery('');
+              }}
+            />
           </IconField>
           <span
             className="search-bar-icon"
@@ -124,7 +146,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
             </div>
           </Dialog>
         </div>
-        <div style={{display: 'flex', marginBottom: '1em'}}>
+        <div style={{display: 'flex', margin: '1em'}}>
           {selectedFilters.map(filter => (
             <Chip
               key={filter}
@@ -164,9 +186,8 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
 
                     {/* State */}
                     <div className="lab-state">
-                      <span className="lab-state-label">
-                        {LabState[lab.state]}
-                      </span>
+                      <i className={statusIcons[lab.state]}></i>
+                      <label className="lab-state-label">12.11.2024</label>
                     </div>
                   </div>
                 ))}
@@ -176,7 +197,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
                 <Button
                   label="Previous"
                   onClick={handlePreviousPage}
-                  disabled={currentPage === 1}
+                  disabled={currentPage === 0}
                   className="pagination-button"
                 />
                 <span className="pagination-info">
@@ -212,6 +233,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
                       lab={selectedLab!}
                       apiConnector={props.apiConnector}
                       deviceManager={deviceManager!}
+                      groupName={getGroupById(selectedLab!.groupId)}
                     />
                   </div>
                 </If>

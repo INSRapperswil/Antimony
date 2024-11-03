@@ -1,5 +1,13 @@
+import {NotificationControllerContext} from '@sb/lib/NotificationController';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import {Image} from 'primereact/image';
 import {Dialog} from 'primereact/dialog';
@@ -9,25 +17,16 @@ import {Accordion, AccordionTab} from 'primereact/accordion';
 
 import {If} from '@sb/types/control';
 import {NodeEditor} from '@sb/lib/NodeEditor';
-import {DeviceManager} from '@sb/lib/DeviceManager';
 import SBInput from '@sb/components/common/SBInput';
-import {TopologyManager} from '@sb/lib/TopologyManager';
-import {ClabSchema, TopologyDefinition} from '@sb/types/Types';
+import {TopologyDefinition} from '@sb/types/Types';
 import NodePropertyTable from './NodePropertyTable/NodePropertyTable';
-import {NotificationController} from '@sb/lib/NotificationController';
 
 import './NodeEditDialog.sass';
 
 interface NodeEditDialogProps {
-  notificationController: NotificationController;
-
   editingTopology: YAMLDocument<TopologyDefinition> | null;
   editingNode: string | null;
   isOpen: boolean;
-  clabSchema: ClabSchema | null;
-
-  topologyManager: TopologyManager;
-  deviceManager: DeviceManager;
 
   onClose: () => void;
 }
@@ -37,31 +36,40 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
 ) => {
   const [nodeKind, setNodeKind] = useState('');
 
+  const topologyStore = useContext(RootStoreContext).topologyStore;
+  const schemaStore = useContext(RootStoreContext).schemaStore;
+  const deviceStore = useContext(RootStoreContext).deviceStore;
+  const notificationController = useContext(NotificationControllerContext);
+
   const nodeEditor = useMemo(() => {
-    if (!props.editingNode || !props.editingTopology || !props.clabSchema) {
+    if (
+      !props.editingNode ||
+      !props.editingTopology ||
+      !schemaStore.clabSchema
+    ) {
       return null;
     }
 
     return new NodeEditor(
-      props.clabSchema,
+      schemaStore.clabSchema,
       props.editingNode,
       props.editingTopology,
-      props.notificationController
+      notificationController
     );
   }, [
-    props.clabSchema,
+    schemaStore.clabSchema,
     props.editingNode,
     props.editingTopology,
-    props.notificationController,
+    notificationController,
   ]);
 
   const kindList = useMemo(() => {
-    if (!props.clabSchema) return;
+    if (!schemaStore.clabSchema) return;
 
-    return props.clabSchema['definitions']['node-config']['properties']['kind'][
-      'enum'
-    ]!.map(kind => ({value: kind}));
-  }, [props.clabSchema]);
+    return schemaStore.clabSchema['definitions']['node-config']['properties'][
+      'kind'
+    ]['enum']!.map(kind => ({value: kind}));
+  }, [schemaStore]);
 
   const onTopologyUpdate = useCallback(() => {
     if (!nodeEditor || !nodeEditor.getNode()) return;
@@ -81,7 +89,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   function onClose() {
     if (!nodeEditor) return;
 
-    props.topologyManager.apply(nodeEditor.getTopology());
+    topologyStore.manager.apply(nodeEditor.getTopology());
     props.onClose();
   }
 
@@ -98,7 +106,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
           <div className="sb-dialog-header">
             <div className="sb-dialog-header-title">
               <Image
-                src={props.deviceManager.getNodeIcon(nodeEditor!.getNode())}
+                src={deviceStore.getNodeIcon(nodeEditor!.getNode())}
                 width="45px"
               />
               <span>Edit Node</span>

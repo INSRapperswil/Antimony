@@ -1,21 +1,24 @@
+import {Monaco} from '@monaco-editor/react';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
+import {If} from '@sb/types/control';
+import {toJS} from 'mobx';
+import * as monaco from 'monaco-editor';
+import {editor} from 'monaco-editor';
+import {configureMonacoYaml} from 'monaco-yaml';
 import React, {
   forwardRef,
   useCallback,
+  useContext,
   useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
 } from 'react';
+import MonacoEditor from 'react-monaco-editor';
 
 import {Document} from 'yaml';
-import {editor} from 'monaco-editor';
-import * as monaco from 'monaco-editor';
-import {Monaco} from '@monaco-editor/react';
-import MonacoEditor from 'react-monaco-editor';
-import {configureMonacoYaml} from 'monaco-yaml';
 
-import {MonacoOptions, AntimonyTheme} from './monaco.conf';
-import {ClabSchema} from '@sb/types/Types';
+import {AntimonyTheme, MonacoOptions} from './monaco.conf';
 
 import './MonacoWrapper.sass';
 
@@ -29,7 +32,6 @@ window.MonacoEnvironment = {
 
 interface MonacoWrapperProps {
   openTopology: Document | null;
-  schema: ClabSchema;
 
   setContent: (content: string) => void;
   setValidationError: (error: string | null) => void;
@@ -51,6 +53,8 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
   (props, ref) => {
     const textModelRef = useRef<editor.ITextModel | null>(null);
     const monacoEditorRef = useRef<Monaco | null>(null);
+
+    const schemaStore = useContext(RootStoreContext).schemaStore;
 
     useImperativeHandle(ref, () => ({
       openTopology: (topology: Document) => {
@@ -99,6 +103,8 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
     }
 
     function onEditorMount(_editor: unknown, monaco: Monaco) {
+      if (!schemaStore.clabSchema) return;
+
       monacoEditorRef.current = monaco;
       textModelRef.current = monaco.editor.getModel(
         monaco.Uri.parse(schemaModelUri)
@@ -118,7 +124,7 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
         schemas: [
           {
             fileMatch: ['**/*.yaml'],
-            schema: props.schema,
+            schema: toJS(schemaStore.clabSchema),
             uri: process.env.SB_CLAB_SCHEMA_URL!,
           },
         ],
@@ -132,17 +138,19 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
     }
 
     return (
-      <div className="w-full h-full sb-monaco-wrapper">
-        <MonacoEditor
-          language="yaml"
-          value={content}
-          theme="antimonyTheme"
-          options={MonacoOptions}
-          onChange={onContentChange}
-          editorDidMount={onEditorMount}
-          uri={() => monaco.Uri.parse(schemaModelUri)}
-        />
-      </div>
+      <If condition={schemaStore.clabSchema}>
+        <div className="w-full h-full sb-monaco-wrapper">
+          <MonacoEditor
+            language="yaml"
+            value={content}
+            theme="antimonyTheme"
+            options={MonacoOptions}
+            onChange={onContentChange}
+            editorDidMount={onEditorMount}
+            uri={() => monaco.Uri.parse(schemaModelUri)}
+          />
+        </div>
+      </If>
     );
   }
 );

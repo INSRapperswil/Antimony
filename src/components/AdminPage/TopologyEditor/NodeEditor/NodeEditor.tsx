@@ -1,8 +1,10 @@
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 import {TopologyDefinition} from '@sb/types/Types';
 import React, {
   MouseEvent,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -15,24 +17,16 @@ import {Node, Edge, Position} from 'vis';
 
 import {ContextMenu} from 'primereact/contextmenu';
 import useResizeObserver from '@react-hook/resize-observer';
-import {NotificationController} from '@sb/lib/NotificationController';
 
 import {NetworkOptions} from './network.conf';
-import {DeviceManager} from '@sb/lib/DeviceManager';
-import {TopologyManager} from '@sb/lib/TopologyManager';
 
 import './NodeEditor.sass';
 
 interface NodeEditorProps {
-  notificationController: NotificationController;
-
   openTopology: YAMLDocument<TopologyDefinition> | null;
-  deviceManager: DeviceManager;
 
   onEditNode: (nodeName: string) => void;
   onAddNode: () => void;
-
-  topologyManager: TopologyManager;
 }
 
 type GraphDefinition = {
@@ -43,6 +37,9 @@ type GraphDefinition = {
 const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
   const [selectedNode, setSelectedNode] = useState<number | null>(null);
+
+  const deviceStore = useContext(RootStoreContext).deviceStore;
+  const topologyStore = useContext(RootStoreContext).topologyStore;
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
   const containerRef = useRef(null);
@@ -83,7 +80,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       nodes.push({
         id: index,
         label: nodeName,
-        image: props.deviceManager.getNodeIcon(node),
+        image: deviceStore.getNodeIcon(node),
       });
     }
 
@@ -99,7 +96,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     ];
 
     return {nodes: nodes, edges: edges};
-  }, [props.openTopology, props.deviceManager]);
+  }, [props.openTopology, deviceStore]);
 
   /*
    * Passing this through the graph's prop directly was causing a weird error. We need to take the imperative way here.
@@ -233,10 +230,10 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const onNodeDelete = useCallback(() => {
     if (!network || network.getSelectedNodes().length < 1) return;
 
-    props.topologyManager.deleteNode(
+    topologyStore.manager.deleteNode(
       nodeLookup.get(network.getSelectedNodes()[0] as number)!
     );
-  }, [network, nodeLookup, props]);
+  }, [network, nodeLookup, topologyStore]);
 
   const networkContextMenuItems = useMemo(() => {
     if (selectedNode !== null) {

@@ -1,13 +1,13 @@
 import {useCallback, useEffect, useState} from 'react';
 
 import {FetchState} from '@sb/types/Types';
-import {APIConnector} from '@sb/lib/APIConnector';
+import {APIConnectorStore} from '@sb/lib/stores/APIConnectorStore';
 
 export type Instantiatable<T> = {new (...args: unknown[]): T};
 
 export function useResource<T>(
   path: string,
-  apiConnector: APIConnector,
+  apiConnector: APIConnectorStore,
   defaultValue: T,
   mapper: ((input: unknown) => T) | null = null,
   isExternal = false

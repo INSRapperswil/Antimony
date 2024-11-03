@@ -1,4 +1,12 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {Edge, Node} from 'vis';
 import {Network} from 'vis-network';
@@ -6,17 +14,7 @@ import Graph from 'react-graph-vis';
 import {Button} from 'primereact/button';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import {useResource} from '@sb/lib/utils/Hooks';
-import {APIConnector} from '@sb/lib/APIConnector';
-import {DeviceManager} from '@sb/lib/DeviceManager';
-import {TopologyManager} from '@sb/lib/TopologyManager';
-import {
-  Group,
-  Lab,
-  Topology,
-  TopologyDefinition,
-  TopologyOut,
-} from '@sb/types/Types';
+import {Lab, TopologyDefinition} from '@sb/types/Types';
 import {NetworkOptions} from '@sb/components/AdminPage/TopologyEditor/NodeEditor/network.conf';
 
 import './LabDialog.sass';
@@ -29,8 +27,6 @@ type GraphDefinition = {
 };
 interface LabDialogProps {
   lab: Lab;
-  apiConnector: APIConnector;
-  deviceManager: DeviceManager;
   groupName: String;
 }
 
@@ -41,12 +37,8 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const containerRef = useRef(null);
   const [dialogVisible, setDialogVisible] = useState<boolean>(false);
 
-  const [topologies] = useResource<Topology[]>(
-    '/topologies',
-    props.apiConnector,
-    [],
-    topologies => TopologyManager.parseTopologies(topologies as TopologyOut[])
-  );
+  const topologyStore = useContext(RootStoreContext).topologyStore;
+  const deviceStore = useContext(RootStoreContext).deviceStore;
 
   useResizeObserver(containerRef, () => {
     if (network) {
@@ -56,13 +48,13 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
 
   const getTopology = useCallback(
     (id: string): void => {
-      for (const topology of topologies) {
+      for (const topology of topologyStore.topologies) {
         if (topology.id === id) {
           setTopologyDefinition(topology.definition);
         }
       }
     },
-    [topologies]
+    [topologyStore.topologies]
   );
 
   const graph: GraphDefinition = useMemo(() => {
@@ -80,7 +72,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       nodes.push({
         id: index,
         label: nodeName,
-        image: props.deviceManager.getNodeIcon(node),
+        image: deviceStore.getNodeIcon(node),
       });
     }
 
@@ -96,7 +88,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     ];
 
     return {nodes: nodes, edges: edges};
-  }, [topologyDefinition, props.deviceManager]);
+  }, [topologyDefinition, deviceStore]);
 
   useEffect(() => {
     getTopology(props.lab.topologyId);

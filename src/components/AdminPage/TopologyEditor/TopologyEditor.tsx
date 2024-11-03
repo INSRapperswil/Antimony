@@ -1,4 +1,11 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import {Document, parseDocument} from 'yaml';
 import {validate} from 'jsonschema';
@@ -7,12 +14,9 @@ import {Tooltip} from 'primereact/tooltip';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
 
 import NodeEditor from './NodeEditor/NodeEditor';
-import {APIConnector} from '@sb/lib/APIConnector';
-import {DeviceManager} from '@sb/lib/DeviceManager';
-import {Choose, If, Otherwise, When} from '@sb/types/control';
-import {NotificationController} from '@sb/lib/NotificationController';
-import {ClabSchema, Topology} from '@sb/types/Types';
-import {TopologyEditReport, TopologyManager} from '@sb/lib/TopologyManager';
+import {Choose, Otherwise, When} from '@sb/types/control';
+import {Topology} from '@sb/types/Types';
+import {TopologyEditReport} from '@sb/lib/TopologyManager';
 import MonacoWrapper, {MonacoWrapperRef} from './MonacoWrapper/MonacoWrapper';
 import NodeEditDialog from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEditDialog';
 
@@ -25,16 +29,8 @@ export enum ValidationState {
 }
 
 interface TopologyEditorProps {
-  apiConnector: APIConnector;
-  notificationController: NotificationController;
-
   isMaximized: boolean;
   setMaximized: (isMinimized: boolean) => void;
-
-  clabSchema: ClabSchema | null;
-
-  deviceManager: DeviceManager;
-  topologyManager: TopologyManager;
 
   onSaveTopology: () => void;
 }
@@ -54,6 +50,9 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     null
   );
 
+  const topologyStore = useContext(RootStoreContext).topologyStore;
+  const schemaStore = useContext(RootStoreContext).schemaStore;
+
   const monacoWrapperRef = useRef<MonacoWrapperRef>(null);
 
   const onTopologyOpen = useCallback((topology: Topology) => {
@@ -67,22 +66,22 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
   }, []);
 
   useEffect(() => {
-    props.topologyManager.onEdit.register(onTopologyEdit);
-    props.topologyManager.onOpen.register(onTopologyOpen);
+    topologyStore.manager.onEdit.register(onTopologyEdit);
+    topologyStore.manager.onOpen.register(onTopologyOpen);
 
     return () => {
-      props.topologyManager.onEdit.unregister(onTopologyEdit);
-      props.topologyManager.onOpen.unregister(onTopologyOpen);
+      topologyStore.manager.onEdit.unregister(onTopologyEdit);
+      topologyStore.manager.onOpen.unregister(onTopologyOpen);
     };
-  }, [props.topologyManager, onTopologyOpen, onTopologyEdit]);
+  }, [topologyStore.manager, onTopologyOpen, onTopologyEdit]);
 
   function onContentChange(content: string) {
     try {
       const obj = parseDocument(content);
 
-      if (validate(obj.toJS(), props.clabSchema).errors.length === 0) {
+      if (validate(obj.toJS(), schemaStore.clabSchema).errors.length === 0) {
         setValidationState(ValidationState.Done);
-        props.topologyManager.apply(obj);
+        topologyStore.manager.apply(obj);
       } else {
         // Set this to working until the monaco worker has finished and generated the error
         setValidationState(ValidationState.Working);
@@ -150,7 +149,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   icon="pi pi-trash"
                   size="large"
                   tooltip="Clear"
-                  onClick={props.topologyManager.clear}
+                  onClick={topologyStore.manager.clear}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
                 <Button
@@ -200,16 +199,13 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   minSize={10}
                   size={30}
                 >
-                  <If condition={props.clabSchema}>
-                    <MonacoWrapper
-                      ref={monacoWrapperRef}
-                      openTopology={openTopology}
-                      schema={props.clabSchema!}
-                      language="yaml"
-                      setContent={onContentChange}
-                      setValidationError={onSetValidationError}
-                    />
-                  </If>
+                  <MonacoWrapper
+                    ref={monacoWrapperRef}
+                    openTopology={openTopology}
+                    language="yaml"
+                    setContent={onContentChange}
+                    setValidationError={onSetValidationError}
+                  />
                 </SplitterPanel>
                 <SplitterPanel
                   className="flex align-items-center justify-content-center"
@@ -219,9 +215,6 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                     onAddNode={onAddNode}
                     onEditNode={onNodeEdit}
                     openTopology={openTopology}
-                    deviceManager={props.deviceManager}
-                    topologyManager={props.topologyManager}
-                    notificationController={props.notificationController}
                   />
                 </SplitterPanel>
               </Splitter>
@@ -274,11 +267,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
         isOpen={isNodeEditDialogOpen}
         editingTopology={openTopology}
         editingNode={currentlyEditedNode}
-        topologyManager={props.topologyManager}
         onClose={() => setNodeEditDialogOpen(false)}
-        clabSchema={props.clabSchema}
-        notificationController={props.notificationController}
-        deviceManager={props.deviceManager}
       />
     </>
   );

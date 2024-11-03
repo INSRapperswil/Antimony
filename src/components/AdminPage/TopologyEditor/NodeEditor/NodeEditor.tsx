@@ -1,6 +1,4 @@
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
-import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
-import {TopologyDefinition} from '@sb/types/Types';
+import {SpeedDial} from 'primereact/speeddial';
 import React, {
   MouseEvent,
   useCallback,
@@ -14,11 +12,13 @@ import React, {
 import {Network} from 'vis-network';
 import Graph from 'react-graph-vis';
 import {Node, Edge, Position} from 'vis';
-
+import {NetworkOptions} from './network.conf';
 import {ContextMenu} from 'primereact/contextmenu';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import {NetworkOptions} from './network.conf';
+import {TopologyDefinition} from '@sb/types/Types';
+import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
 
 import './NodeEditor.sass';
 
@@ -43,8 +43,9 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
   const containerRef = useRef(null);
+  const radialMenuRef = useRef<SpeedDial>(null);
 
-  // Connection state does not have to be reactive, so we do it during rendering
+  // Connection state does not have to be reactive, so we define it as refs
   const nodeConnectTarget = useRef<Position | null>(null);
   const nodeConnectDestination = useRef<Position | null>(null);
   const nodeConnecting = useRef(false);
@@ -103,6 +104,8 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
    */
   useEffect(() => {
     network?.setData(graph);
+    radialMenuRef.current?.hide();
+    setSelectedNode(null);
   }, [network, graph]);
 
   const networkCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
@@ -257,29 +260,40 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     }
   }, [selectedNode, onNodeConnect, onNodeDelete, onNodeEdit, props]);
 
-  // const topbarItems = useMemo(() => {
-  //   if (selectedNode !== null && nodeLookup.has(selectedNode)) {
-  //     return [
-  //       {
-  //         label: `Edit '${nodeLookup.get(selectedNode)}'`,
-  //         icon: 'pi pi-pen-to-square',
-  //       },
-  //       {
-  //         label: `Delete '${nodeLookup.get(selectedNode)}'`,
-  //         icon: 'pi pi-trash',
-  //       },
-  //     ];
-  //   }
-  //   return [];
-  // }, [selectedNode, nodeLookup]);
-
   function onNetworkClick(selectData: NodeClickEvent) {
+    if (!network) return;
+
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
     if (targetNode !== undefined) {
+      const targetPosition = network.getPosition(targetNode);
+
+      /*
+       * If a node is already selected, hide the menu first and then show it
+       * with a delay.
+       */
+      if (selectedNode !== null) {
+        radialMenuRef.current?.hide();
+        setTimeout(() => {
+          openRadialMenu(targetPosition);
+        }, 230);
+      } else {
+        openRadialMenu(targetPosition);
+      }
       setSelectedNode(targetNode as number);
     } else {
+      radialMenuRef.current?.hide();
       setSelectedNode(null);
+      network.unselectAll();
     }
+  }
+
+  function openRadialMenu(position: Position) {
+    if (!network || !radialMenuRef.current) return;
+
+    const element = radialMenuRef.current?.getElement();
+    element.style.top = `${network?.canvasToDOM(position).y - 32}px`;
+    element.style.left = `${network?.canvasToDOM(position).x - 32}px`;
+    radialMenuRef.current?.show();
   }
 
   function onNetworkDoubleClick(selectData: NodeClickEvent) {
@@ -306,19 +320,44 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     nodeContextMenuRef.current.show(selectData.event);
   }
 
+  function onNetworkDragging() {
+    radialMenuRef.current?.hide();
+  }
+
+  const radialItems = [
+    {
+      label: 'Connect',
+      icon: 'pi pi-arrow-right-arrow-left',
+      command: onNodeConnect,
+    },
+    {
+      label: 'Edit',
+      icon: 'pi pi-pen-to-square',
+      command: onNodeEdit,
+    },
+    {
+      label: 'Delete',
+      icon: 'pi pi-trash',
+      command: onNodeDelete,
+    },
+  ];
+
   return (
     <div
       className="w-full h-full sb-node-editor"
       ref={containerRef}
       onMouseMove={onMouseMove}
     >
-      {/*<Menubar*/}
-      {/*  className={classNames({*/}
-      {/*    'sb-node-editor-menubar': true,*/}
-      {/*    'sb-node-editor-menubar-disabled': selectedNode === null,*/}
-      {/*  })}*/}
-      {/*  model={topbarItems}*/}
-      {/*/>*/}
+      <SpeedDial
+        className="sb-node-editor-dial"
+        ref={radialMenuRef}
+        model={radialItems}
+        radius={80}
+        type="circle"
+        visible={true}
+        hideOnClickOutside={false}
+        buttonClassName="p-button-warning"
+      />
       <Graph
         graph={{nodes: [], edges: []}}
         options={NetworkOptions}
@@ -326,6 +365,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
           click: onNetworkClick,
           oncontext: onNetworkContext,
           doubleClick: onNetworkDoubleClick,
+          dragging: onNetworkDragging,
         }}
         getNetwork={setNetwork}
       />

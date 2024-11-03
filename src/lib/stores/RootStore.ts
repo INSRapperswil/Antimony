@@ -1,9 +1,10 @@
-import {APIConnectorStore} from '@sb/lib/stores/APIConnectorStore';
-import {DeviceStore} from '@sb/lib/stores/DeviceStore';
+import {createContext} from 'react';
+
 import {GroupStore} from '@sb/lib/stores/GroupStore';
 import {SchemaStore} from '@sb/lib/stores/SchemaStore';
+import {DeviceStore} from '@sb/lib/stores/DeviceStore';
 import {TopologyStore} from '@sb/lib/stores/TopologyStore';
-import {createContext} from 'react';
+import {APIConnectorStore} from '@sb/lib/stores/APIConnectorStore';
 
 export class RootStore {
   apiConnectorStore: APIConnectorStore;

@@ -1,4 +1,3 @@
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import React, {
   useCallback,
   useContext,
@@ -7,15 +6,16 @@ import React, {
   useState,
 } from 'react';
 
-import {Document, parseDocument} from 'yaml';
 import {validate} from 'jsonschema';
 import {Button} from 'primereact/button';
 import {Tooltip} from 'primereact/tooltip';
+import {Document, parseDocument} from 'yaml';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
 
+import {Topology} from '@sb/types/Types';
 import NodeEditor from './NodeEditor/NodeEditor';
 import {Choose, Otherwise, When} from '@sb/types/control';
-import {Topology} from '@sb/types/Types';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {TopologyEditReport} from '@sb/lib/TopologyManager';
 import MonacoWrapper, {MonacoWrapperRef} from './MonacoWrapper/MonacoWrapper';
 import NodeEditDialog from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEditDialog';
@@ -230,11 +230,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                     className="pi pi-times"
                     style={{color: 'var(--danger-color)'}}
                   ></i>
-                  <span
-                    // className="sb-toplogy-editor-validation"
-                    data-pr-tooltip="test"
-                    data-pr-position="top"
-                  >
+                  <span data-pr-tooltip="test" data-pr-position="top">
                     {validationError}
                   </span>
                 </When>
@@ -259,7 +255,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
         </When>
         <Otherwise>
           <div className="flex h-full w-full align-items-center justify-content-center">
-            <h3 className="text-center">No topology selected</h3>
+            <span className="text-center">No topology selected</span>
           </div>
         </Otherwise>
       </Choose>

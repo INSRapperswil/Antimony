@@ -1,7 +1,8 @@
+import {makeAutoObservable} from 'mobx';
+
 import {RootStore} from '@sb/lib/stores/RootStore';
 import {TopologyManager} from '@sb/lib/TopologyManager';
 import {FetchState, Topology, TopologyOut} from '@sb/types/Types';
-import {makeAutoObservable} from 'mobx';
 
 export class TopologyStore {
   private rootStore: RootStore;

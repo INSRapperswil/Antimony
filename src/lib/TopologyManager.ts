@@ -1,9 +1,9 @@
-import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
-import {parseDocument} from 'yaml';
 import _ from 'lodash';
+import {parseDocument} from 'yaml';
 import cloneDeep from 'lodash.clonedeep';
 
 import {Binding} from '@sb/lib/utils/Binding';
+import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 import {Topology, TopologyDefinition, TopologyOut} from '@sb/types/Types';
 
 export type TopologyEditReport = {

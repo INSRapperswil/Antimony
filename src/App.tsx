@@ -1,22 +1,22 @@
-import SBConfirm, {SBConfirmRef} from '@sb/components/common/SBConfirm';
+import React, {useRef} from 'react';
+
+import {BrowserRouter, Route, Routes} from 'react-router-dom';
+
+import {Toast} from 'primereact/toast';
+import {PrimeReactProvider} from 'primereact/api';
+
 import {
   NotificationController,
   NotificationControllerContext,
 } from '@sb/lib/NotificationController';
-import {rootStore, RootStoreContext} from '@sb/lib/stores/RootStore';
-import React, {useRef} from 'react';
-
-import {PrimeReactProvider} from 'primereact/api';
-
 import Dock from '@sb/components/Dock/Dock';
+import LabsPage from '@sb/components/LabsPage/LabsPage';
 import AdminPage from '@sb/components/AdminPage/AdminPage';
-
-import 'primereact/resources/themes/lara-dark-blue/theme.css';
-import {Toast} from 'primereact/toast';
+import {rootStore, RootStoreContext} from '@sb/lib/stores/RootStore';
+import SBConfirm, {SBConfirmRef} from '@sb/components/common/SBConfirm';
 
 import './App.sass';
-import LabsPage from '@sb/components/LabsPage/LabsPage';
-import {BrowserRouter, Route, Routes} from 'react-router-dom';
+import 'primereact/resources/themes/lara-dark-blue/theme.css';
 
 const App: React.FC = () => {
   const toastRef = useRef<Toast>(null);

@@ -1,10 +1,3 @@
-import {Monaco} from '@monaco-editor/react';
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
-import {If} from '@sb/types/control';
-import {toJS} from 'mobx';
-import * as monaco from 'monaco-editor';
-import {editor} from 'monaco-editor';
-import {configureMonacoYaml} from 'monaco-yaml';
 import React, {
   forwardRef,
   useCallback,
@@ -14,10 +7,17 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
-import MonacoEditor from 'react-monaco-editor';
 
+import {toJS} from 'mobx';
 import {Document} from 'yaml';
+import {editor} from 'monaco-editor';
+import * as monaco from 'monaco-editor';
+import {Monaco} from '@monaco-editor/react';
+import MonacoEditor from 'react-monaco-editor';
+import {configureMonacoYaml} from 'monaco-yaml';
 
+import {If} from '@sb/types/control';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {AntimonyTheme, MonacoOptions} from './monaco.conf';
 
 import './MonacoWrapper.sass';

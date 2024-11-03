@@ -1,9 +1,11 @@
+import React, {createContext, createRef} from 'react';
+
+import {Toast} from 'primereact/toast';
+
 import {
   SBConfirmOpenProps,
   SBConfirmRef,
 } from '@sb/components/common/SBConfirm';
-import {Toast} from 'primereact/toast';
-import React, {createContext, createRef} from 'react';
 
 export class NotificationController {
   private toastRef: React.RefObject<Toast>;

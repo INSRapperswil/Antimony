@@ -1,4 +1,3 @@
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import React, {
   useCallback,
   useContext,
@@ -11,16 +10,17 @@ import {Chip} from 'primereact/chip';
 import {Button} from 'primereact/button';
 import {Dialog} from 'primereact/dialog';
 import {InputText} from 'primereact/inputtext';
+import {IconField} from 'primereact/iconfield';
+import {InputIcon} from 'primereact/inputicon';
 
+import {Lab, LabState} from '@sb/types/Types';
 import {useResource} from '@sb/lib/utils/Hooks';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
-import {Lab, LabState} from '@sb/types/Types';
 import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 
 import './LabsPage.sass';
-import {IconField} from 'primereact/iconfield';
-import {InputIcon} from 'primereact/inputicon';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',

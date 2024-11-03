@@ -37,6 +37,7 @@ type GraphDefinition = {
 const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
   const [selectedNode, setSelectedNode] = useState<number | null>(null);
+  const [radialTarget, setRadialTarget] = useState<number | null>(null);
 
   const deviceStore = useContext(RootStoreContext).deviceStore;
   const topologyStore = useContext(RootStoreContext).topologyStore;
@@ -219,6 +220,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     if (!selectedNodes || selectedNodes.length < 1) {
       return;
     }
+    setRadialTarget(null);
     nodeConnectTarget.current =
       network?.getPosition(network?.getSelectedNodes()[0]) ?? null;
     nodeConnecting.current = nodeConnectTarget.current !== null;
@@ -227,12 +229,14 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const onNodeEdit = useCallback(() => {
     if (!network || network.getSelectedNodes().length < 1) return;
 
+    setRadialTarget(null);
     props.onEditNode(nodeLookup.get(network.getSelectedNodes()[0] as number)!);
   }, [network, nodeLookup, props]);
 
   const onNodeDelete = useCallback(() => {
     if (!network || network.getSelectedNodes().length < 1) return;
 
+    setRadialTarget(null);
     topologyStore.manager.deleteNode(
       nodeLookup.get(network.getSelectedNodes()[0] as number)!
     );
@@ -264,6 +268,8 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     if (!network) return;
 
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+    if (radialTarget === targetNode) return;
+
     if (targetNode !== undefined) {
       const targetPosition = network.getPosition(targetNode);
 
@@ -280,9 +286,11 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
         openRadialMenu(targetPosition);
       }
       setSelectedNode(targetNode as number);
+      setRadialTarget(targetNode as number);
     } else {
       radialMenuRef.current?.hide();
       setSelectedNode(null);
+      setRadialTarget(null);
       network.unselectAll();
     }
   }

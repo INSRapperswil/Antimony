@@ -47,7 +47,12 @@ const AdminPage: React.FC = observer(() => {
         topologyStore.manager.close();
       }
     }
-  }, [topologyStore]);
+  }, [
+    topologyStore.fetchState,
+    topologyStore.lookup,
+    topologyStore.manager,
+    topologyStore.topologies,
+  ]);
 
   function onSelectTopology(id: string) {
     if (!topologyStore.lookup.has(id)) return;

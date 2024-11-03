@@ -1,3 +1,4 @@
+import {observer} from 'mobx-react-lite';
 import React, {
   forwardRef,
   useCallback,
@@ -49,8 +50,8 @@ export interface MonacoWrapperRef {
   redo: () => void;
 }
 
-const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
-  (props, ref) => {
+const MonacoWrapper = observer(
+  forwardRef<MonacoWrapperRef, MonacoWrapperProps>((props, ref) => {
     const textModelRef = useRef<editor.ITextModel | null>(null);
     const monacoEditorRef = useRef<Monaco | null>(null);
 
@@ -152,7 +153,7 @@ const MonacoWrapper = forwardRef<MonacoWrapperRef, MonacoWrapperProps>(
         </div>
       </If>
     );
-  }
+  })
 );
 
 export default MonacoWrapper;

@@ -1,3 +1,4 @@
+import {observer} from 'mobx-react-lite';
 import React, {useCallback, useContext, useEffect, useState} from 'react';
 
 import {Tooltip} from 'primereact/tooltip';
@@ -20,9 +21,7 @@ interface TopologyBrowserProps {
   onTopologySelect: (id: string) => void;
 }
 
-const TopologyExplorer: React.FC<TopologyBrowserProps> = (
-  props: TopologyBrowserProps
-) => {
+const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   const [topologyTree, setTopologyTree] = useState<TreeNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<TreeExpandedKeysType>({});
 
@@ -76,7 +75,7 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
     setExpandedKeys(
       Object.fromEntries(topologyTree.map(group => [group.key, true]))
     );
-  }, [groupStore, topologyStore, generateTopologyTree]);
+  }, [groupStore.fetchState, topologyStore.fetchState, generateTopologyTree]);
 
   function onSelectionChange(e: TreeSelectionEvent) {
     if (e.value === null) return;
@@ -85,7 +84,6 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
   }
 
   function onRenameGroup(uuid: string, value: string) {
-    console.log('Renaming group: ', uuid, ' to ', value);
     notificationController.success('Successfully renamed group.');
 
     return null;
@@ -157,6 +155,6 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
       </Choose>
     </>
   );
-};
+});
 
 export default TopologyExplorer;

@@ -13,17 +13,16 @@ import {InputText} from 'primereact/inputtext';
 import {IconField} from 'primereact/iconfield';
 import {InputIcon} from 'primereact/inputicon';
 
-import {Lab, LabState} from '@sb/types/Types';
+import {DeviceInfo, Lab, LabState} from '@sb/types/Types';
 import {useResource} from '@sb/lib/utils/Hooks';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
 import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
+import ReservationDialog from '@sb/components/LabsPage/ReservationDialog/ReservationDialog';
 
 import './LabsPage.sass';
-import {IconField} from 'primereact/iconfield';
-import {InputIcon} from 'primereact/inputicon';
-import ReservationDialog from '@sb/components/LabsPage/ReservationDialog/ReservationDialog';
+import {APIConnectorStore} from '@sb/lib/stores/APIConnectorStore';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
@@ -58,14 +57,13 @@ const LabsPage: React.FC = () => {
   const [reschedulingDialog, setReschedulingDialog] = useState<boolean>(false);
   const today = new Date();
 
-  const [devices] = useResource<DeviceInfo[]>(
-    '/devices',
-    props.apiConnector,
+  const deviceStore = useContext(RootStoreContext).deviceStore;
+  const labsPath = `/labs?limit=${pageSize}&offset=${currentPage * pageSize}&stateFilter=${selectedFilters.join(',')}&searchQuery=${searchQuery}`;
+  const [labQuery] = useResource<Lab[]>(
+    labsPath,
+    useContext(RootStoreContext).apiConnectorStore,
     []
   );
-  const labsPath = `/labs?limit=${pageSize}&offset=${currentPage * pageSize}&stateFilter=${selectedFilters.join(',')}&searchQuery=${searchQuery}`;
-  const [labQuery] = useResource<Lab[]>(labsPath, props.apiConnector, []);
-
   useEffect(() => {
     setTotalAmountOfEntries(10); //useResource needs update for api header
     setLabs(labQuery);
@@ -98,12 +96,6 @@ const LabsPage: React.FC = () => {
   const handleSearch = useCallback(() => {
     setSearchQuery(searchQueryRef.current);
   }, []);
-
-  const deviceManager = useMemo(() => {
-    if (!devices) return null;
-    return new DeviceManager(devices);
-  }, [devices]);
-  const isReady = useReady(deviceManager, labs);
 
   function handleEditLab(lab: Lab) {
     if (lab.state === LabState.Scheduled) {

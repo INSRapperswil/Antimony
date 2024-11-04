@@ -1,26 +1,29 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import {Chip} from 'primereact/chip';
 import {Button} from 'primereact/button';
 import {Dialog} from 'primereact/dialog';
 import {InputText} from 'primereact/inputtext';
+import {IconField} from 'primereact/iconfield';
+import {InputIcon} from 'primereact/inputicon';
 
-import {APIConnector} from '@sb/lib/APIConnector';
-import {DeviceManager} from '@sb/lib/DeviceManager';
-import {useReady, useResource} from '@sb/lib/utils/Hooks';
+import {Lab, LabState} from '@sb/types/Types';
+import {useResource} from '@sb/lib/utils/Hooks';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
-import {DeviceInfo, Group, Lab, LabState} from '@sb/types/Types';
 import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 
 import './LabsPage.sass';
 import {IconField} from 'primereact/iconfield';
 import {InputIcon} from 'primereact/inputicon';
 import ReservationDialog from '@sb/components/LabsPage/ReservationDialog/ReservationDialog';
-
-interface LabsPageProps {
-  apiConnector: APIConnector;
-}
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
@@ -30,7 +33,7 @@ const statusIcons: Record<LabState, string> = {
   [LabState.Done]: 'pi pi-check',
 };
 
-const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
+const LabsPage: React.FC = () => {
   const [LabDialogVisible, setLabDialogVisible] = useState<boolean>(false);
   const [FilterDialogVisible, setFilterDialogVisible] =
     useState<boolean>(false);
@@ -46,7 +49,10 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(0);
   const [pageSize] = useState<number>(7);
-  const [groups] = useResource<Group[]>('/groups', props.apiConnector, []);
+
+  const groupStore = useContext(RootStoreContext).groupStore;
+  const apiConnectorStore = useContext(RootStoreContext).apiConnectorStore;
+
   const searchQueryRef = useRef('');
   const [searchQuery, setSearchQuery] = useState<String>('');
   const [reschedulingDialog, setReschedulingDialog] = useState<boolean>(false);
@@ -66,7 +72,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
   }, [selectedFilters, totalAmountOfEntries, labQuery, currentPage]);
 
   function getGroupById(groupId?: String): String {
-    const group = groups.find(group => group.id === groupId);
+    const group = groupStore.groups.find(group => group.id === groupId);
     if (group !== undefined) {
       return group.name;
     }
@@ -132,7 +138,7 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
   }
 
   return (
-    <If condition={isReady}>
+    <If condition={labs}>
       <div className="bg-primary font-bold height-100 width-100 sb-card overflow-y-auto overflow-x-hidden">
         <div className="search-bar">
           <IconField className="search-bar-input" iconPosition="left">
@@ -303,8 +309,6 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
                   <div className="height-100">
                     <LabDialog
                       lab={selectedLab!}
-                      apiConnector={props.apiConnector}
-                      deviceManager={deviceManager!}
                       groupName={getGroupById(selectedLab!.groupId)}
                     />
                   </div>

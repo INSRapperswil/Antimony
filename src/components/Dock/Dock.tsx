@@ -2,20 +2,19 @@ import React from 'react';
 import {Button} from 'primereact/button';
 
 import './Dock.sass';
+import {useNavigate} from 'react-router-dom';
 
-interface DockProps {
-  onPageSwitch: (pageNumber: number) => void;
-}
+const Dock: React.FC = () => {
+  const navigate = useNavigate();
 
-const Dock: React.FC<DockProps> = (props: DockProps) => {
   return (
     <div className=" flex mb-3 align-items-center justify-content-between sb-card p-2 sb-dock">
       <div className="flex align-items-center gap-2">
         <div className="sb-logo-tab sb-corner-tab flex justify-content-center align-items-center">
           <div>Logo Here</div>
         </div>
-        <Button label="Labs" outlined onClick={() => props.onPageSwitch(0)} />
-        <Button label="Admin" outlined onClick={() => props.onPageSwitch(1)} />
+        <Button label="Labs" outlined onClick={() => navigate('/')} />
+        <Button label="Admin" outlined onClick={() => navigate('/admin')} />
       </div>
       <div className="flex align-items-center gap-2 justify-content-end">
         <Button

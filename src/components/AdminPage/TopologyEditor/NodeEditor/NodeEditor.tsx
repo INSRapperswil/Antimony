@@ -1,8 +1,8 @@
-import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
-import {TopologyDefinition} from '@sb/types/Types';
+import {SpeedDial} from 'primereact/speeddial';
 import React, {
   MouseEvent,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -12,27 +12,21 @@ import React, {
 import {Network} from 'vis-network';
 import Graph from 'react-graph-vis';
 import {Node, Edge, Position} from 'vis';
-
+import {NetworkOptions} from './network.conf';
 import {ContextMenu} from 'primereact/contextmenu';
 import useResizeObserver from '@react-hook/resize-observer';
-import {NotificationController} from '@sb/lib/NotificationController';
 
-import {NetworkOptions} from './network.conf';
-import {DeviceManager} from '@sb/lib/DeviceManager';
-import {TopologyManager} from '@sb/lib/TopologyManager';
+import {TopologyDefinition} from '@sb/types/Types';
+import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
 
 import './NodeEditor.sass';
 
 interface NodeEditorProps {
-  notificationController: NotificationController;
-
   openTopology: YAMLDocument<TopologyDefinition> | null;
-  deviceManager: DeviceManager;
 
   onEditNode: (nodeName: string) => void;
   onAddNode: () => void;
-
-  topologyManager: TopologyManager;
 }
 
 type GraphDefinition = {
@@ -43,11 +37,16 @@ type GraphDefinition = {
 const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
   const [selectedNode, setSelectedNode] = useState<number | null>(null);
+  const [radialTarget, setRadialTarget] = useState<number | null>(null);
+
+  const deviceStore = useContext(RootStoreContext).deviceStore;
+  const topologyStore = useContext(RootStoreContext).topologyStore;
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
   const containerRef = useRef(null);
+  const radialMenuRef = useRef<SpeedDial>(null);
 
-  // Connection state does not have to be reactive, so we do it during rendering
+  // Connection state does not have to be reactive, so we define it as refs
   const nodeConnectTarget = useRef<Position | null>(null);
   const nodeConnectDestination = useRef<Position | null>(null);
   const nodeConnecting = useRef(false);
@@ -83,7 +82,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       nodes.push({
         id: index,
         label: nodeName,
-        image: props.deviceManager.getNodeIcon(node),
+        image: deviceStore.getNodeIcon(node),
       });
     }
 
@@ -99,13 +98,15 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     ];
 
     return {nodes: nodes, edges: edges};
-  }, [props.openTopology, props.deviceManager]);
+  }, [props.openTopology, deviceStore]);
 
   /*
    * Passing this through the graph's prop directly was causing a weird error. We need to take the imperative way here.
    */
   useEffect(() => {
     network?.setData(graph);
+    radialMenuRef.current?.hide();
+    setSelectedNode(null);
   }, [network, graph]);
 
   const networkCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
@@ -219,6 +220,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     if (!selectedNodes || selectedNodes.length < 1) {
       return;
     }
+    setRadialTarget(null);
     nodeConnectTarget.current =
       network?.getPosition(network?.getSelectedNodes()[0]) ?? null;
     nodeConnecting.current = nodeConnectTarget.current !== null;
@@ -227,16 +229,18 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const onNodeEdit = useCallback(() => {
     if (!network || network.getSelectedNodes().length < 1) return;
 
+    setRadialTarget(null);
     props.onEditNode(nodeLookup.get(network.getSelectedNodes()[0] as number)!);
   }, [network, nodeLookup, props]);
 
   const onNodeDelete = useCallback(() => {
     if (!network || network.getSelectedNodes().length < 1) return;
 
-    props.topologyManager.deleteNode(
+    setRadialTarget(null);
+    topologyStore.manager.deleteNode(
       nodeLookup.get(network.getSelectedNodes()[0] as number)!
     );
-  }, [network, nodeLookup, props]);
+  }, [network, nodeLookup, topologyStore]);
 
   const networkContextMenuItems = useMemo(() => {
     if (selectedNode !== null) {
@@ -260,29 +264,44 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     }
   }, [selectedNode, onNodeConnect, onNodeDelete, onNodeEdit, props]);
 
-  // const topbarItems = useMemo(() => {
-  //   if (selectedNode !== null && nodeLookup.has(selectedNode)) {
-  //     return [
-  //       {
-  //         label: `Edit '${nodeLookup.get(selectedNode)}'`,
-  //         icon: 'pi pi-pen-to-square',
-  //       },
-  //       {
-  //         label: `Delete '${nodeLookup.get(selectedNode)}'`,
-  //         icon: 'pi pi-trash',
-  //       },
-  //     ];
-  //   }
-  //   return [];
-  // }, [selectedNode, nodeLookup]);
-
   function onNetworkClick(selectData: NodeClickEvent) {
+    if (!network) return;
+
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+    if (radialTarget === targetNode) return;
+
     if (targetNode !== undefined) {
+      const targetPosition = network.getPosition(targetNode);
+
+      /*
+       * If a node is already selected, hide the menu first and then show it
+       * with a delay.
+       */
+      if (selectedNode !== null) {
+        radialMenuRef.current?.hide();
+        setTimeout(() => {
+          openRadialMenu(targetPosition);
+        }, 230);
+      } else {
+        openRadialMenu(targetPosition);
+      }
       setSelectedNode(targetNode as number);
+      setRadialTarget(targetNode as number);
     } else {
+      radialMenuRef.current?.hide();
       setSelectedNode(null);
+      setRadialTarget(null);
+      network.unselectAll();
     }
+  }
+
+  function openRadialMenu(position: Position) {
+    if (!network || !radialMenuRef.current) return;
+
+    const element = radialMenuRef.current?.getElement();
+    element.style.top = `${network?.canvasToDOM(position).y - 32}px`;
+    element.style.left = `${network?.canvasToDOM(position).x - 32}px`;
+    radialMenuRef.current?.show();
   }
 
   function onNetworkDoubleClick(selectData: NodeClickEvent) {
@@ -309,19 +328,44 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     nodeContextMenuRef.current.show(selectData.event);
   }
 
+  function onNetworkDragging() {
+    radialMenuRef.current?.hide();
+  }
+
+  const radialItems = [
+    {
+      label: 'Connect',
+      icon: 'pi pi-arrow-right-arrow-left',
+      command: onNodeConnect,
+    },
+    {
+      label: 'Edit',
+      icon: 'pi pi-pen-to-square',
+      command: onNodeEdit,
+    },
+    {
+      label: 'Delete',
+      icon: 'pi pi-trash',
+      command: onNodeDelete,
+    },
+  ];
+
   return (
     <div
       className="w-full h-full sb-node-editor"
       ref={containerRef}
       onMouseMove={onMouseMove}
     >
-      {/*<Menubar*/}
-      {/*  className={classNames({*/}
-      {/*    'sb-node-editor-menubar': true,*/}
-      {/*    'sb-node-editor-menubar-disabled': selectedNode === null,*/}
-      {/*  })}*/}
-      {/*  model={topbarItems}*/}
-      {/*/>*/}
+      <SpeedDial
+        className="sb-node-editor-dial"
+        ref={radialMenuRef}
+        model={radialItems}
+        radius={80}
+        type="circle"
+        visible={true}
+        hideOnClickOutside={false}
+        buttonClassName="p-button-warning"
+      />
       <Graph
         graph={{nodes: [], edges: []}}
         options={NetworkOptions}
@@ -329,6 +373,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
           click: onNetworkClick,
           oncontext: onNetworkContext,
           doubleClick: onNetworkDoubleClick,
+          dragging: onNetworkDragging,
         }}
         getNetwork={setNetwork}
       />

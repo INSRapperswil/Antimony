@@ -1,20 +1,22 @@
+import React, {createContext, createRef} from 'react';
+
+import {Toast} from 'primereact/toast';
+
 import {
   SBConfirmOpenProps,
   SBConfirmRef,
 } from '@sb/components/common/SBConfirm';
-import {Toast} from 'primereact/toast';
-import React from 'react';
 
 export class NotificationController {
   private toastRef: React.RefObject<Toast>;
   private confirmRef: React.RefObject<SBConfirmRef>;
 
   constructor(
-    toastRef: React.RefObject<Toast>,
-    confirmRef: React.RefObject<SBConfirmRef>
+    toastRef?: React.RefObject<Toast>,
+    confirmRef?: React.RefObject<SBConfirmRef>
   ) {
-    this.toastRef = toastRef;
-    this.confirmRef = confirmRef;
+    this.toastRef = toastRef ?? createRef();
+    this.confirmRef = confirmRef ?? createRef();
   }
 
   public success = (message: string, title: string = 'Success') =>
@@ -45,3 +47,7 @@ export class NotificationController {
     });
   }
 }
+
+export const NotificationControllerContext = createContext(
+  new NotificationController()
+);

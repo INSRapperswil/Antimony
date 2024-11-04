@@ -1,10 +1,11 @@
 import {ErrorResponse, UserCredentials} from '@sb/types/Types';
 
-export class APIConnector {
+export class APIConnectorStore {
   private readonly apiUrl = process.env.SB_API_SERVER_URL;
 
-  // TODO(kian): Save in local session storage or cookies
   private authToken: string = '';
+
+  public isAuthenticated: boolean = false;
 
   public async login(credentials: UserCredentials): Promise<boolean> {
     const tokenResponse = await this.post<UserCredentials, string>(

@@ -1,41 +1,39 @@
-import ExplorerTreeNode from '@sb/components/AdminPage/TopologyExplorer/ExplorerTreeNode/ExplorerTreeNode';
-import SBConfirm from '@sb/components/common/SBConfirm';
-import {NotificationController} from '@sb/lib/NotificationController';
-import React, {useCallback, useEffect, useState} from 'react';
+import {observer} from 'mobx-react-lite';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 
-import {Tree, TreeExpandedKeysType, TreeSelectionEvent} from 'primereact/tree';
 import {Tooltip} from 'primereact/tooltip';
 import {TreeNode} from 'primereact/treenode';
 import {ProgressSpinner} from 'primereact/progressspinner';
+import {Tree, TreeExpandedKeysType, TreeSelectionEvent} from 'primereact/tree';
 
+import {FetchState, Topology} from '@sb/types/Types';
+import {combinedFetchState} from '@sb/lib/utils/Utils';
+import SBConfirm from '@sb/components/common/SBConfirm';
 import {Choose, Otherwise, When} from '@sb/types/control';
-import {DeviceInfo, FetchState, Group, Topology} from '@sb/types/Types';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
+import {NotificationControllerContext} from '@sb/lib/NotificationController';
+import ExplorerTreeNode from '@sb/components/AdminPage/TopologyExplorer/ExplorerTreeNode/ExplorerTreeNode';
 
 import './TopologyExplorer.sass';
 
 interface TopologyBrowserProps {
-  notificationController: NotificationController;
-
-  groups: Group[];
-  topologies: Topology[];
-  fetchState: FetchState;
-  devices: DeviceInfo[];
-
   selectedTopologyId?: string | null;
   onTopologySelect: (id: string) => void;
 }
 
-const TopologyExplorer: React.FC<TopologyBrowserProps> = (
-  props: TopologyBrowserProps
-) => {
+const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   const [topologyTree, setTopologyTree] = useState<TreeNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<TreeExpandedKeysType>({});
+
+  const topologyStore = useContext(RootStoreContext).topologyStore;
+  const groupStore = useContext(RootStoreContext).groupStore;
+  const notificationController = useContext(NotificationControllerContext);
 
   const generateTopologyTree = useCallback(() => {
     const topologyTree: TreeNode[] = [];
     const topologiesByGroup = new Map<string, Topology[]>();
 
-    for (const topology of props.topologies) {
+    for (const topology of topologyStore.topologies) {
       if (topologiesByGroup.has(topology.groupId)) {
         topologiesByGroup.get(topology.groupId)!.push(topology);
       } else {
@@ -43,7 +41,7 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
       }
     }
 
-    for (const group of props.groups) {
+    for (const group of groupStore.groups) {
       topologyTree.push({
         key: group.id,
         label: group.name,
@@ -61,10 +59,15 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
     }
 
     return topologyTree;
-  }, [props.groups, props.topologies]);
+  }, [groupStore, topologyStore]);
 
   useEffect(() => {
-    if (props.fetchState !== FetchState.Done) return;
+    if (
+      combinedFetchState(topologyStore.fetchState, groupStore.fetchState) !==
+      FetchState.Done
+    ) {
+      return;
+    }
 
     const topologyTree = generateTopologyTree();
     setTopologyTree(topologyTree);
@@ -72,7 +75,7 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
     setExpandedKeys(
       Object.fromEntries(topologyTree.map(group => [group.key, true]))
     );
-  }, [generateTopologyTree, props.fetchState, props.topologies]);
+  }, [groupStore.fetchState, topologyStore.fetchState, generateTopologyTree]);
 
   function onSelectionChange(e: TreeSelectionEvent) {
     if (e.value === null) return;
@@ -81,36 +84,33 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
   }
 
   function onRenameGroup(uuid: string, value: string) {
-    console.log('Renaming group: ', uuid, ' to ', value);
-    props.notificationController.success('Successfully renamed group.');
+    notificationController.success('Successfully renamed group.');
 
     return null;
   }
 
   function onDeleteGroupRequest(uuid: string) {
-    props.notificationController.confirm({
+    notificationController.confirm({
       message: 'This action cannot be undone!',
       header: 'Delete Group?',
       icon: 'pi pi-exclamation-triangle',
       severity: 'danger',
       onAccept: () => {
         console.log('Deleting Group: ', uuid);
-        props.notificationController.success('Group was successfully deleted!');
+        notificationController.success('Group was successfully deleted!');
       },
     });
   }
 
   function onDeleteTopologyRequest(uuid: string) {
-    props.notificationController.confirm({
+    notificationController.confirm({
       message: 'This action cannot be undone!',
       header: 'Delete Topology?',
       icon: 'pi pi-exclamation-triangle',
       severity: 'danger',
       onAccept: () => {
         console.log('Deleting Topology: ', uuid);
-        props.notificationController.success(
-          'Topology was successfully deleted!'
-        );
+        notificationController.success('Topology was successfully deleted!');
       },
     });
   }
@@ -155,6 +155,6 @@ const TopologyExplorer: React.FC<TopologyBrowserProps> = (
       </Choose>
     </>
   );
-};
+});
 
 export default TopologyExplorer;

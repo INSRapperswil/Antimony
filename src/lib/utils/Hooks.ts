@@ -1,13 +1,11 @@
 import {useCallback, useEffect, useState} from 'react';
 
 import {FetchState} from '@sb/types/Types';
-import {APIConnector} from '@sb/lib/APIConnector';
-
-export type Instantiatable<T> = {new (...args: unknown[]): T};
+import {APIConnectorStore} from '@sb/lib/stores/APIConnectorStore';
 
 export function useResource<T>(
   path: string,
-  apiConnector: APIConnector,
+  apiConnector: APIConnectorStore,
   defaultValue: T,
   mapper: ((input: unknown) => T) | null = null,
   isExternal = false
@@ -32,34 +30,7 @@ export function useResource<T>(
 
   useEffect(() => {
     fetchData();
-  }, [path]);
+  }, [fetchData, path]);
 
   return [data, fetchState, fetchData];
-}
-
-export function useSingleton<T>(
-  toInstantiate: Instantiatable<T>,
-  ...args: unknown[]
-) {
-  const [singleton, setSingleton] = useState<T | null>(null);
-
-  useEffect(() => {
-    if (!singleton) {
-      setSingleton(new toInstantiate(...args));
-    }
-  }, [singleton, toInstantiate, args]);
-
-  return singleton;
-}
-
-export function useReady(...args: (object | null | undefined)[]) {
-  const [isReady, setReady] = useState(false);
-
-  useEffect(() => {
-    if (!isReady) {
-      setReady(args.every(o => o !== null));
-    }
-  }, [args, isReady]);
-
-  return isReady;
 }

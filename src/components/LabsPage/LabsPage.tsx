@@ -16,6 +16,7 @@ import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 import './LabsPage.sass';
 import {IconField} from 'primereact/iconfield';
 import {InputIcon} from 'primereact/inputicon';
+import ReservationDialog from '@sb/components/LabsPage/ReservationDialog/ReservationDialog';
 
 interface LabsPageProps {
   apiConnector: APIConnector;
@@ -23,7 +24,7 @@ interface LabsPageProps {
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
-  [LabState.Deploying]: '',
+  [LabState.Deploying]: 'pi pi-upload',
   [LabState.Running]: 'pi pi-sync',
   [LabState.Failed]: 'pi pi-times-circle',
   [LabState.Done]: 'pi pi-check',
@@ -48,13 +49,15 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
   const [groups] = useResource<Group[]>('/groups', props.apiConnector, []);
   const searchQueryRef = useRef('');
   const [searchQuery, setSearchQuery] = useState<String>('');
+  const [reschedulingDialog, setReschedulingDialog] = useState<boolean>(false);
+  const today = new Date();
+
   const [devices] = useResource<DeviceInfo[]>(
     '/devices',
     props.apiConnector,
     []
   );
   const labsPath = `/labs?limit=${pageSize}&offset=${currentPage * pageSize}&stateFilter=${selectedFilters.join(',')}&searchQuery=${searchQuery}`;
-  console.log(labsPath);
   const [labQuery] = useResource<Lab[]>(labsPath, props.apiConnector, []);
 
   useEffect(() => {
@@ -95,6 +98,38 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
     return new DeviceManager(devices);
   }, [devices]);
   const isReady = useReady(deviceManager, labs);
+
+  function handleEditLab(lab: Lab) {
+    if (lab.state === LabState.Scheduled) {
+      setReschedulingDialog(true);
+      setSelectedLab(lab);
+    }
+  }
+
+  function setDialog(state: boolean): void {
+    setReschedulingDialog(state);
+  }
+
+  function handleLabDate(lab: Lab): String {
+    let timeString: Date;
+    if (lab.state === LabState.Scheduled) {
+      timeString = new Date(lab.startDate);
+    } else {
+      timeString = new Date(lab.endDate);
+    }
+    if (
+      timeString.getDate() === today.getDate() &&
+      timeString.getMonth() === today.getMonth() &&
+      timeString.getFullYear() === today.getFullYear()
+    ) {
+      return timeString.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } else {
+      return timeString.toISOString().split('T')[0];
+    }
+  }
 
   return (
     <If condition={isReady}>
@@ -160,39 +195,76 @@ const LabsPage: React.FC<LabsPageProps> = (props: LabsPageProps) => {
               className="chip"
             />
           ))}
+          {searchQuery !== '' && (
+            <Chip
+              label={searchQuery as string}
+              removable={true}
+              onRemove={() => setSearchQuery('')}
+              className="chip"
+            />
+          )}
         </div>
         <div className="bg-primary" style={{padding: '1em', color: '#C3E4E9'}}>
           <Choose>
             <When condition={labs.length > 0}>
               <div className="lab-explorer-container">
                 {getFilteredLabs().map(lab => (
-                  <div
-                    key={lab.id}
-                    className="lab-item-card"
-                    onClick={() => {
-                      setLabDialogVisible(true);
-                      setSelectedLab(lab);
-                    }}
-                  >
+                  <div key={lab.id} className="lab-item-card">
                     {/* Group */}
-                    <div className="lab-group">
+                    <div
+                      className="lab-group"
+                      onClick={() => {
+                        setLabDialogVisible(true);
+                        setSelectedLab(lab);
+                      }}
+                    >
                       <p>{getGroupById(lab.groupId)}</p>
                     </div>
-
                     {/* Lab Name */}
-                    <div className="lab-name">
+                    <div
+                      className="lab-name"
+                      onClick={() => {
+                        setLabDialogVisible(true);
+                        setSelectedLab(lab);
+                      }}
+                    >
                       <p>{lab.name}</p>
                     </div>
-
                     {/* State */}
                     <div className="lab-state">
-                      <i className={statusIcons[lab.state]}></i>
-                      <label className="lab-state-label">12.11.2024</label>
+                      <span
+                        className="lab-state-label"
+                        onClick={() => {
+                          handleEditLab(lab);
+                        }}
+                      >
+                        <i className={statusIcons[lab.state]}></i>
+                        <label className="lab-state-date">
+                          {handleLabDate(lab)}
+                        </label>
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
-
+              <Dialog
+                header={
+                  <div className="dialog-header">
+                    <strong>Update Reservation</strong>
+                  </div>
+                }
+                visible={reschedulingDialog}
+                className="dialog-lab-reservation"
+                onHide={() => setDialog(false)}
+                modal={false}
+              >
+                <div>
+                  <ReservationDialog
+                    lab={selectedLab!}
+                    setRescheduling={setReschedulingDialog}
+                  />
+                </div>
+              </Dialog>
               <div className="pagination-controls">
                 <Button
                   label="Previous"

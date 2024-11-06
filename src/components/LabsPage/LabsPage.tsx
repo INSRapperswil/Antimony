@@ -1,7 +1,6 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {MouseEvent, useContext, useEffect, useState} from 'react';
 
 import {Chip} from 'primereact/chip';
-import {Button} from 'primereact/button';
 import {Dialog} from 'primereact/dialog';
 import {InputText} from 'primereact/inputtext';
 import {IconField} from 'primereact/iconfield';
@@ -19,17 +18,18 @@ import {Choose, If, Otherwise, When} from '@sb/types/control';
 
 import './LabsPage.sass';
 import classNames from 'classnames';
+import {Paginator} from 'primereact/paginator';
+import {Button} from 'primereact/button';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
-  [LabState.Deploying]: 'pi pi-sync',
+  [LabState.Deploying]: 'pi pi-sync pi-spin',
   [LabState.Running]: 'pi pi-check',
   [LabState.Failed]: 'pi pi-times',
   [LabState.Done]: 'pi pi-check',
 };
 
 const LabsPage: React.FC = () => {
-  const [LabDialogVisible, setLabDialogVisible] = useState<boolean>(false);
   const [FilterDialogVisible, setFilterDialogVisible] =
     useState<boolean>(false);
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
@@ -49,6 +49,8 @@ const LabsPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [reschedulingDialog, setReschedulingDialog] = useState<boolean>(false);
+  const [reschedulingDialogLab, setReschedulingDialogLab] =
+    useState<Lab | null>(null);
 
   const labsPath = `/labs?limit=${pageSize}&offset=${currentPage * pageSize}&stateFilter=${selectedFilters.join(',')}&searchQuery=${searchQuery}`;
   const [labQuery] = useResource<Lab[]>(
@@ -73,29 +75,6 @@ const LabsPage: React.FC = () => {
     return labs.filter(lab => selectedFilters.includes(lab.state));
   };
 
-  const handleNextPage = () => {
-    if (totalAmountOfEntries / pageSize >= currentPage + 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  function handleEditLab(lab: Lab) {
-    if (lab.state === LabState.Scheduled) {
-      setReschedulingDialog(true);
-      setSelectedLab(lab);
-    }
-  }
-
-  function setDialog(state: boolean): void {
-    setReschedulingDialog(state);
-  }
-
   function handleLabDate(lab: Lab): string {
     let timeString: Date;
 
@@ -103,7 +82,7 @@ const LabsPage: React.FC = () => {
       case LabState.Scheduled:
         // In the Scheduled state, return just the day and month in DD-MM format
         timeString = new Date(lab.startDate);
-        return `${timeString.getDate().toString().padStart(2, '0')}-${(timeString.getMonth() + 1).toString().padStart(2, '0')}`;
+        return timeString.toISOString().split('T')[0];
 
       case LabState.Deploying:
       case LabState.Running:
@@ -126,6 +105,16 @@ const LabsPage: React.FC = () => {
       default:
         return '';
     }
+  }
+
+  function onRescheduleLab(event: MouseEvent<HTMLButtonElement>, lab: Lab) {
+    event.stopPropagation();
+    setReschedulingDialog(true);
+    setReschedulingDialogLab(lab);
+  }
+
+  function onStopLab(event: MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
   }
 
   return (
@@ -192,25 +181,20 @@ const LabsPage: React.FC = () => {
             <When condition={labs.length > 0}>
               <div className="lab-explorer-container">
                 {getFilteredLabs().map(lab => (
-                  <div key={lab.id} className="lab-item-card">
+                  <div
+                    key={lab.id}
+                    className="lab-item-card"
+                    onClick={() => setSelectedLab(lab)}
+                  >
                     {/* Group */}
                     <div
                       className="lab-group sb-corner-tab"
-                      onClick={() => {
-                        setLabDialogVisible(true);
-                        setSelectedLab(lab);
-                      }}
+                      onClick={() => setSelectedLab(lab)}
                     >
                       <span>{getGroupById(lab.groupId)}</span>
                     </div>
                     {/* Lab Name */}
-                    <div
-                      className="lab-name"
-                      onClick={() => {
-                        setLabDialogVisible(true);
-                        setSelectedLab(lab);
-                      }}
-                    >
+                    <div className="lab-name">
                       <span>{lab.name}</span>
                     </div>
                     {/* State */}
@@ -223,13 +207,41 @@ const LabsPage: React.FC = () => {
                         failed: lab.state === LabState.Failed,
                       })}
                     >
-                      <span
-                        className="lab-state-label"
-                        onClick={() => {
-                          handleEditLab(lab);
-                        }}
-                      >
-                        <i className={statusIcons[lab.state]}></i>
+                      <div className="lab-state-buttons">
+                        <If condition={lab.state === LabState.Scheduled}>
+                          <Button
+                            icon="pi pi-calendar"
+                            severity="info"
+                            rounded
+                            text
+                            size="large"
+                            tooltip="Reschedule Lab"
+                            tooltipOptions={{
+                              position: 'bottom',
+                              showDelay: 200,
+                            }}
+                            onClick={e => onRescheduleLab(e, lab)}
+                          />
+                        </If>
+                        <Button
+                          icon="pi pi-power-off"
+                          severity="danger"
+                          rounded
+                          text
+                          size="large"
+                          tooltip="Stop Lab"
+                          tooltipOptions={{
+                            position: 'bottom',
+                            showDelay: 200,
+                          }}
+                          onClick={onStopLab}
+                        />
+                      </div>
+                      <span className="lab-state-label">
+                        <div className="lab-state-label-icon">
+                          <i className={statusIcons[lab.state]}></i>
+                          <span>{LabState[lab.state]}</span>
+                        </div>
                         <label className="lab-state-date">
                           {handleLabDate(lab)}
                         </label>
@@ -247,32 +259,22 @@ const LabsPage: React.FC = () => {
                 visible={reschedulingDialog}
                 className="dialog-lab-reservation"
                 dismissableMask={true}
-                onHide={() => setDialog(false)}
+                onHide={() => setReschedulingDialog(false)}
               >
                 <div>
                   <ReservationDialog
-                    lab={selectedLab!}
+                    lab={reschedulingDialogLab!}
                     setRescheduling={setReschedulingDialog}
                   />
                 </div>
               </Dialog>
               <div className="pagination-controls">
-                <Button
-                  label="Previous"
-                  onClick={handlePreviousPage}
-                  disabled={currentPage === 0}
-                  className="pagination-button"
-                />
-                <span className="pagination-info">
-                  Page {currentPage + 1} of{' '}
-                  {Math.ceil(totalAmountOfEntries / pageSize)}
-                </span>
-                <Button
-                  label="Next"
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalAmountOfEntries / pageSize}
-                  className="pagination-button"
-                />
+                <Paginator
+                  first={currentPage * pageSize}
+                  rows={pageSize}
+                  totalRecords={totalAmountOfEntries}
+                  onPageChange={e => setCurrentPage(e.page)}
+                ></Paginator>
               </div>
               {/* Dialog for Lab Details */}
               <Dialog
@@ -286,10 +288,10 @@ const LabsPage: React.FC = () => {
                     </div>
                   </div>
                 }
-                visible={LabDialogVisible}
+                visible={selectedLab !== null}
                 dismissableMask={true}
                 className="dialog-lab-details"
-                onHide={() => setLabDialogVisible(false)}
+                onHide={() => setSelectedLab(null)}
               >
                 <If condition={selectedLab}>
                   <div className="height-100">

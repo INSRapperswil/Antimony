@@ -14,8 +14,12 @@ const Dock: React.FC = () => {
         <div className="sb-logo-tab sb-corner-tab flex justify-content-center align-items-center">
           <div>Logo Here</div>
         </div>
-        <Button label="Labs" outlined onClick={() => navigate('/')} />
-        <Button label="Admin" outlined onClick={() => navigate('/admin')} />
+        <Button label="Dashboard" outlined onClick={() => navigate('/')} />
+        <Button
+          label="Topology Editor"
+          outlined
+          onClick={() => navigate('/admin')}
+        />
       </div>
       <div className="flex align-items-center gap-2 justify-content-end">
         <Button

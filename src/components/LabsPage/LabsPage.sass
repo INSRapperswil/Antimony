@@ -60,6 +60,11 @@
   border-radius: 4px
   border: 1px solid var(--primary-color-border)
   cursor: pointer
+  position: relative
+
+  &:hover
+    .lab-state-buttons
+      transform: translateX(0)
 
 .lab-group
   width: 180px
@@ -68,7 +73,6 @@
   display: flex
   text-align: center
   border: 1px solid var(--primary-color-border)
-  background-color: var(--secondary-color)
   border-radius: 4px 6px 6px 4px
   margin: -1px
   align-self: stretch
@@ -85,13 +89,38 @@
 
 .lab-state
   display: flex
-  width: 120px
+  min-width: 150px
+  padding: 0 16px 0 16px
   text-align: center
   border: 1px solid var(--primary-color-border)
   border-radius: 6px 4px 4px 6px
   margin: -1px
   align-self: stretch
   align-items: center
+  position: relative
+  overflow: hidden
+
+  .lab-state-buttons
+    position: absolute
+    bottom: 0
+    top: 0
+    left: 0
+    right: 0
+    border: 1px solid var(--primary-color-border)
+    border-radius: 6px 4px 4px 6px
+    margin: -1px
+    background-color: #1A2B34
+    display: flex
+    justify-content: space-evenly
+    align-items: center
+    z-index: 2
+    transform: translateX(100%)
+    transition: transform ease 0.2s
+
+    .p-button
+      background-color: transparent
+      border: none
+      padding: 0
 
   &.running
     color: var(--success-color)
@@ -111,7 +140,6 @@
 
   &.scheduled
     color: var(--info-color)
-
     .lab-state-date
       &::before
         background-color: var(--info-color)
@@ -137,8 +165,16 @@
     display: flex
     border-radius: 4px
     text-align: center
-    justify-content: space-evenly
-    width: 140px
+    transition: margin-right ease 0.3s
+
+    .lab-state-label-icon
+      display: flex
+      flex-direction: column
+      gap: 4px
+      width: 60px
+
+      span
+        font-size: 12px
 
     .pi
       font-size: 1em
@@ -146,11 +182,12 @@
 
     .lab-state-date
       padding: 4px
+      margin-left: 10px
       border-radius: 4px
       color: var(--primary-color-text)
-      width: 60px
       position: relative
       filter: brightness(1) contrast(0.9)
+      align-self: center
 
       &::before
         content: ""
@@ -190,7 +227,7 @@
 
 .pagination-controls
   display: flex
-  justify-content: space-between
+  justify-content: space-around
   align-items: center
   flex-direction: row
   margin-top: 1em

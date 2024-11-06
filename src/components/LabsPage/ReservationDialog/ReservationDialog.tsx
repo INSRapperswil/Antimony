@@ -14,17 +14,14 @@ interface ReservationDialogProps {
 const ReservationDialog: React.FC<ReservationDialogProps> = (
   props: ReservationDialogProps
 ) => {
-  // Parse the existing datetime into separate date and time
   const initialStartDate = new Date(props.lab.startDate);
   const initialEndDate = new Date(props.lab.endDate);
 
-  // Set the initial date and time separately in the state
   const [startDate, setStartDate] = useState<Date | null>(initialStartDate);
-  const [startTime, setStartTime] = useState<Date | null>(initialStartDate);
-  const [endDate, setEndDate] = useState<Date | null>(initialEndDate);
-  const [endTime, setEndTime] = useState<Date | null>(initialEndDate);
+  const [startTime, setStartTime] = useState<Date | null>(initialStartDate!);
+  const [endDate, setEndDate] = useState<Date | null>(initialEndDate!);
+  const [endTime, setEndTime] = useState<Date | null>(initialEndDate!);
 
-  // Function to combine date and time to create the ISO string
   const combineDateAndTime = (date: Date | null, time: Date | null): string => {
     if (date && time) {
       const combinedDate = new Date(date);

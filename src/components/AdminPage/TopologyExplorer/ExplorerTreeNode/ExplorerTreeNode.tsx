@@ -10,6 +10,7 @@ interface ExplorerTreeNodeProps {
   node: TreeNode;
 
   onDeleteGroup: (uuid: string) => void;
+  onEditGroup: (uuid: string) => void;
   onRenameGroup: (value: string) => string | null;
 
   onAddTopology: () => void;
@@ -22,6 +23,11 @@ const ExplorerTreeNode: React.FC<ExplorerTreeNodeProps> = (
 ) => {
   function onAddTopology(event: MouseEvent<HTMLButtonElement>) {
     props.onAddTopology();
+    event.stopPropagation();
+  }
+
+  function onEditGroup(event: MouseEvent<HTMLButtonElement>) {
+    props.onEditGroup(props.node.key as string);
     event.stopPropagation();
   }
 
@@ -84,6 +90,15 @@ const ExplorerTreeNode: React.FC<ExplorerTreeNodeProps> = (
             onValueSubmit={props.onRenameGroup}
           />
           <div className="sb-explorer-node-buttons">
+            <Button
+              icon="pi pi-pen-to-square"
+              severity="secondary"
+              rounded
+              text
+              tooltip="Edit Group"
+              onClick={onEditGroup}
+              tooltipOptions={{showDelay: 500}}
+            />
             <Button
               icon="pi pi-trash"
               severity="danger"

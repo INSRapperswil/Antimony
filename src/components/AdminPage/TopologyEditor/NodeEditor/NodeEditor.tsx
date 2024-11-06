@@ -22,6 +22,7 @@ import {RootStoreContext} from '@sb/lib/stores/RootStore';
 
 import './NodeEditor.sass';
 import {drawGrid} from '@sb/lib/utils/Utils';
+import {isEqual} from 'lodash';
 
 interface NodeEditorProps {
   openTopology: YAMLDocument<TopologyDefinition> | null;
@@ -47,8 +48,12 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const containerRef = useRef(null);
   const radialMenuRef = useRef<SpeedDial>(null);
 
-  // Connection state does not have to be reactive, so we define it as refs
-  const nodeConnectTarget = useRef<Position | null>(null);
+  // Referece to the current graph data since we can't get it from the network
+  const currentNetworkData = useRef<GraphDefinition | null>(null);
+
+  // Connection state does not have to be reactive so we use refs
+  const nodeConnectTarget = useRef<number | null>(null);
+  const nodeConnectTargetPosition = useRef<Position | null>(null);
   const nodeConnectDestination = useRef<Position | null>(null);
   const nodeConnecting = useRef(false);
 
@@ -105,9 +110,15 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
    * Passing this through the graph's prop directly was causing a weird error. We need to take the imperative way here.
    */
   useEffect(() => {
+    if (!network) return;
+
+    // Ignore update if graph hasn't changed
+    if (isEqual(currentNetworkData.current, graph)) return;
+
+    currentNetworkData.current = graph;
     network?.setData(graph);
-    radialMenuRef.current?.hide();
     setSelectedNode(null);
+    radialMenuRef.current?.hide();
   }, [network, graph]);
 
   const networkCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
@@ -116,17 +127,18 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     (ctx: CanvasRenderingContext2D) => {
       if (
         !network ||
-        !nodeConnectTarget.current ||
+        !nodeConnectTargetPosition.current ||
         !nodeConnectDestination.current
       ) {
         return;
       }
 
-      const target = nodeConnectTarget.current;
-      const destination = getMousePosition(
-        ctx.canvas,
-        nodeConnectDestination.current
-      );
+      const target = nodeConnectTargetPosition.current;
+      // const destination = getMousePosition(
+      //   ctx.canvas,
+      //   nodeConnectDestination.current
+      // );
+      const destination = network.canvasToDOM(nodeConnectDestination.current);
 
       ctx.lineWidth = 2;
       ctx.strokeStyle = 'rgb(66 181 172)';
@@ -179,9 +191,10 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       return;
     }
     setRadialTarget(null);
-    nodeConnectTarget.current =
-      network?.getPosition(network?.getSelectedNodes()[0]) ?? null;
-    nodeConnecting.current = nodeConnectTarget.current !== null;
+    nodeConnectTarget.current = selectedNodes[0] as number;
+    nodeConnectTargetPosition.current =
+      network?.getPosition(selectedNodes[0]) ?? null;
+    nodeConnecting.current = nodeConnectTargetPosition.current !== null;
   }, [network]);
 
   const onNodeEdit = useCallback(() => {

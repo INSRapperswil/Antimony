@@ -8,7 +8,6 @@ import React, {
 
 import {validate} from 'jsonschema';
 import {Button} from 'primereact/button';
-import {Tooltip} from 'primereact/tooltip';
 import {Document, parseDocument} from 'yaml';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
 
@@ -79,7 +78,10 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     try {
       const obj = parseDocument(content);
 
-      if (validate(obj.toJS(), schemaStore.clabSchema).errors.length === 0) {
+      if (
+        obj.errors.length === 0 &&
+        validate(obj.toJS(), schemaStore.clabSchema).errors.length === 0
+      ) {
         setValidationState(ValidationState.Done);
         topologyStore.manager.apply(obj);
       } else {
@@ -201,6 +203,8 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                 >
                   <MonacoWrapper
                     ref={monacoWrapperRef}
+                    validationError={validationError}
+                    validationState={validationState}
                     openTopology={openTopology}
                     language="yaml"
                     setContent={onContentChange}
@@ -218,38 +222,6 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   />
                 </SplitterPanel>
               </Splitter>
-            </div>
-            <div
-              className="flex sb-card sb-topology-editor-bottombar sb-toplogy-editor-validation"
-              data-pr-tooltip="test"
-              data-pr-position="top"
-            >
-              <Choose>
-                <When condition={validationState === ValidationState.Error}>
-                  <i
-                    className="pi pi-times"
-                    style={{color: 'var(--danger-color)'}}
-                  ></i>
-                  <span data-pr-tooltip="test" data-pr-position="top">
-                    {validationError}
-                  </span>
-                </When>
-                <When condition={validationState === ValidationState.Working}>
-                  <i
-                    className="pi pi-spin pi-spinner-dotted"
-                    style={{color: 'var(--warning-color)'}}
-                  ></i>
-                  <span>Validating...</span>
-                </When>
-                <Otherwise>
-                  <i
-                    className="pi pi-check"
-                    style={{color: 'var(--success-color)'}}
-                  ></i>
-                  <span>Done.</span>
-                </Otherwise>
-              </Choose>
-              <Tooltip target=".sb-toplogy-editor-validation" />
             </div>
           </div>
         </When>

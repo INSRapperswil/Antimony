@@ -5,8 +5,8 @@ import React, {
   useContext,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
+  useState,
 } from 'react';
 
 import {toJS} from 'mobx';
@@ -17,11 +17,14 @@ import {Monaco} from '@monaco-editor/react';
 import MonacoEditor from 'react-monaco-editor';
 import {configureMonacoYaml} from 'monaco-yaml';
 
-import {If} from '@sb/types/control';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {AntimonyTheme, MonacoOptions} from './monaco.conf';
 
 import './MonacoWrapper.sass';
+import {isEqual} from 'lodash';
+import {ValidationState} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
+import {Tooltip} from 'primereact/tooltip';
 
 const schemaModelUri = 'inmemory://schema.yaml';
 
@@ -32,6 +35,8 @@ window.MonacoEnvironment = {
 };
 
 interface MonacoWrapperProps {
+  validationError: string | null;
+  validationState: ValidationState;
   openTopology: Document | null;
 
   setContent: (content: string) => void;
@@ -80,11 +85,24 @@ const MonacoWrapper = observer(
       }
     }, []);
 
-    const content = useMemo(() => {
-      if (props.openTopology) {
-        return props.openTopology.toString();
+    const [content, setContent] = useState('');
+
+    useEffect(() => {
+      if (!props.openTopology) return;
+
+      const updatedContent = props.openTopology?.toString();
+      if (!textModelRef.current) {
+        setContent(updatedContent);
+        return;
       }
-      return '';
+
+      const existingContent = textModelRef.current.getValue();
+      const updatedContentStripped = updatedContent.replaceAll(' ', '');
+      const existingContentStripped = existingContent.replaceAll(' ', '');
+
+      if (!isEqual(updatedContentStripped, existingContentStripped)) {
+        setContent(updatedContent);
+      }
     }, [props.openTopology]);
 
     useEffect(() => {
@@ -141,6 +159,42 @@ const MonacoWrapper = observer(
     return (
       <If condition={schemaStore.clabSchema}>
         <div className="w-full h-full sb-monaco-wrapper">
+          <div
+            className="sb-monaco-wrapper-error"
+            data-pr-tooltip={props.validationError ?? 'Schema Valid'}
+            data-pr-position="right"
+          >
+            <Choose>
+              <When condition={props.validationState === ValidationState.Error}>
+                <i
+                  className="pi pi-times"
+                  style={{color: 'var(--danger-color)'}}
+                ></i>
+              </When>
+              <When
+                condition={props.validationState === ValidationState.Working}
+              >
+                <span>Validating...</span>
+              </When>
+              <Otherwise>
+                <i
+                  className="pi pi-check"
+                  style={{color: 'var(--success-color)'}}
+                ></i>
+              </Otherwise>
+            </Choose>
+            <Tooltip
+              className="sb-monaco-wrapper-error-tooltip"
+              target=".sb-monaco-wrapper-error"
+            />
+            {/*<Button*/}
+            {/*  text*/}
+            {/*  icon="pi pi-check"*/}
+            {/*  size="large"*/}
+            {/*  tooltip="Clear"*/}
+            {/*  tooltipOptions={{position: 'bottom', showDelay: 500}}*/}
+            {/*/>*/}
+          </div>
           <MonacoEditor
             language="yaml"
             value={content}

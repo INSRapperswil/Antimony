@@ -18,13 +18,17 @@ import {Lab, TopologyDefinition} from '@sb/types/Types';
 import {NetworkOptions} from '@sb/components/AdminPage/TopologyEditor/NodeEditor/network.conf';
 
 import './LabDialog.sass';
-import {Dialog} from 'primereact/dialog';
 import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
+import {ContextMenu} from 'primereact/contextmenu';
+import {Checkbox} from 'primereact/checkbox';
+import {drawGrid} from '@sb/lib/utils/Utils';
+import {NotificationControllerContext} from '@sb/lib/NotificationController';
 
 type GraphDefinition = {
   nodes?: Node[];
   edges?: Edge[];
 };
+
 interface LabDialogProps {
   lab: Lab;
   groupName: String;
@@ -35,7 +39,9 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const [topologyDefinition, setTopologyDefinition] =
     useState<YAMLDocument<TopologyDefinition> | null>(null);
   const containerRef = useRef(null);
-  const [dialogVisible, setDialogVisible] = useState<boolean>(false);
+  const [hostsVisible, setHostsVisible] = useState<boolean>(false);
+  const nodeContextMenuRef = useRef<ContextMenu | null>(null);
+  const [selectedNode, setSelectedNode] = useState<number | null>(null);
 
   const topologyStore = useContext(RootStoreContext).topologyStore;
   const deviceStore = useContext(RootStoreContext).deviceStore;
@@ -45,6 +51,8 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       network.redraw();
     }
   });
+
+  const notificationController = useContext(NotificationControllerContext);
 
   const getTopology = useCallback(
     (id: string): void => {
@@ -69,9 +77,13 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       if (!node) continue;
 
       nodeMap.set(nodeName, index);
+
+      // Update label based on `hostsVisible`
       nodes.push({
         id: index,
-        label: nodeName,
+        label: hostsVisible
+          ? `${nodeName}\n${props.lab.nodeMeta[index]?.webSsh + ':' + props.lab.nodeMeta[index]?.port || ''}`
+          : nodeName,
         image: deviceStore.getNodeIcon(node),
       });
     }
@@ -88,49 +100,112 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     ];
 
     return {nodes: nodes, edges: edges};
-  }, [topologyDefinition, deviceStore]);
+  }, [topologyDefinition, deviceStore, hostsVisible, props.lab.nodeMeta]);
+
+  // Function to update network data
+  const updateGraphData = useCallback(() => {
+    if (network) {
+      network.setData(graph);
+    }
+  }, [network, graph]);
+
+  // Update graph whenever `network` or `hostsVisible` changes
+  useEffect(() => {
+    if (network) {
+      updateGraphData();
+    }
+  }, [network, updateGraphData]);
+
+  function onNetworkContext(selectData: NodeClickEvent) {
+    if (!nodeContextMenuRef.current) return;
+
+    const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+    if (targetNode !== undefined) {
+      network?.selectNodes([targetNode]);
+      setSelectedNode(targetNode as number);
+      nodeContextMenuRef.current.show(selectData.event);
+    }
+  }
+
+  const networkContextMenuItems = useMemo(() => {
+    if (selectedNode !== null) {
+      return [
+        {
+          label: 'Copy Host',
+          icon: 'pi pi-copy',
+        },
+        {
+          label: 'Web SSH',
+          icon: 'pi pi-external-link',
+        },
+      ];
+    }
+  }, [selectedNode]);
+
+  useEffect(() => {
+    if (!network) return;
+    network.on('beforeDrawing', drawGrid);
+
+    return () => network.off('beforeDrawing', drawGrid);
+  }, [network]);
 
   useEffect(() => {
     getTopology(props.lab.topologyId);
-    network?.setData(graph);
-  }, [network, graph, props.lab, getTopology]);
+  }, [props.lab.topologyId, getTopology]);
+
+  function onAbort() {
+    notificationController.confirm({
+      message: 'This action cannot be undone.',
+      header: `Stop Lab '${props.lab.name}'?`,
+      icon: 'pi pi-power-off',
+      severity: 'danger',
+      onAccept: onAbortConfirm,
+    });
+  }
+
+  function onAbortConfirm() {}
 
   return (
     <div className="height-100 topology-container">
       <div className="height-100">
         <div className="topology-header">
-          <strong className="topology-title">Topology</strong>
           <Button
-            onClick={() => console.log('EdgeShark Clicked')} // Replace with handler
+            onClick={() => window.open(props.lab.edgesharkLink, '_blank')}
             className="topology-button"
           >
             🦈 Start EdgeShark
           </Button>
+          <div className="dialog-actions">
+            <Checkbox
+              inputId="hostsVisibleCheckbox"
+              checked={hostsVisible}
+              onChange={e => setHostsVisible(e.checked!)}
+            />
+            <label htmlFor="hostsVisibleCheckbox">Show hosts</label>
+          </div>
         </div>
         <div className="height-100 topology-graph-container">
           <Graph
             graph={{nodes: [], edges: []}}
             options={NetworkOptions}
+            events={{
+              oncontext: onNetworkContext,
+            }}
             getNetwork={setNetwork}
           />
         </div>
+        <ContextMenu model={networkContextMenuItems} ref={nodeContextMenuRef} />
         <div className="topology-footer">
-          <Button className="p-component" style={{alignSelf: 'flex-start'}}>
-            Reset
-          </Button>
           <Button
-            className="p-component"
-            style={{alignSelf: 'flex-end'}}
-            onClick={() => {
-              setDialogVisible(true);
-              console.log('got clicked');
-            }}
+            className="p-component bold"
+            style={{alignSelf: 'flex-start'}}
+            onClick={onAbort}
           >
-            Abort
+            Stop
           </Button>
-          <Dialog
+          {/*<Dialog
             header={
-              <div className="dialog-header">
+              <div className="conformation-dialog-header">
                 <strong>Abort?</strong>
               </div>
             }
@@ -150,7 +225,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
               <p>Group name: {props.groupName}</p>
               <div className="abort-buttons">
                 <Button
-                  className="p-button p-component"
+                  className="p-button p-component bold"
                   onClick={() => setDialogVisible(false)}
                 >
                   Cancel
@@ -158,11 +233,27 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
                 <Button className="p-button p-component">Abort</Button>
               </div>
             </div>
-          </Dialog>
+          </Dialog>*/}
         </div>
       </div>
     </div>
   );
 };
+
+interface NodeClickEvent {
+  nodes: Node[];
+  edges: Edge[];
+  event: React.SyntheticEvent;
+  pointer: {
+    DOM: {
+      x: number;
+      y: number;
+    };
+    canvas: {
+      x: number;
+      y: number;
+    };
+  };
+}
 
 export default LabDialog;

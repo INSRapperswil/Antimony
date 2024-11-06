@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 
 import {Chip} from 'primereact/chip';
 import {Button} from 'primereact/button';
@@ -13,22 +7,24 @@ import {InputText} from 'primereact/inputtext';
 import {IconField} from 'primereact/iconfield';
 import {InputIcon} from 'primereact/inputicon';
 
-import {DeviceInfo, Lab, LabState} from '@sb/types/Types';
+// eslint-disable-next-line n/no-extraneous-import
+import {Lab, LabState} from '@sb/types/Types';
 import {useResource} from '@sb/lib/utils/Hooks';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
-import {Choose, If, Otherwise, When} from '@sb/types/control';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
 import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 import ReservationDialog from '@sb/components/LabsPage/ReservationDialog/ReservationDialog';
+// eslint-disable-next-line n/no-extraneous-import
+import {Choose, If, Otherwise, When} from '@sb/types/control';
 
 import './LabsPage.sass';
-import {APIConnectorStore} from '@sb/lib/stores/APIConnectorStore';
+import classNames from 'classnames';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
-  [LabState.Deploying]: 'pi pi-upload',
-  [LabState.Running]: 'pi pi-sync',
-  [LabState.Failed]: 'pi pi-times-circle',
+  [LabState.Deploying]: 'pi pi-sync',
+  [LabState.Running]: 'pi pi-check',
+  [LabState.Failed]: 'pi pi-times',
   [LabState.Done]: 'pi pi-check',
 };
 
@@ -47,17 +43,13 @@ const LabsPage: React.FC = () => {
   ]);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(0);
-  const [pageSize] = useState<number>(7);
+  const [pageSize] = useState<number>(6);
 
   const groupStore = useContext(RootStoreContext).groupStore;
-  const apiConnectorStore = useContext(RootStoreContext).apiConnectorStore;
 
-  const searchQueryRef = useRef('');
-  const [searchQuery, setSearchQuery] = useState<String>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [reschedulingDialog, setReschedulingDialog] = useState<boolean>(false);
-  const today = new Date();
 
-  const deviceStore = useContext(RootStoreContext).deviceStore;
   const labsPath = `/labs?limit=${pageSize}&offset=${currentPage * pageSize}&stateFilter=${selectedFilters.join(',')}&searchQuery=${searchQuery}`;
   const [labQuery] = useResource<Lab[]>(
     labsPath,
@@ -93,10 +85,6 @@ const LabsPage: React.FC = () => {
     }
   };
 
-  const handleSearch = useCallback(() => {
-    setSearchQuery(searchQueryRef.current);
-  }, []);
-
   function handleEditLab(lab: Lab) {
     if (lab.state === LabState.Scheduled) {
       setReschedulingDialog(true);
@@ -108,51 +96,48 @@ const LabsPage: React.FC = () => {
     setReschedulingDialog(state);
   }
 
-  function handleLabDate(lab: Lab): String {
+  function handleLabDate(lab: Lab): string {
     let timeString: Date;
-    if (lab.state === LabState.Scheduled) {
-      timeString = new Date(lab.startDate);
-    } else {
-      timeString = new Date(lab.endDate);
-    }
-    if (
-      timeString.getDate() === today.getDate() &&
-      timeString.getMonth() === today.getMonth() &&
-      timeString.getFullYear() === today.getFullYear()
-    ) {
-      return timeString.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } else {
-      return timeString.toISOString().split('T')[0];
+
+    switch (lab.state) {
+      case LabState.Scheduled:
+        // In the Scheduled state, return just the day and month in DD-MM format
+        timeString = new Date(lab.startDate);
+        return `${timeString.getDate().toString().padStart(2, '0')}-${(timeString.getMonth() + 1).toString().padStart(2, '0')}`;
+
+      case LabState.Deploying:
+      case LabState.Running:
+        // In Deploying or Running state, return hh:mm from the start date
+        timeString = new Date(lab.startDate);
+        return timeString.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+      case LabState.Done:
+      case LabState.Failed:
+        // In Done or Failed state, return hh:mm from the end date
+        timeString = new Date(lab.endDate);
+        return timeString.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+      default:
+        return '';
     }
   }
 
   return (
     <If condition={labs}>
-      <div className="bg-primary font-bold height-100 width-100 sb-card overflow-y-auto overflow-x-hidden">
+      <div className="bg-primary height-100 width-100 sb-card overflow-y-hidden overflow-x-hidden sb-labs-container">
         <div className="search-bar">
           <IconField className="search-bar-input" iconPosition="left">
             <InputIcon className="pi pi-search"></InputIcon>
             <InputText
               className="width-100"
               placeholder="Search here..."
-              onChange={e => {
-                searchQueryRef.current = e.target.value;
-              }}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                }
-              }}
-            />
-            <Button
-              className="pi-button"
-              label="Reset"
-              onClick={() => {
-                setSearchQuery('');
-              }}
+              onChange={e => setSearchQuery(e.target.value)}
             />
           </IconField>
           <span
@@ -179,7 +164,7 @@ const LabsPage: React.FC = () => {
             </div>
           </Dialog>
         </div>
-        <div style={{display: 'flex', margin: '1em'}}>
+        <div style={{display: 'flex', margin: '0 16px', gap: '5px'}}>
           {selectedFilters.map(filter => (
             <Chip
               key={filter}
@@ -193,16 +178,16 @@ const LabsPage: React.FC = () => {
               className="chip"
             />
           ))}
-          {searchQuery !== '' && (
+          <If condition={searchQuery !== ''}>
             <Chip
-              label={searchQuery as string}
+              label={searchQuery}
               removable={true}
               onRemove={() => setSearchQuery('')}
               className="chip"
             />
-          )}
+          </If>
         </div>
-        <div className="bg-primary" style={{padding: '1em', color: '#C3E4E9'}}>
+        <div className="bg-primary sb-labs-content">
           <Choose>
             <When condition={labs.length > 0}>
               <div className="lab-explorer-container">
@@ -210,13 +195,13 @@ const LabsPage: React.FC = () => {
                   <div key={lab.id} className="lab-item-card">
                     {/* Group */}
                     <div
-                      className="lab-group"
+                      className="lab-group sb-corner-tab"
                       onClick={() => {
                         setLabDialogVisible(true);
                         setSelectedLab(lab);
                       }}
                     >
-                      <p>{getGroupById(lab.groupId)}</p>
+                      <span>{getGroupById(lab.groupId)}</span>
                     </div>
                     {/* Lab Name */}
                     <div
@@ -226,10 +211,18 @@ const LabsPage: React.FC = () => {
                         setSelectedLab(lab);
                       }}
                     >
-                      <p>{lab.name}</p>
+                      <span>{lab.name}</span>
                     </div>
                     {/* State */}
-                    <div className="lab-state">
+                    <div
+                      className={classNames('lab-state', {
+                        running: lab.state === LabState.Running,
+                        scheduled: lab.state === LabState.Scheduled,
+                        deploying: lab.state === LabState.Deploying,
+                        done: lab.state === LabState.Done,
+                        failed: lab.state === LabState.Failed,
+                      })}
+                    >
                       <span
                         className="lab-state-label"
                         onClick={() => {
@@ -253,8 +246,8 @@ const LabsPage: React.FC = () => {
                 }
                 visible={reschedulingDialog}
                 className="dialog-lab-reservation"
+                dismissableMask={true}
                 onHide={() => setDialog(false)}
-                modal={false}
               >
                 <div>
                   <ReservationDialog
@@ -288,12 +281,13 @@ const LabsPage: React.FC = () => {
                     <div style={{flex: 1, textAlign: 'left'}}>
                       <strong>{getGroupById(selectedLab?.groupId)}</strong>{' '}
                     </div>
-                    <div style={{flex: 1, textAlign: 'center'}}>
+                    <div style={{flex: 1, textAlign: 'left'}}>
                       <strong>{selectedLab?.name}</strong>{' '}
                     </div>
                   </div>
                 }
                 visible={LabDialogVisible}
+                dismissableMask={true}
                 className="dialog-lab-details"
                 onHide={() => setLabDialogVisible(false)}
               >
@@ -308,7 +302,7 @@ const LabsPage: React.FC = () => {
               </Dialog>
             </When>
             <Otherwise>
-              <p>No labs found.</p>
+              <span>No labs found.</span>
             </Otherwise>
           </Choose>
         </div>

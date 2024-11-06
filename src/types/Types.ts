@@ -26,7 +26,7 @@ export type Lab = {
   endDate: string;
   groupId: uuid4;
   topologyId: uuid4;
-  nodeMeta: NodeMeta;
+  nodeMeta: NodeMeta[];
   edgesharkLink: string;
   runnerId: uuid4;
   latestStateChange: string;

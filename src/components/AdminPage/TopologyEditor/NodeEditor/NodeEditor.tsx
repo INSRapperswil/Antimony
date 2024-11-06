@@ -21,6 +21,7 @@ import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
 
 import './NodeEditor.sass';
+import {drawGrid} from '@sb/lib/utils/Utils';
 
 interface NodeEditorProps {
   openTopology: YAMLDocument<TopologyDefinition> | null;
@@ -136,54 +137,11 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     [network]
   );
 
-  const drawGrid = useCallback(
+  const onBeforeDrawing = useCallback(
     (ctx: CanvasRenderingContext2D) => {
       networkCanvasContext.current = ctx;
 
-      const width = window.outerWidth;
-      const height = window.outerHeight;
-      const gridSpacing = 30;
-      const gridExtent = 4;
-
-      // ctx.globalCompositeOperation = 'destination-over';
-      ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
-      ctx.beginPath();
-
-      for (
-        let x = -width * gridExtent;
-        x <= width * gridExtent;
-        x += gridSpacing
-      ) {
-        ctx.beginPath();
-        if (x % 4 === 0) {
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = 'rgb(41,61,67)';
-        } else {
-          ctx.lineWidth = 1;
-          ctx.strokeStyle = 'rgb(39,58,64)';
-        }
-        ctx.moveTo(x, height * gridExtent);
-        ctx.lineTo(x, -height * gridExtent);
-        ctx.stroke();
-      }
-      for (
-        let y = -height * gridExtent;
-        y <= height * gridExtent;
-        y += gridSpacing
-      ) {
-        ctx.beginPath();
-        if (y % 4 === 0) {
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = 'rgb(41,61,67)';
-        } else {
-          ctx.lineWidth = 1;
-          ctx.strokeStyle = 'rgb(39,58,64)';
-        }
-        ctx.moveTo(width * gridExtent, y);
-        ctx.lineTo(-width * gridExtent, y);
-        ctx.stroke();
-      }
-
+      drawGrid(ctx);
       drawConnectionLine(ctx);
     },
     [drawConnectionLine]
@@ -191,10 +149,10 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
 
   useEffect(() => {
     if (!network) return;
-    network.on('beforeDrawing', drawGrid);
+    network.on('beforeDrawing', onBeforeDrawing);
 
-    return () => network.off('beforeDrawing', drawGrid);
-  }, [network, drawGrid]);
+    return () => network.off('beforeDrawing', onBeforeDrawing);
+  }, [network, onBeforeDrawing]);
 
   function onMouseMove(event: MouseEvent<HTMLDivElement>) {
     if (!nodeConnecting.current || !network) return;

@@ -1,8 +1,9 @@
 import React from 'react';
+
 import {Button} from 'primereact/button';
+import {useNavigate} from 'react-router-dom';
 
 import './Dock.sass';
-import {useNavigate} from 'react-router-dom';
 
 const Dock: React.FC = () => {
   const navigate = useNavigate();

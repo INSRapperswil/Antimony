@@ -5,13 +5,26 @@
   border-radius: 4px
   background-color: #263238
   padding: 5px
-
+  margin: -1px
 
 .search-bar-input
   flex-grow: 1
   display: flex
   align-items: center
   background-color: var(--primary-color)
+
+.sb-labs-container
+  display: flex
+  flex-direction: column
+  gap: 16px
+  margin-bottom: 16px
+
+.sb-labs-content
+  min-height: 0
+  flex-grow: 1
+  display: flex
+  flex-direction: column
+  margin: 0 16px 16px 16px
 
 .search-bar-icon
   flex-shrink: 0
@@ -33,51 +46,122 @@
 
 .lab-explorer-container
   display: flex
+  flex-grow: 1
   flex-direction: column
+  gap: 10px
 
 .lab-item-card
   display: flex
+  flex-grow: 1
+  max-height: 70px
   justify-content: space-between
   align-items: center
   background-color: #1B2B34
-  padding: 1em
-  margin-bottom: 1em
-  border-radius: 8px
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2)
-  max-height: 55px
+  border-radius: 4px
+  border: 1px solid var(--primary-color-border)
   cursor: pointer
 
 .lab-group
-  flex: 1
+  width: 180px
+  padding-left: 12px
+  font-weight: 700
+  display: flex
+  text-align: center
+  border: 1px solid var(--primary-color-border)
+  background-color: var(--secondary-color)
+  border-radius: 4px 6px 6px 4px
+  margin: -1px
+  align-self: stretch
+  align-items: center
   p
     margin: 0
-    font-weight: bold
 
 .lab-name
-  flex: 2
-  text-align: center
+  flex: 3
+  padding-left: 1em
+
   p
     margin: 0
-    font-weight: bold
 
 .lab-state
-  flex: 1
-  text-align: right
+  display: flex
+  width: 120px
+  text-align: center
+  border: 1px solid var(--primary-color-border)
+  border-radius: 6px 4px 4px 6px
+  margin: -1px
+  align-self: stretch
+  align-items: center
+
+  &.running
+    color: var(--success-color)
+
+    .lab-state-date
+      &::before
+        background-color: var(--success-color)
+      border: 1px solid var(--success-color)
+
+  &.failed
+    color: var(--danger-color)
+
+    .lab-state-date
+      &::before
+        background-color: var(--danger-color)
+      border: 1px solid var(--danger-color)
+
+  &.scheduled
+    color: var(--info-color)
+
+    .lab-state-date
+      &::before
+        background-color: var(--info-color)
+      border: 1px solid var(--info-color)
+
+  &.deploying
+    color: var(--warning-color)
+
+    .lab-state-date
+      &::before
+        background-color: var(--warning-color)
+      border: 1px solid var(--warning-color)
+
+  &.done
+    color: var(--primary-color-text)
+
+    .lab-state-date
+      &::before
+        background-color: var(--primary-color-text)
+      border: 1px solid var(--primary-color-text)
+
   .lab-state-label
-    display: inline-block
-    padding: 0.5em 1em
+    display: flex
     border-radius: 4px
-    color: #FFFFFF
-    font-weight: bold
     text-align: center
-    background-color: var(--primary-color-border)
-    justify-content: space-between
-    width: 160px
+    justify-content: space-evenly
+    width: 140px
+
     .pi
       font-size: 1em
+      align-content: center
+
     .lab-state-date
-      text-align: left
-      margin-left: 0.5em
+      padding: 4px
+      border-radius: 4px
+      color: var(--primary-color-text)
+      width: 60px
+      position: relative
+      filter: brightness(1) contrast(0.9)
+
+      &::before
+        content: ""
+        position: absolute
+        top: 0
+        bottom: 0
+        right: 0
+        left: 0
+        z-index: -1
+        border-radius: 3px
+        filter: brightness(0.5) contrast(0.9)
 
 .dialog-header
   display: flex
@@ -106,9 +190,10 @@
 
 .pagination-controls
   display: flex
+  justify-content: space-between
   align-items: center
   flex-direction: row
-  justify-content: space-between
+  margin-top: 1em
 
 .dialog-lab-reservation
   background-color: #1B2B34

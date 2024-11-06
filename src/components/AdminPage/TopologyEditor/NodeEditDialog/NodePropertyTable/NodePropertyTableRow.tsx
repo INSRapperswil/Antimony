@@ -43,10 +43,14 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
       <td className="sb-property-table-key">
         <Choose>
           <When condition={props.property.wasAdded}>
-            <Message severity="info" text="New" />
+            <Message className="sb-mini-message" severity="info" text="New" />
           </When>
           <When condition={props.property.wasEdited}>
-            <Message severity="warn" text="Edited" />
+            <Message
+              className="sb-mini-message"
+              severity="warn"
+              text="Edited"
+            />
           </When>
         </Choose>
         <Choose>

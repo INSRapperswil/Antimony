@@ -4,7 +4,7 @@
     query_params:
       limit:
         matcher: ShouldEqual
-        value: "7"
+        value: "6"
       offset:
         matcher: ShouldEqual
         value: "0"

@@ -89,6 +89,8 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     return null;
   }
 
+  function onEditGroup(uuid: string) {}
+
   function onDeleteGroupRequest(uuid: string) {
     notificationController.confirm({
       message: 'This action cannot be undone!',
@@ -134,6 +136,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
               <ExplorerTreeNode
                 node={node}
                 onDeleteGroup={onDeleteGroupRequest}
+                onEditGroup={onEditGroup}
                 onRenameGroup={value =>
                   onRenameGroup(node.key as string, value)
                 }

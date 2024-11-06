@@ -5,8 +5,8 @@ import React, {
   useContext,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
+  useState,
 } from 'react';
 
 import {toJS} from 'mobx';
@@ -22,6 +22,7 @@ import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {AntimonyTheme, MonacoOptions} from './monaco.conf';
 
 import './MonacoWrapper.sass';
+import {isEqual} from 'lodash';
 
 const schemaModelUri = 'inmemory://schema.yaml';
 
@@ -80,11 +81,24 @@ const MonacoWrapper = observer(
       }
     }, []);
 
-    const content = useMemo(() => {
-      if (props.openTopology) {
-        return props.openTopology.toString();
+    const [content, setContent] = useState('');
+
+    useEffect(() => {
+      if (!props.openTopology) return;
+
+      const updatedContent = props.openTopology?.toString();
+      if (!textModelRef.current) {
+        setContent(updatedContent);
+        return;
       }
-      return '';
+
+      const existingContent = textModelRef.current.getValue();
+      const updatedContentStripped = updatedContent.replaceAll(' ', '');
+      const existingContentStripped = existingContent.replaceAll(' ', '');
+
+      if (!isEqual(updatedContentStripped, existingContentStripped)) {
+        setContent(updatedContent);
+      }
     }, [props.openTopology]);
 
     useEffect(() => {

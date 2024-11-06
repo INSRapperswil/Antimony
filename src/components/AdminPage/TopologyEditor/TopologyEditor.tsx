@@ -79,7 +79,10 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     try {
       const obj = parseDocument(content);
 
-      if (validate(obj.toJS(), schemaStore.clabSchema).errors.length === 0) {
+      if (
+        obj.errors.length === 0 &&
+        validate(obj.toJS(), schemaStore.clabSchema).errors.length === 0
+      ) {
         setValidationState(ValidationState.Done);
         topologyStore.manager.apply(obj);
       } else {
@@ -246,7 +249,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                     className="pi pi-check"
                     style={{color: 'var(--success-color)'}}
                   ></i>
-                  <span>Done.</span>
+                  <span>Schema Valid.</span>
                 </Otherwise>
               </Choose>
               <Tooltip target=".sb-toplogy-editor-validation" />

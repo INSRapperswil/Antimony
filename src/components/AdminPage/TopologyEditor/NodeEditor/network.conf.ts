@@ -29,8 +29,13 @@ export const NetworkOptions = {
   },
   physics: {
     barnesHut: {
-      damping: 0.12,
-      springConstant: 0.08,
+      damping: 0.2,
+      springConstant: 0.02,
+      springLength: 140,
+      avoidOverlap: 0.9,
+      centralGravity: -0,
     },
+    maxVelocity: 40,
+    minVelocity: 0.5,
   },
 };

@@ -56,7 +56,7 @@ export class DeviceStore {
     }
     if (!iconName) iconName = 'generic';
 
-    return './icons/' + iconName + '.svg';
+    return '/icons/' + iconName + '.svg';
   }
 }
 

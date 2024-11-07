@@ -13,4 +13,6 @@ const exampleProxy = createProxyMiddleware({
 
 app.use('/api', exampleProxy);
 app.use('/', express.static('build'));
+app.use('/icons', express.static('build/assets/icons'));
+app.use('*', express.static('build'));
 app.listen(8100);

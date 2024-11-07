@@ -48,7 +48,15 @@ const App: React.FC = observer(() => {
                 <Routes>
                   <Route path="/" element={<DashboardPage />} />
                   <Route path="/editor" element={<EditorPage />} />
-                  <Route path="*" element={<ErrorPage />} />
+                  <Route
+                    path="*"
+                    element={
+                      <ErrorPage
+                        code="404"
+                        message="This page does not exist"
+                      />
+                    }
+                  />
                 </Routes>
               </div>
             </If>

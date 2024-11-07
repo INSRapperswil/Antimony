@@ -1,9 +1,9 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 
-import App from '@sb/App';
+import App from '@sb/app';
 
-import '@sb/theme/Base.sass';
+import '@sb/theme/sb-base.sass';
 import {createBrowserRouter, RouterProvider} from 'react-router-dom';
 
 /*

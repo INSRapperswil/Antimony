@@ -10,11 +10,10 @@ import React, {
 } from 'react';
 
 import {toJS} from 'mobx';
+import MonacoEditor from 'react-monaco-editor/lib/editor';
 import {Document} from 'yaml';
 import {editor} from 'monaco-editor';
-import * as monaco from 'monaco-editor';
 import {Monaco} from '@monaco-editor/react';
-import MonacoEditor from 'react-monaco-editor';
 import {configureMonacoYaml} from 'monaco-yaml';
 
 import {Choose, If, Otherwise, When} from '@sb/types/control';
@@ -25,6 +24,7 @@ import './MonacoWrapper.sass';
 import {isEqual} from 'lodash';
 import {ValidationState} from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
 import {Tooltip} from 'primereact/tooltip';
+import {monaco} from 'react-monaco-editor';
 
 const schemaModelUri = 'inmemory://schema.yaml';
 

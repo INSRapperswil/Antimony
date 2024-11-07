@@ -1,3 +1,4 @@
+import NodeEditor from '@sb/components/AdminPage/TopologyEditor/NodeEditor/NodeEditor';
 import React, {
   useCallback,
   useContext,
@@ -12,7 +13,6 @@ import {Document, parseDocument} from 'yaml';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
 
 import {Topology} from '@sb/types/Types';
-import NodeEditor from './NodeEditor/NodeEditor';
 import {Choose, Otherwise, When} from '@sb/types/control';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {TopologyEditReport} from '@sb/lib/TopologyManager';
@@ -115,12 +115,11 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
       <Choose>
         <When condition={openTopology !== null}>
           <div className="flex flex-column h-full overflow-hidden">
-            <div className="flex justify-content-between sb-card sb-topology-editor-topbar">
+            <div className="flex justify-content-between sb-topology-editor-topbar">
               <div className="flex gap-2 justify-content-center left-tab">
                 <Button
                   outlined
                   icon="pi pi-undo"
-                  size="large"
                   tooltip="Undo"
                   onClick={() => monacoWrapperRef.current?.undo()}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}

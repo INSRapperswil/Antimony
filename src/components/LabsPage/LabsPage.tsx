@@ -1,3 +1,4 @@
+import {NotificationControllerContext} from '@sb/lib/NotificationController';
 import React, {MouseEvent, useContext, useEffect, useState} from 'react';
 
 import {Chip} from 'primereact/chip';
@@ -20,7 +21,6 @@ import './LabsPage.sass';
 import classNames from 'classnames';
 import {Paginator} from 'primereact/paginator';
 import {Button} from 'primereact/button';
-import {Navigate} from 'react-router-dom';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
@@ -36,18 +36,15 @@ const LabsPage: React.FC = () => {
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
   const [labs, setLabs] = useState<Lab[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<LabState[]>([
-    LabState.Scheduled,
     LabState.Deploying,
     LabState.Running,
-    LabState.Failed,
-    LabState.Done,
   ]);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(0);
   const [pageSize] = useState<number>(6);
 
-  const apiStore = useContext(RootStoreContext).apiConnectorStore;
   const groupStore = useContext(RootStoreContext).groupStore;
+  const notificationController = useContext(NotificationControllerContext);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [reschedulingDialog, setReschedulingDialog] = useState<boolean>(false);
@@ -115,18 +112,24 @@ const LabsPage: React.FC = () => {
     setReschedulingDialogLab(lab);
   }
 
-  function onStopLab(event: MouseEvent<HTMLButtonElement>) {
+  function onStopLab(event: MouseEvent<HTMLButtonElement>, lab: Lab) {
     event.stopPropagation();
+    notificationController.confirm({
+      message: 'This action cannot be undone.',
+      header: `Stop Lab '${lab.name}'?`,
+      icon: 'pi pi-power-off',
+      severity: 'danger',
+      onAccept: onStopConfirm,
+    });
   }
+
+  function onStopConfirm() {}
 
   return (
     <Choose>
-      <When condition={!apiStore.isLoggedIn}>
-        <Navigate to="/login" />
-      </When>
       <When condition={labs}>
-        <div className="bg-primary height-100 width-100 sb-card overflow-y-hidden overflow-x-hidden sb-labs-container">
-          <div className="search-bar">
+        <div className="height-100 width-100 sb-card overflow-y-hidden overflow-x-hidden sb-labs-container">
+          <div className="search-bar sb-card">
             <IconField className="search-bar-input" iconPosition="left">
               <InputIcon className="pi pi-search"></InputIcon>
               <InputText
@@ -182,7 +185,7 @@ const LabsPage: React.FC = () => {
               />
             </If>
           </div>
-          <div className="bg-primary sb-labs-content">
+          <div className="sb-labs-content">
             <Choose>
               <When condition={labs.length > 0}>
                 <div className="lab-explorer-container">
@@ -221,7 +224,7 @@ const LabsPage: React.FC = () => {
                               rounded
                               text
                               size="large"
-                              tooltip="Reschedule Lab"
+                              tooltip="Reschedule"
                               tooltipOptions={{
                                 position: 'bottom',
                                 showDelay: 200,
@@ -235,22 +238,31 @@ const LabsPage: React.FC = () => {
                             rounded
                             text
                             size="large"
-                            tooltip="Stop Lab"
+                            tooltip="Stop"
                             tooltipOptions={{
                               position: 'bottom',
                               showDelay: 200,
                             }}
-                            onClick={onStopLab}
+                            onClick={e => onStopLab(e, lab)}
                           />
                         </div>
                         <span className="lab-state-label">
-                          <div className="lab-state-label-icon">
+                          <div
+                            className={classNames('lab-state-label-icon', {
+                              running: lab.state === LabState.Running,
+                              scheduled: lab.state === LabState.Scheduled,
+                              deploying: lab.state === LabState.Deploying,
+                              done: lab.state === LabState.Done,
+                              failed: lab.state === LabState.Failed,
+                            })}
+                          >
                             <i className={statusIcons[lab.state]}></i>
                             <span>{LabState[lab.state]}</span>
                           </div>
-                          <label className="lab-state-date">
-                            {handleLabDate(lab)}
-                          </label>
+                          <div className="lab-state-date">
+                            <i className="pi pi-clock"></i>
+                            <span>{handleLabDate(lab)}</span>
+                          </div>
                         </span>
                       </div>
                     </div>

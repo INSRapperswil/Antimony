@@ -7,18 +7,16 @@ import {
   FetchState,
   TopologyNode,
 } from '@sb/types/Types';
-import {makeAutoObservable, observe} from 'mobx';
+import {observable, observe} from 'mobx';
 
 export class DeviceStore {
   private rootStore: RootStore;
 
-  public devices: DeviceInfo[] = [];
-  public lookup: Map<string, DeviceInfo> = new Map();
-  public fetchReport: FetchReport = DefaultFetchReport;
+  @observable accessor devices: DeviceInfo[] = [];
+  @observable accessor lookup: Map<string, DeviceInfo> = new Map();
+  @observable accessor fetchReport: FetchReport = DefaultFetchReport;
 
   constructor(rootStore: RootStore) {
-    makeAutoObservable(this);
-
     this.rootStore = rootStore;
 
     observe(rootStore.apiConnectorStore, () => this.fetch());

@@ -1,33 +1,30 @@
+import {ParticlesOptions} from '@sb/components/LoginOverlay/particles.conf';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {If} from '@sb/types/control';
-import classNames from 'classnames';
-import {Message} from 'primereact/message';
-import {useNavigate} from 'react-router-dom';
-import {ParticlesOptions} from './particles.conf';
+import {FetchState} from '@sb/types/Types';
 import {loadLinksPreset} from '@tsparticles/preset-links';
+import Particles, {initParticlesEngine} from '@tsparticles/react';
+import classNames from 'classnames';
+import {observer} from 'mobx-react-lite';
 import {Button} from 'primereact/button';
 import {Checkbox} from 'primereact/checkbox';
 import {InputText} from 'primereact/inputtext';
+import {Message} from 'primereact/message';
 import React, {FormEvent, useContext, useEffect, useState} from 'react';
-import Particles, {initParticlesEngine} from '@tsparticles/react';
 
-import './LoginPage.sass';
+import './LoginOverlay.sass';
 
-interface LoginPageProps {
-  code?: string;
-  message?: string;
-}
+const LoginOverlay = observer(() => {
+  const [particlesReady, setParticlesReady] = useState(false);
 
-const LoginPage = (props: LoginPageProps) => {
-  const navigate = useNavigate();
+  const rootStore = useContext(RootStoreContext);
+  const apiStore = useContext(RootStoreContext).apiConnectorStore;
 
   useEffect(() => {
     void initParticlesEngine(async engine => {
       await loadLinksPreset(engine);
-    });
+    }).then(() => setParticlesReady(true));
   }, []);
-
-  const apiStore = useContext(RootStoreContext).apiConnectorStore;
 
   const LoginForm = () => {
     const [loginError, setLoginError] = useState<string | null>(null);
@@ -48,8 +45,6 @@ const LoginPage = (props: LoginPageProps) => {
         .then(response => {
           if (!response) {
             setLoginError('Invalid username or password');
-          } else {
-            navigate('/');
           }
         });
     }
@@ -119,11 +114,21 @@ const LoginPage = (props: LoginPageProps) => {
    * https://github.com/Wufe/react-particles-js/issues/43
    */
   return (
-    <div className="sb-login-page-container">
-      <Particles id="tsparticles" options={ParticlesOptions} />
-      <LoginForm />
-    </div>
+    <If condition={particlesReady}>
+      <div
+        className={classNames('sb-login-page-container', {
+          'login-hidden':
+            apiStore.isLoggedIn &&
+            rootStore.combinedFetchState === FetchState.Done,
+        })}
+      >
+        <If condition={!apiStore.isLoggedIn}>
+          <Particles options={ParticlesOptions} />
+        </If>
+        <LoginForm />
+      </div>
+    </If>
   );
-};
+});
 
-export default LoginPage;
+export default LoginOverlay;

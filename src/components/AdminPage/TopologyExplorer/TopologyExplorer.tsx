@@ -3,13 +3,10 @@ import React, {useCallback, useContext, useEffect, useState} from 'react';
 
 import {Tooltip} from 'primereact/tooltip';
 import {TreeNode} from 'primereact/treenode';
-import {ProgressSpinner} from 'primereact/progressspinner';
 import {Tree, TreeExpandedKeysType, TreeSelectionEvent} from 'primereact/tree';
 
-import {FetchState, Topology} from '@sb/types/Types';
-import {combinedFetchState} from '@sb/lib/utils/Utils';
+import {Topology} from '@sb/types/Types';
 import SBConfirm from '@sb/components/common/SBConfirm';
-import {Choose, Otherwise, When} from '@sb/types/control';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import {NotificationControllerContext} from '@sb/lib/NotificationController';
 import ExplorerTreeNode from '@sb/components/AdminPage/TopologyExplorer/ExplorerTreeNode/ExplorerTreeNode';
@@ -59,23 +56,16 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     }
 
     return topologyTree;
-  }, [groupStore, topologyStore]);
+  }, [groupStore, topologyStore.topologies]);
 
   useEffect(() => {
-    if (
-      combinedFetchState(topologyStore.fetchState, groupStore.fetchState) !==
-      FetchState.Done
-    ) {
-      return;
-    }
-
     const topologyTree = generateTopologyTree();
     setTopologyTree(topologyTree);
 
     setExpandedKeys(
       Object.fromEntries(topologyTree.map(group => [group.key, true]))
     );
-  }, [groupStore.fetchState, topologyStore.fetchState, generateTopologyTree]);
+  }, [generateTopologyTree]);
 
   function onSelectionChange(e: TreeSelectionEvent) {
     if (e.value === null) return;
@@ -119,43 +109,32 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
 
   return (
     <>
-      <Choose>
-        <When condition={topologyTree.length > 0}>
-          <Tooltip target=".tree-node" />
-          <Tree
-            filter
-            filterMode="lenient"
-            filterPlaceholder="Search"
-            value={topologyTree}
-            className="w-full"
-            emptyMessage=" "
-            expandedKeys={expandedKeys}
-            selectionMode="single"
-            selectionKeys={props.selectedTopologyId}
-            nodeTemplate={node => (
-              <ExplorerTreeNode
-                node={node}
-                onDeleteGroup={onDeleteGroupRequest}
-                onEditGroup={onEditGroup}
-                onRenameGroup={value =>
-                  onRenameGroup(node.key as string, value)
-                }
-                onAddTopology={() => {}}
-                onDeployTopology={() => {}}
-                onDeleteTopology={onDeleteTopologyRequest}
-              />
-            )}
-            onSelectionChange={onSelectionChange}
-            onToggle={e => setExpandedKeys(e.value)}
+      <Tooltip target=".tree-node" />
+      <Tree
+        filter
+        filterMode="lenient"
+        filterPlaceholder="Search"
+        value={topologyTree}
+        className="w-full"
+        emptyMessage=" "
+        expandedKeys={expandedKeys}
+        selectionMode="single"
+        selectionKeys={props.selectedTopologyId}
+        nodeTemplate={node => (
+          <ExplorerTreeNode
+            node={node}
+            onDeleteGroup={onDeleteGroupRequest}
+            onEditGroup={onEditGroup}
+            onRenameGroup={value => onRenameGroup(node.key as string, value)}
+            onAddTopology={() => {}}
+            onDeployTopology={() => {}}
+            onDeleteTopology={onDeleteTopologyRequest}
           />
-          <SBConfirm />
-        </When>
-        <Otherwise>
-          <div className="h-full flex align-items-center">
-            <ProgressSpinner />
-          </div>
-        </Otherwise>
-      </Choose>
+        )}
+        onSelectionChange={onSelectionChange}
+        onToggle={e => setExpandedKeys(e.value)}
+      />
+      <SBConfirm />
     </>
   );
 });

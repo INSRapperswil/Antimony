@@ -4,6 +4,7 @@ import * as ReactDOM from 'react-dom/client';
 import App from '@sb/App';
 
 import '@sb/theme/Base.sass';
+import {createBrowserRouter, RouterProvider} from 'react-router-dom';
 
 /*
  * We want to register the workbox service worker before loading the web-app.
@@ -25,6 +26,8 @@ if (process.env.NODE_ENV === 'production') {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <RouterProvider
+      router={createBrowserRouter([{path: '*', element: <App />}])}
+    />
   </React.StrictMode>
 );

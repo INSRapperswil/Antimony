@@ -6,18 +6,16 @@ import {
   FetchState,
   Group,
 } from '@sb/types/Types';
-import {makeAutoObservable, observe} from 'mobx';
+import {observable, observe} from 'mobx';
 
 export class GroupStore {
   private rootStore: RootStore;
 
-  public groups: Group[] = [];
-  public groupLookup: Map<string, Group> = new Map();
-  public fetchReport: FetchReport = DefaultFetchReport;
+  @observable accessor groups: Group[] = [];
+  @observable accessor groupLookup: Map<string, Group> = new Map();
+  @observable accessor fetchReport: FetchReport = DefaultFetchReport;
 
   constructor(rootStore: RootStore) {
-    makeAutoObservable(this);
-
     this.rootStore = rootStore;
 
     observe(rootStore.apiConnectorStore, () => this.fetch());

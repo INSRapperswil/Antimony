@@ -6,17 +6,15 @@ import {
   FetchReport,
   FetchState,
 } from '@sb/types/Types';
-import {makeAutoObservable} from 'mobx';
+import {observable} from 'mobx';
 
 export class SchemaStore {
   private rootStore: RootStore;
 
-  public clabSchema: ClabSchema | null = null;
-  public fetchReport: FetchReport = DefaultFetchReport;
+  @observable accessor clabSchema: ClabSchema | null = null;
+  @observable accessor fetchReport: FetchReport = DefaultFetchReport;
 
   constructor(rootStore: RootStore) {
-    makeAutoObservable(this);
-
     this.rootStore = rootStore;
 
     this.fetch();

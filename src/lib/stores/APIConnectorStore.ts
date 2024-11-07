@@ -1,12 +1,13 @@
 import {RootStore} from '@sb/lib/stores/RootStore';
 import {AuthResponse, ErrorResponse, UserCredentials} from '@sb/types/Types';
-import {makeAutoObservable} from 'mobx';
+import {action, makeAutoObservable} from 'mobx';
 
 export class APIConnectorStore {
   private readonly apiUrl = process.env.SB_API_SERVER_URL;
   private rootStore: RootStore;
   private authToken: string | null = null;
 
+  public loginRedirect: string | null = null;
   public isAdmin = false;
   public isLoggedIn = false;
 
@@ -16,6 +17,7 @@ export class APIConnectorStore {
     this.rootStore = rootStore;
   }
 
+  @action
   public async login(credentials: UserCredentials): Promise<boolean> {
     const tokenResponse = await this.post<UserCredentials, AuthResponse>(
       '/users/auth',
@@ -30,9 +32,7 @@ export class APIConnectorStore {
       return false;
     }
 
-    this.authToken = (tokenResponse[1] as AuthResponse).token;
-    this.isAdmin = (tokenResponse[1] as AuthResponse).isAdmin;
-    this.isLoggedIn = true;
+    this.setToken(tokenResponse[1] as AuthResponse);
     return true;
   }
 
@@ -156,5 +156,17 @@ export class APIConnectorStore {
         },
       ];
     }
+  }
+
+  public logout() {
+    this.authToken = null;
+    this.isAdmin = false;
+    this.isLoggedIn = false;
+  }
+
+  private setToken(response: AuthResponse) {
+    this.authToken = (response as AuthResponse).token;
+    this.isAdmin = (response as AuthResponse).isAdmin;
+    this.isLoggedIn = true;
   }
 }

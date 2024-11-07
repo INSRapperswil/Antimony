@@ -38,7 +38,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const [topologyDefinition, setTopologyDefinition] =
     useState<YAMLDocument<TopologyDefinition> | null>(null);
   const containerRef = useRef(null);
-  const [hostsVisible, setHostsVisible] = useState<boolean>(false);
+  const [hostsHidden, setHostsHidden] = useState<boolean>(false);
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
   const [selectedNode, setSelectedNode] = useState<number | null>(null);
 
@@ -50,8 +50,6 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       network.redraw();
     }
   });
-
-  const notificationController = useContext(NotificationControllerContext);
 
   const getTopology = useCallback(
     (id: string): void => {
@@ -80,7 +78,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       // Update label based on `hostsVisible`
       nodes.push({
         id: index,
-        label: hostsVisible
+        label: !hostsHidden
           ? `${nodeName}\n${props.lab.nodeMeta[index]?.webSsh + ':' + props.lab.nodeMeta[index]?.port || ''}`
           : nodeName,
         image: deviceStore.getNodeIcon(node),
@@ -99,7 +97,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     ];
 
     return {nodes: nodes, edges: edges};
-  }, [topologyDefinition, deviceStore, hostsVisible, props.lab.nodeMeta]);
+  }, [topologyDefinition, deviceStore, hostsHidden, props.lab.nodeMeta]);
 
   // Function to update network data
   const updateGraphData = useCallback(() => {
@@ -152,18 +150,6 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     getTopology(props.lab.topologyId);
   }, [props.lab.topologyId, getTopology]);
 
-  function onAbort() {
-    notificationController.confirm({
-      message: 'This action cannot be undone.',
-      header: `Stop Lab '${props.lab.name}'?`,
-      icon: 'pi pi-power-off',
-      severity: 'danger',
-      onAccept: onAbortConfirm,
-    });
-  }
-
-  function onAbortConfirm() {}
-
   return (
     <div className="height-100 topology-container">
       <div className="height-100">
@@ -177,10 +163,10 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
           <div className="dialog-actions">
             <Checkbox
               inputId="hostsVisibleCheckbox"
-              checked={hostsVisible}
-              onChange={e => setHostsVisible(e.checked!)}
+              checked={hostsHidden}
+              onChange={e => setHostsHidden(e.checked!)}
             />
-            <label htmlFor="hostsVisibleCheckbox">Show hosts</label>
+            <label htmlFor="hostsVisibleCheckbox">Hide hosts</label>
           </div>
         </div>
         <div className="height-100 topology-graph-container">
@@ -195,13 +181,6 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
         </div>
         <ContextMenu model={networkContextMenuItems} ref={nodeContextMenuRef} />
         <div className="topology-footer">
-          <Button
-            className="p-component bold"
-            style={{alignSelf: 'flex-start'}}
-            onClick={onAbort}
-          >
-            Stop
-          </Button>
           {/*<Dialog
             header={
               <div className="conformation-dialog-header">

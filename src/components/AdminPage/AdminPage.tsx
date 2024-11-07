@@ -3,29 +3,29 @@ import TopologyExplorer from '@sb/components/AdminPage/TopologyExplorer/Topology
 import {NotificationControllerContext} from '@sb/lib/NotificationController';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
 
-import {Choose, When} from '@sb/types/control';
-import {FetchState, Topology} from '@sb/types/Types';
+import {Topology} from '@sb/types/Types';
 
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
 import React, {useCallback, useContext, useEffect, useState} from 'react';
 
 import './AdminPage.sass';
-import {Navigate} from 'react-router-dom';
+import {useSearchParams} from 'react-router-dom';
 
 const AdminPage: React.FC = observer(() => {
-  const [editingTopologyId, setEditingTopologyId] = useState<string | null>(
-    null
-  );
   const [isMaximized, setMaximized] = useState(false);
 
-  const apiStore = useContext(RootStoreContext).apiConnectorStore;
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const topologyStore = useContext(RootStoreContext).topologyStore;
   const notificationController = useContext(NotificationControllerContext);
 
-  const onTopologyOpen = useCallback((topology: Topology) => {
-    setEditingTopologyId(topology.id);
-  }, []);
+  const onTopologyOpen = useCallback(
+    (topology: Topology) => {
+      setSearchParams({t: topology.id});
+    },
+    [setSearchParams]
+  );
 
   useEffect(() => {
     topologyStore.manager.onOpen.register(onTopologyOpen);
@@ -34,12 +34,6 @@ const AdminPage: React.FC = observer(() => {
   }, [topologyStore, onTopologyOpen]);
 
   useEffect(() => {
-    /// #if DEBUG
-    if (topologyStore.topologies.length > 0) {
-      topologyStore.manager.open(topologyStore.topologies[0]);
-    }
-    /// #endif
-
     if (topologyStore.manager.editingTopologyId) {
       if (topologyStore.lookup.has(topologyStore.manager.editingTopologyId)) {
         topologyStore.manager.open(
@@ -86,45 +80,40 @@ const AdminPage: React.FC = observer(() => {
   }
 
   return (
-    <Choose>
-      <When condition={!apiStore.isLoggedIn}>
-        <Navigate to="/login" />
-      </When>
-      <When condition={topologyStore.fetchReport.state === FetchState.Done}>
-        <div
-          className={classNames(
-            'bg-primary',
-            'font-bold',
-            'height-100',
-            'sb-card',
-            'overflow-y-auto',
-            'overflow-x-hidden',
-            'sb-admin-page-left',
-            {
-              'sb-admin-page-left-maximized': isMaximized,
-            }
-          )}
-        >
-          <TopologyExplorer
-            selectedTopologyId={editingTopologyId}
-            onTopologySelect={onSelectTopology}
+    <>
+      <div
+        className={classNames(
+          'bg-primary',
+          'font-bold',
+          'height-100',
+          'sb-card',
+          'overflow-y-auto',
+          'overflow-x-hidden',
+          'sb-admin-page-left',
+          {
+            'sb-admin-page-left-maximized': isMaximized,
+          }
+        )}
+      >
+        <TopologyExplorer
+          selectedTopologyId={searchParams.get('t')}
+          onTopologySelect={onSelectTopology}
+        />
+      </div>
+      <div
+        className={classNames('flex-grow-1', 'sb-admin-page-right', {
+          'sb-admin-page-right-maximized': isMaximized,
+        })}
+      >
+        <div className="bg-primary font-bold height-100 sb-card overflow-y-auto overflow-x-hidden">
+          <TopologyEditor
+            onSaveTopology={onSaveTopology}
+            isMaximized={isMaximized}
+            setMaximized={setMaximized}
           />
         </div>
-        <div
-          className={classNames('flex-grow-1', 'sb-admin-page-right', {
-            'sb-admin-page-right-maximized': isMaximized,
-          })}
-        >
-          <div className="bg-primary font-bold height-100 sb-card overflow-y-auto overflow-x-hidden">
-            <TopologyEditor
-              onSaveTopology={onSaveTopology}
-              isMaximized={isMaximized}
-              setMaximized={setMaximized}
-            />
-          </div>
-        </div>
-      </When>
-    </Choose>
+      </div>
+    </>
   );
 });
 

@@ -20,6 +20,7 @@ import './LabsPage.sass';
 import classNames from 'classnames';
 import {Paginator} from 'primereact/paginator';
 import {Button} from 'primereact/button';
+import {Navigate} from 'react-router-dom';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
@@ -45,6 +46,7 @@ const LabsPage: React.FC = () => {
   const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(0);
   const [pageSize] = useState<number>(6);
 
+  const apiStore = useContext(RootStoreContext).apiConnectorStore;
   const groupStore = useContext(RootStoreContext).groupStore;
 
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -118,198 +120,203 @@ const LabsPage: React.FC = () => {
   }
 
   return (
-    <If condition={labs}>
-      <div className="bg-primary height-100 width-100 sb-card overflow-y-hidden overflow-x-hidden sb-labs-container">
-        <div className="search-bar">
-          <IconField className="search-bar-input" iconPosition="left">
-            <InputIcon className="pi pi-search"></InputIcon>
-            <InputText
-              className="width-100"
-              placeholder="Search here..."
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-          </IconField>
-          <span
-            className="search-bar-icon"
-            onClick={() => setFilterDialogVisible(true)}
-          >
-            <i className="pi pi-filter" />
-          </span>
-          <Dialog
-            header={
-              <div className="dialog-header">
-                <strong>Set Filters</strong>
-              </div>
-            }
-            visible={FilterDialogVisible}
-            className="dialog-content"
-            onHide={() => setFilterDialogVisible(false)}
-          >
-            <div>
-              <FilterDialog
-                filters={selectedFilters}
-                setFilters={setSelectedFilters}
+    <Choose>
+      <When condition={!apiStore.isLoggedIn}>
+        <Navigate to="/login" />
+      </When>
+      <When condition={labs}>
+        <div className="bg-primary height-100 width-100 sb-card overflow-y-hidden overflow-x-hidden sb-labs-container">
+          <div className="search-bar">
+            <IconField className="search-bar-input" iconPosition="left">
+              <InputIcon className="pi pi-search"></InputIcon>
+              <InputText
+                className="width-100"
+                placeholder="Search here..."
+                onChange={e => setSearchQuery(e.target.value)}
               />
-            </div>
-          </Dialog>
-        </div>
-        <div style={{display: 'flex', margin: '0 16px', gap: '5px'}}>
-          {selectedFilters.map(filter => (
-            <Chip
-              key={filter}
-              label={LabState[filter]}
-              removable={true}
-              onRemove={() =>
-                setSelectedFilters(prevFilters =>
-                  prevFilters.filter(f => f !== filter)
-                )
+            </IconField>
+            <span
+              className="search-bar-icon"
+              onClick={() => setFilterDialogVisible(true)}
+            >
+              <i className="pi pi-filter" />
+            </span>
+            <Dialog
+              header={
+                <div className="dialog-header">
+                  <strong>Set Filters</strong>
+                </div>
               }
-              className="chip"
-            />
-          ))}
-          <If condition={searchQuery !== ''}>
-            <Chip
-              label={searchQuery}
-              removable={true}
-              onRemove={() => setSearchQuery('')}
-              className="chip"
-            />
-          </If>
-        </div>
-        <div className="bg-primary sb-labs-content">
-          <Choose>
-            <When condition={labs.length > 0}>
-              <div className="lab-explorer-container">
-                {getFilteredLabs().map(lab => (
-                  <div
-                    key={lab.id}
-                    className="lab-item-card"
-                    onClick={() => setSelectedLab(lab)}
-                  >
-                    {/* Group */}
+              visible={FilterDialogVisible}
+              className="dialog-content"
+              onHide={() => setFilterDialogVisible(false)}
+            >
+              <div>
+                <FilterDialog
+                  filters={selectedFilters}
+                  setFilters={setSelectedFilters}
+                />
+              </div>
+            </Dialog>
+          </div>
+          <div style={{display: 'flex', margin: '0 16px', gap: '5px'}}>
+            {selectedFilters.map(filter => (
+              <Chip
+                key={filter}
+                label={LabState[filter]}
+                removable={true}
+                onRemove={() =>
+                  setSelectedFilters(prevFilters =>
+                    prevFilters.filter(f => f !== filter)
+                  )
+                }
+                className="chip"
+              />
+            ))}
+            <If condition={searchQuery !== ''}>
+              <Chip
+                label={searchQuery}
+                removable={true}
+                onRemove={() => setSearchQuery('')}
+                className="chip"
+              />
+            </If>
+          </div>
+          <div className="bg-primary sb-labs-content">
+            <Choose>
+              <When condition={labs.length > 0}>
+                <div className="lab-explorer-container">
+                  {getFilteredLabs().map(lab => (
                     <div
-                      className="lab-group sb-corner-tab"
+                      key={lab.id}
+                      className="lab-item-card"
                       onClick={() => setSelectedLab(lab)}
                     >
-                      <span>{getGroupById(lab.groupId)}</span>
-                    </div>
-                    {/* Lab Name */}
-                    <div className="lab-name">
-                      <span>{lab.name}</span>
-                    </div>
-                    {/* State */}
-                    <div
-                      className={classNames('lab-state', {
-                        running: lab.state === LabState.Running,
-                        scheduled: lab.state === LabState.Scheduled,
-                        deploying: lab.state === LabState.Deploying,
-                        done: lab.state === LabState.Done,
-                        failed: lab.state === LabState.Failed,
-                      })}
-                    >
-                      <div className="lab-state-buttons">
-                        <If condition={lab.state === LabState.Scheduled}>
+                      {/* Group */}
+                      <div
+                        className="lab-group sb-corner-tab"
+                        onClick={() => setSelectedLab(lab)}
+                      >
+                        <span>{getGroupById(lab.groupId)}</span>
+                      </div>
+                      {/* Lab Name */}
+                      <div className="lab-name">
+                        <span>{lab.name}</span>
+                      </div>
+                      {/* State */}
+                      <div
+                        className={classNames('lab-state', {
+                          running: lab.state === LabState.Running,
+                          scheduled: lab.state === LabState.Scheduled,
+                          deploying: lab.state === LabState.Deploying,
+                          done: lab.state === LabState.Done,
+                          failed: lab.state === LabState.Failed,
+                        })}
+                      >
+                        <div className="lab-state-buttons">
+                          <If condition={lab.state === LabState.Scheduled}>
+                            <Button
+                              icon="pi pi-calendar"
+                              severity="info"
+                              rounded
+                              text
+                              size="large"
+                              tooltip="Reschedule Lab"
+                              tooltipOptions={{
+                                position: 'bottom',
+                                showDelay: 200,
+                              }}
+                              onClick={e => onRescheduleLab(e, lab)}
+                            />
+                          </If>
                           <Button
-                            icon="pi pi-calendar"
-                            severity="info"
+                            icon="pi pi-power-off"
+                            severity="danger"
                             rounded
                             text
                             size="large"
-                            tooltip="Reschedule Lab"
+                            tooltip="Stop Lab"
                             tooltipOptions={{
                               position: 'bottom',
                               showDelay: 200,
                             }}
-                            onClick={e => onRescheduleLab(e, lab)}
+                            onClick={onStopLab}
                           />
-                        </If>
-                        <Button
-                          icon="pi pi-power-off"
-                          severity="danger"
-                          rounded
-                          text
-                          size="large"
-                          tooltip="Stop Lab"
-                          tooltipOptions={{
-                            position: 'bottom',
-                            showDelay: 200,
-                          }}
-                          onClick={onStopLab}
-                        />
-                      </div>
-                      <span className="lab-state-label">
-                        <div className="lab-state-label-icon">
-                          <i className={statusIcons[lab.state]}></i>
-                          <span>{LabState[lab.state]}</span>
                         </div>
-                        <label className="lab-state-date">
-                          {handleLabDate(lab)}
-                        </label>
-                      </span>
+                        <span className="lab-state-label">
+                          <div className="lab-state-label-icon">
+                            <i className={statusIcons[lab.state]}></i>
+                            <span>{LabState[lab.state]}</span>
+                          </div>
+                          <label className="lab-state-date">
+                            {handleLabDate(lab)}
+                          </label>
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <Dialog
-                header={
-                  <div className="dialog-header">
-                    <strong>Update Reservation</strong>
-                  </div>
-                }
-                visible={reschedulingDialog}
-                className="dialog-lab-reservation"
-                dismissableMask={true}
-                onHide={() => setReschedulingDialog(false)}
-              >
-                <div>
-                  <ReservationDialog
-                    lab={reschedulingDialogLab!}
-                    setRescheduling={setReschedulingDialog}
-                  />
+                  ))}
                 </div>
-              </Dialog>
-              <div className="pagination-controls">
-                <Paginator
-                  first={currentPage * pageSize}
-                  rows={pageSize}
-                  totalRecords={totalAmountOfEntries}
-                  onPageChange={e => setCurrentPage(e.page)}
-                ></Paginator>
-              </div>
-              {/* Dialog for Lab Details */}
-              <Dialog
-                header={
-                  <div className="dialog-header">
-                    <div style={{flex: 1, textAlign: 'left'}}>
-                      <strong>{getGroupById(selectedLab?.groupId)}</strong>{' '}
+                <Dialog
+                  header={
+                    <div className="dialog-header">
+                      <strong>Update Reservation</strong>
                     </div>
-                    <div style={{flex: 1, textAlign: 'left'}}>
-                      <strong>{selectedLab?.name}</strong>{' '}
-                    </div>
-                  </div>
-                }
-                visible={selectedLab !== null}
-                dismissableMask={true}
-                className="dialog-lab-details"
-                onHide={() => setSelectedLab(null)}
-              >
-                <If condition={selectedLab}>
-                  <div className="height-100">
-                    <LabDialog
-                      lab={selectedLab!}
-                      groupName={getGroupById(selectedLab!.groupId)}
+                  }
+                  visible={reschedulingDialog}
+                  className="dialog-lab-reservation"
+                  dismissableMask={true}
+                  onHide={() => setReschedulingDialog(false)}
+                >
+                  <div>
+                    <ReservationDialog
+                      lab={reschedulingDialogLab!}
+                      setRescheduling={setReschedulingDialog}
                     />
                   </div>
-                </If>
-              </Dialog>
-            </When>
-            <Otherwise>
-              <span>No labs found.</span>
-            </Otherwise>
-          </Choose>
+                </Dialog>
+                <div className="pagination-controls">
+                  <Paginator
+                    first={currentPage * pageSize}
+                    rows={pageSize}
+                    totalRecords={totalAmountOfEntries}
+                    onPageChange={e => setCurrentPage(e.page)}
+                  ></Paginator>
+                </div>
+                {/* Dialog for Lab Details */}
+                <Dialog
+                  header={
+                    <div className="dialog-header">
+                      <div style={{flex: 1, textAlign: 'left'}}>
+                        <strong>{getGroupById(selectedLab?.groupId)}</strong>{' '}
+                      </div>
+                      <div style={{flex: 1, textAlign: 'left'}}>
+                        <strong>{selectedLab?.name}</strong>{' '}
+                      </div>
+                    </div>
+                  }
+                  visible={selectedLab !== null}
+                  dismissableMask={true}
+                  className="dialog-lab-details"
+                  onHide={() => setSelectedLab(null)}
+                >
+                  <If condition={selectedLab}>
+                    <div className="height-100">
+                      <LabDialog
+                        lab={selectedLab!}
+                        groupName={getGroupById(selectedLab!.groupId)}
+                      />
+                    </div>
+                  </If>
+                </Dialog>
+              </When>
+              <Otherwise>
+                <span>No labs found.</span>
+              </Otherwise>
+            </Choose>
+          </div>
         </div>
-      </div>
-    </If>
+      </When>
+    </Choose>
   );
 };
 

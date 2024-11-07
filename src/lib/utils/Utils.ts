@@ -6,7 +6,7 @@ export function matchesSearch(value: string, search: string) {
 
 export function combinedFetchState(...fetchStates: FetchState[]): FetchState {
   const states = new Set(fetchStates);
-  if (states.has(FetchState.NetworkError)) return FetchState.NetworkError;
+  if (states.has(FetchState.Error)) return FetchState.Error;
   if (states.has(FetchState.Pending)) return FetchState.Pending;
 
   return FetchState.Done;

@@ -14,7 +14,7 @@ export class RootStore {
   schemaStore: SchemaStore;
 
   constructor() {
-    this.apiConnectorStore = new APIConnectorStore();
+    this.apiConnectorStore = new APIConnectorStore(this);
     this.topologyStore = new TopologyStore(this);
     this.deviceStore = new DeviceStore(this);
     this.groupStore = new GroupStore(this);

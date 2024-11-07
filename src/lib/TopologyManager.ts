@@ -3,8 +3,12 @@ import {parseDocument} from 'yaml';
 import cloneDeep from 'lodash.clonedeep';
 
 import {Binding} from '@sb/lib/utils/Binding';
-import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
-import {Topology, TopologyDefinition, TopologyOut} from '@sb/types/Types';
+import {
+  Topology,
+  TopologyDefinition,
+  TopologyOut,
+  YAMLDocument,
+} from '@sb/types/Types';
 
 export type TopologyEditReport = {
   updatedTopology: Topology;
@@ -184,6 +188,10 @@ export class TopologyManager {
       }
     }
 
-    return topologies;
+    return topologies.toSorted((a, b) =>
+      (a.definition.get('name') as string).localeCompare(
+        b.definition.get('name') as string
+      )
+    );
   }
 }

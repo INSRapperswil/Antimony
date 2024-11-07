@@ -1,18 +1,27 @@
 import {RootStore} from '@sb/lib/stores/RootStore';
-import {DeviceInfo, FetchState, TopologyNode} from '@sb/types/Types';
-import {makeAutoObservable} from 'mobx';
+import {
+  DefaultFetchReport,
+  DeviceInfo,
+  ErrorResponse,
+  FetchReport,
+  FetchState,
+  TopologyNode,
+} from '@sb/types/Types';
+import {makeAutoObservable, observe} from 'mobx';
 
 export class DeviceStore {
   private rootStore: RootStore;
 
   public devices: DeviceInfo[] = [];
   public lookup: Map<string, DeviceInfo> = new Map();
-  public fetchState: FetchState = FetchState.Pending;
+  public fetchReport: FetchReport = DefaultFetchReport;
 
   constructor(rootStore: RootStore) {
     makeAutoObservable(this);
 
     this.rootStore = rootStore;
+
+    observe(rootStore.apiConnectorStore, () => this.fetch());
 
     this.fetch();
   }
@@ -26,9 +35,13 @@ export class DeviceStore {
           this.lookup = new Map(
             this.devices.map(device => [device.kind, device])
           );
-          this.fetchState = FetchState.Done;
+          this.fetchReport = {state: FetchState.Done};
         } else {
-          this.fetchState = FetchState.NetworkError;
+          this.fetchReport = {
+            state: FetchState.Error,
+            errorCode: String((data[1] as ErrorResponse).code),
+            errorMessage: (data[1] as ErrorResponse).message,
+          };
         }
       });
   }

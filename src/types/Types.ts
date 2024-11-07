@@ -1,9 +1,18 @@
-import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
+import {Document, ToJSOptions} from 'yaml';
+
+/*
+ * Generic wrapper around the YAML document object for type specification
+ */
+export class YAMLDocument<T> extends Document {
+  toJS(opt?: ToJSOptions & {[p: string]: unknown}): T {
+    return super.toJS(opt) as T;
+  }
+}
 
 export type uuid4 = string;
 
 export type ErrorResponse = {
-  code: number;
+  code: string;
   message: string;
 };
 
@@ -148,6 +157,12 @@ export interface PatternPropertyDefinition {
   };
 }
 
+export interface FetchReport {
+  state: FetchState;
+  errorMessage?: string;
+  errorCode?: string;
+}
+
 export type OptionGroupOptions = {
   optionGroup: {
     value: string;
@@ -165,5 +180,9 @@ export enum LabState {
 export enum FetchState {
   Pending,
   Done,
-  NetworkError,
+  Error,
 }
+
+export const DefaultFetchReport = {
+  state: FetchState.Pending,
+};

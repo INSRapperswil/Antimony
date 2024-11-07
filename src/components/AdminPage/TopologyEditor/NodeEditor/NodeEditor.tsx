@@ -16,8 +16,7 @@ import {NetworkOptions} from './network.conf';
 import {ContextMenu} from 'primereact/contextmenu';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import {TopologyDefinition} from '@sb/types/Types';
-import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
+import {TopologyDefinition, YAMLDocument} from '@sb/types/Types';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
 
 import './NodeEditor.sass';

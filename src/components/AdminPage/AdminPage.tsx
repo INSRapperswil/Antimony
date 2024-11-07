@@ -1,16 +1,17 @@
-import React, {useCallback, useContext, useEffect, useState} from 'react';
+import TopologyEditor from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
+import TopologyExplorer from '@sb/components/AdminPage/TopologyExplorer/TopologyExplorer';
+import {NotificationControllerContext} from '@sb/lib/NotificationController';
+import {RootStoreContext} from '@sb/lib/stores/RootStore';
+
+import {Choose, When} from '@sb/types/control';
+import {FetchState, Topology} from '@sb/types/Types';
 
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
-
-import {If} from '@sb/types/control';
-import {FetchState, Topology} from '@sb/types/Types';
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
-import {NotificationControllerContext} from '@sb/lib/NotificationController';
-import TopologyEditor from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
-import TopologyExplorer from '@sb/components/AdminPage/TopologyExplorer/TopologyExplorer';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 
 import './AdminPage.sass';
+import {Navigate} from 'react-router-dom';
 
 const AdminPage: React.FC = observer(() => {
   const [editingTopologyId, setEditingTopologyId] = useState<string | null>(
@@ -18,6 +19,7 @@ const AdminPage: React.FC = observer(() => {
   );
   const [isMaximized, setMaximized] = useState(false);
 
+  const apiStore = useContext(RootStoreContext).apiConnectorStore;
   const topologyStore = useContext(RootStoreContext).topologyStore;
   const notificationController = useContext(NotificationControllerContext);
 
@@ -48,7 +50,7 @@ const AdminPage: React.FC = observer(() => {
       }
     }
   }, [
-    topologyStore.fetchState,
+    topologyStore.fetchReport,
     topologyStore.lookup,
     topologyStore.manager,
     topologyStore.topologies,
@@ -83,43 +85,46 @@ const AdminPage: React.FC = observer(() => {
     topologyStore.fetch();
   }
 
-  const isReady = topologyStore.fetchState === FetchState.Done;
-
   return (
-    <If condition={isReady}>
-      <div
-        className={classNames(
-          'bg-primary',
-          'font-bold',
-          'height-100',
-          'sb-card',
-          'overflow-y-auto',
-          'overflow-x-hidden',
-          'sb-admin-page-left',
-          {
-            'sb-admin-page-left-maximized': isMaximized,
-          }
-        )}
-      >
-        <TopologyExplorer
-          selectedTopologyId={editingTopologyId}
-          onTopologySelect={onSelectTopology}
-        />
-      </div>
-      <div
-        className={classNames('flex-grow-1', 'sb-admin-page-right', {
-          'sb-admin-page-right-maximized': isMaximized,
-        })}
-      >
-        <div className="bg-primary font-bold height-100 sb-card overflow-y-auto overflow-x-hidden">
-          <TopologyEditor
-            onSaveTopology={onSaveTopology}
-            isMaximized={isMaximized}
-            setMaximized={setMaximized}
+    <Choose>
+      <When condition={!apiStore.isLoggedIn}>
+        <Navigate to="/login" />
+      </When>
+      <When condition={topologyStore.fetchReport.state === FetchState.Done}>
+        <div
+          className={classNames(
+            'bg-primary',
+            'font-bold',
+            'height-100',
+            'sb-card',
+            'overflow-y-auto',
+            'overflow-x-hidden',
+            'sb-admin-page-left',
+            {
+              'sb-admin-page-left-maximized': isMaximized,
+            }
+          )}
+        >
+          <TopologyExplorer
+            selectedTopologyId={editingTopologyId}
+            onTopologySelect={onSelectTopology}
           />
         </div>
-      </div>
-    </If>
+        <div
+          className={classNames('flex-grow-1', 'sb-admin-page-right', {
+            'sb-admin-page-right-maximized': isMaximized,
+          })}
+        >
+          <div className="bg-primary font-bold height-100 sb-card overflow-y-auto overflow-x-hidden">
+            <TopologyEditor
+              onSaveTopology={onSaveTopology}
+              isMaximized={isMaximized}
+              setMaximized={setMaximized}
+            />
+          </div>
+        </div>
+      </When>
+    </Choose>
   );
 });
 

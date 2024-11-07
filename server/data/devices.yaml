@@ -1,0 +1,12 @@
+- kind: nokia_srlinux
+  name: Nokia SR Linux
+  interfacePattern: ethernet-1/$
+  interfaceStart: 1
+  images:
+    - ghcr.io/nokia/srlinux
+  type: Router
+- kind: ceos
+  name: Arista cEOS
+  interfacePattern: eth$
+  interfaceStart: 0
+  type: VM

@@ -18,7 +18,7 @@ const Dock: React.FC = () => {
         <Button
           label="Topology Editor"
           outlined
-          onClick={() => navigate('/admin')}
+          onClick={() => navigate('/editor')}
         />
       </div>
       <div className="flex align-items-center gap-2 justify-content-end">

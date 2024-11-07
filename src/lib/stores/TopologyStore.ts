@@ -1,15 +1,22 @@
-import {makeAutoObservable} from 'mobx';
+import {makeAutoObservable, observe} from 'mobx';
 
 import {RootStore} from '@sb/lib/stores/RootStore';
 import {TopologyManager} from '@sb/lib/TopologyManager';
-import {FetchState, Topology, TopologyOut} from '@sb/types/Types';
+import {
+  DefaultFetchReport,
+  ErrorResponse,
+  FetchReport,
+  FetchState,
+  Topology,
+  TopologyOut,
+} from '@sb/types/Types';
 
 export class TopologyStore {
   private rootStore: RootStore;
 
   public topologies: Topology[] = [];
   public lookup: Map<string, Topology> = new Map();
-  public fetchState: FetchState = FetchState.Pending;
+  public fetchReport: FetchReport = DefaultFetchReport;
 
   public manager = new TopologyManager();
 
@@ -17,6 +24,8 @@ export class TopologyStore {
     makeAutoObservable(this);
 
     this.rootStore = rootStore;
+
+    observe(rootStore.apiConnectorStore, () => this.fetch());
 
     this.fetch();
   }
@@ -32,9 +41,13 @@ export class TopologyStore {
           this.lookup = new Map(
             this.topologies.map(topology => [topology.id, topology])
           );
-          this.fetchState = FetchState.Done;
+          this.fetchReport = {state: FetchState.Done};
         } else {
-          this.fetchState = FetchState.NetworkError;
+          this.fetchReport = {
+            state: FetchState.Error,
+            errorCode: String((data[1] as ErrorResponse).code),
+            errorMessage: (data[1] as ErrorResponse).message,
+          };
         }
       });
   }

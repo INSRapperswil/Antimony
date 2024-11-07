@@ -1,6 +1,5 @@
 import {NotificationControllerContext} from '@sb/lib/NotificationController';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
-import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 import React, {
   useCallback,
   useContext,
@@ -15,7 +14,7 @@ import {Accordion, AccordionTab} from 'primereact/accordion';
 import {If} from '@sb/types/control';
 import {NodeEditor} from '@sb/lib/NodeEditor';
 import SBInput from '@sb/components/common/SBInput';
-import {TopologyDefinition} from '@sb/types/Types';
+import {TopologyDefinition, YAMLDocument} from '@sb/types/Types';
 import NodePropertyTable from './NodePropertyTable/NodePropertyTable';
 
 import './NodeEditDialog.sass';

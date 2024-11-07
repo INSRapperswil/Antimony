@@ -14,11 +14,10 @@ import Graph from 'react-graph-vis';
 import {Button} from 'primereact/button';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import {Lab, TopologyDefinition} from '@sb/types/Types';
+import {Lab, TopologyDefinition, YAMLDocument} from '@sb/types/Types';
 import {NetworkOptions} from '@sb/components/AdminPage/TopologyEditor/NodeEditor/network.conf';
 
 import './LabDialog.sass';
-import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 import {ContextMenu} from 'primereact/contextmenu';
 import {Checkbox} from 'primereact/checkbox';
 import {drawGrid} from '@sb/lib/utils/Utils';

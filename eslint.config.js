@@ -28,7 +28,7 @@ export default [
       'workbox-config.cjs',
       'eslint.config.js',
       '.prettierrc.cjs',
-      'server.js',
+      'server/*',
     ],
   },
   ...fixupConfigRules(
@@ -84,6 +84,7 @@ export default [
           ignores: [],
         },
       ],
+      'n/no-extraneous-import': ['off'],
     },
   },
 ];

@@ -199,7 +199,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                 <SplitterPanel
                   className="flex align-items-center justify-content-center overflow-hidden"
                   minSize={10}
-                  size={30}
+                  size={40}
                 >
                   <MonacoWrapper
                     ref={monacoWrapperRef}

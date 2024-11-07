@@ -1,4 +1,3 @@
-import {YAMLDocument} from '@sb/lib/utils/YAMLDocument';
 import _ from 'lodash';
 import objectPath from 'object-path';
 import {validate} from 'jsonschema';
@@ -11,6 +10,7 @@ import {
   PropertyType,
   PropertySchema,
   FieldType,
+  YAMLDocument,
 } from '@sb/types/Types';
 import {Binding} from '@sb/lib/utils/Binding';
 import {arrayOf, filterSchemaEnum} from '@sb/lib/utils/Utils';

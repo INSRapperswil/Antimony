@@ -7,14 +7,12 @@ import {InputText} from 'primereact/inputtext';
 import {IconField} from 'primereact/iconfield';
 import {InputIcon} from 'primereact/inputicon';
 
-// eslint-disable-next-line n/no-extraneous-import
 import {Lab, LabState} from '@sb/types/Types';
 import {useResource} from '@sb/lib/utils/Hooks';
 import {RootStoreContext} from '@sb/lib/stores/RootStore';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
 import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 import ReservationDialog from '@sb/components/LabsPage/ReservationDialog/ReservationDialog';
-// eslint-disable-next-line n/no-extraneous-import
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 
 import './LabsPage.sass';

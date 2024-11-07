@@ -16,6 +16,7 @@ lint_frontend:
         - ./node_modules
   script:
     - yarn install
+    - yarn run compile
     - yarn run lint
 
 build_frontend:
@@ -45,3 +46,33 @@ deploy_frontend:
       --ingress=all
       --port 8100
       --cpu=1
+
+build_backend:
+  stage: build
+  image: google/cloud-sdk:latest
+  before_script:
+    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+    - gcloud config set project antimony-438914
+  script:
+    - cd ./server
+    - gcloud builds submit --config build.dev.yaml
+
+deploy_backend:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  before_script:
+    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+    - gcloud config set project antimony-438914
+  script:
+    - >-
+      gcloud run deploy antimony-backend-development
+      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-backend-dev:latest
+      --allow-unauthenticated
+      --region=europe-west1
+      --memory=2Gi
+      --ingress=all
+      --port 8100
+      --cpu=1
+

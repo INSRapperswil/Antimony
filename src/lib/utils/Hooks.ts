@@ -19,7 +19,7 @@ export function useResource<T>(
         setData(mapper ? mapper(data[1] as T) : (data[1] as T));
         setFetchState(FetchState.Done);
       } else {
-        setFetchState(FetchState.NetworkError);
+        setFetchState(FetchState.Error);
       }
     });
   }, [apiConnector, isExternal, mapper, path]);

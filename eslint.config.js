@@ -50,10 +50,10 @@ export default [
     },
 
     languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
+      // globals: {
+      //   ...globals.browser,
+      //   ...globals.node,
+      // },
 
       parser: tsParser,
       ecmaVersion: 5,
@@ -75,6 +75,7 @@ export default [
     rules: {
       // We hate unused imports.
       'unused-imports/no-unused-imports': 'error',
+      'jsx-control-statements/jsx-jcs-no-undef': 'off',
 
       // We don't care about this here since we only use node for the webpack build.
       'n/no-unsupported-features/node-builtins': [

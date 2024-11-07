@@ -75,7 +75,7 @@ const SBLogin = observer(() => {
     return (
       <form onSubmit={onFormSubmit}>
         <div className="sb-login-content">
-          <div className="sb-login-content-header">
+          <div className="sb-login-content-icon">
             <div className="sb-login-header-icon">
               <i className="pi pi-user"></i>
             </div>

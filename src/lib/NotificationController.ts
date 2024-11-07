@@ -1,4 +1,4 @@
-import React, {createContext, createRef} from 'react';
+import React, {createContext, createRef, useContext} from 'react';
 
 import {Toast} from 'primereact/toast';
 
@@ -51,3 +51,5 @@ export class NotificationController {
 export const NotificationControllerContext = createContext(
   new NotificationController()
 );
+
+export const useNotifications = () => useContext(NotificationControllerContext);

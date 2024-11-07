@@ -1,5 +1,5 @@
-import {NotificationControllerContext} from '@sb/lib/NotificationController';
-import React, {MouseEvent, useContext, useEffect, useState} from 'react';
+import {useNotifications} from '@sb/lib/NotificationController';
+import React, {MouseEvent, useEffect, useState} from 'react';
 
 import {Chip} from 'primereact/chip';
 import {Dialog} from 'primereact/dialog';
@@ -9,7 +9,7 @@ import {InputIcon} from 'primereact/inputicon';
 
 import {Lab, LabState} from '@sb/types/Types';
 import {useResource} from '@sb/lib/utils/Hooks';
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
+import {useAPIStore, useGroupStore} from '@sb/lib/stores/RootStore';
 import LabDialog from '@sb/components/LabsPage/LabDialog/LabDialog';
 import FilterDialog from '@sb/components/LabsPage/FilterDialog/FilterDialog';
 import ReservationDialog from '@sb/components/LabsPage/ReservationDialog/ReservationDialog';
@@ -41,8 +41,8 @@ const LabsPage: React.FC = () => {
   const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(0);
   const [pageSize] = useState<number>(6);
 
-  const groupStore = useContext(RootStoreContext).groupStore;
-  const notificationController = useContext(NotificationControllerContext);
+  const groupStore = useGroupStore();
+  const notificationController = useNotifications();
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [reschedulingDialog, setReschedulingDialog] = useState<boolean>(false);
@@ -50,11 +50,7 @@ const LabsPage: React.FC = () => {
     useState<Lab | null>(null);
 
   const labsPath = `/labs?limit=${pageSize}&offset=${currentPage * pageSize}&stateFilter=${selectedFilters.join(',')}&searchQuery=${searchQuery}`;
-  const [labQuery] = useResource<Lab[]>(
-    labsPath,
-    useContext(RootStoreContext).apiConnectorStore,
-    []
-  );
+  const [labQuery] = useResource<Lab[]>(labsPath, useAPIStore(), []);
   useEffect(() => {
     setTotalAmountOfEntries(10); //useResource needs update for api header
     setLabs(labQuery);

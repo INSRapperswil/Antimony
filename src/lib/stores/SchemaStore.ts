@@ -21,7 +21,7 @@ export class SchemaStore {
   }
 
   public fetch() {
-    this.rootStore.apiConnectorStore
+    this.rootStore._apiConnectorStore
       .get<ClabSchema>(process.env.SB_CLAB_SCHEMA_URL!, true)
       .then(data => {
         if (data[0]) {

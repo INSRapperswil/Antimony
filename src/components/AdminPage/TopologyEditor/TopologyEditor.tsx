@@ -1,11 +1,5 @@
 import NodeEditor from '@sb/components/AdminPage/TopologyEditor/NodeEditor/NodeEditor';
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {validate} from 'jsonschema';
 import {Button} from 'primereact/button';
@@ -14,7 +8,7 @@ import {Splitter, SplitterPanel} from 'primereact/splitter';
 
 import {Topology} from '@sb/types/Types';
 import {Choose, Otherwise, When} from '@sb/types/control';
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
+import {useSchemaStore, useTopologyStore} from '@sb/lib/stores/RootStore';
 import {TopologyEditReport} from '@sb/lib/TopologyManager';
 import MonacoWrapper, {MonacoWrapperRef} from './MonacoWrapper/MonacoWrapper';
 import NodeEditDialog from '@sb/components/AdminPage/TopologyEditor/NodeEditDialog/NodeEditDialog';
@@ -49,8 +43,8 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     null
   );
 
-  const topologyStore = useContext(RootStoreContext).topologyStore;
-  const schemaStore = useContext(RootStoreContext).schemaStore;
+  const schemaStore = useSchemaStore();
+  const topologyStore = useTopologyStore();
 
   const monacoWrapperRef = useRef<MonacoWrapperRef>(null);
 

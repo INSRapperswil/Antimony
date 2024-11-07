@@ -1,5 +1,5 @@
 import {ParticlesOptions} from '@sb/components/LoginOverlay/particles.conf';
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
+import {useAPIStore, useRootStore} from '@sb/lib/stores/RootStore';
 import {If} from '@sb/types/control';
 import {FetchState} from '@sb/types/Types';
 import {loadLinksPreset} from '@tsparticles/preset-links';
@@ -10,15 +10,15 @@ import {Button} from 'primereact/button';
 import {Checkbox} from 'primereact/checkbox';
 import {InputText} from 'primereact/inputtext';
 import {Message} from 'primereact/message';
-import React, {FormEvent, useContext, useEffect, useState} from 'react';
+import React, {FormEvent, useEffect, useState} from 'react';
 
 import './LoginOverlay.sass';
 
 const LoginOverlay = observer(() => {
   const [particlesReady, setParticlesReady] = useState(false);
 
-  const rootStore = useContext(RootStoreContext);
-  const apiStore = useContext(RootStoreContext).apiConnectorStore;
+  const rootStore = useRootStore();
+  const apiStore = useAPIStore();
 
   useEffect(() => {
     void initParticlesEngine(async engine => {

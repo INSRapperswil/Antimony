@@ -22,13 +22,13 @@ export class TopologyStore {
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
 
-    observe(rootStore.apiConnectorStore, () => this.fetch());
+    observe(rootStore._apiConnectorStore, () => this.fetch());
 
     this.fetch();
   }
 
   public fetch() {
-    this.rootStore.apiConnectorStore
+    this.rootStore._apiConnectorStore
       .get<TopologyOut[]>('/topologies')
       .then(data => this.update(data));
   }

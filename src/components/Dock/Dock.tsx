@@ -1,5 +1,5 @@
-import {RootStore, RootStoreContext} from '@sb/lib/stores/RootStore';
-import React, {useContext} from 'react';
+import {useAPIStore} from '@sb/lib/stores/RootStore';
+import React from 'react';
 
 import {Button} from 'primereact/button';
 import {useNavigate} from 'react-router-dom';
@@ -9,7 +9,7 @@ import './Dock.sass';
 const Dock: React.FC = () => {
   const navigate = useNavigate();
 
-  const apiConnector = useContext(RootStoreContext).apiConnectorStore;
+  const apiStore = useAPIStore();
 
   return (
     <div className="flex mb-3 align-items-stretch justify-content-between sb-card sb-dock">
@@ -51,7 +51,7 @@ const Dock: React.FC = () => {
           icon="pi pi-sign-out"
           label="Log Out"
           className="flex gap-1"
-          onClick={() => apiConnector.logout()}
+          onClick={() => apiStore.logout()}
           tooltipOptions={{position: 'bottom'}}
         />
       </div>

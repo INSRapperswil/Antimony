@@ -5,7 +5,8 @@ import {createProxyMiddleware} from 'http-proxy-middleware';
 const app = express();
 
 const exampleProxy = createProxyMiddleware({
-  target: 'http://152.96.10.35/',
+  target:
+    'https://antimony-backend-development-491689167898.europe-west1.run.app',
   changeOrigin: true,
   pathRewrite: {'^/api': ''},
 });

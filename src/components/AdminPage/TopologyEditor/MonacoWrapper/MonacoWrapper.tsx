@@ -2,7 +2,6 @@ import {observer} from 'mobx-react-lite';
 import React, {
   forwardRef,
   useCallback,
-  useContext,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -17,7 +16,7 @@ import {Monaco} from '@monaco-editor/react';
 import {configureMonacoYaml} from 'monaco-yaml';
 
 import {Choose, If, Otherwise, When} from '@sb/types/control';
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
+import {useSchemaStore} from '@sb/lib/stores/RootStore';
 import {AntimonyTheme, MonacoOptions} from './monaco.conf';
 
 import './MonacoWrapper.sass';
@@ -60,7 +59,7 @@ const MonacoWrapper = observer(
     const textModelRef = useRef<editor.ITextModel | null>(null);
     const monacoEditorRef = useRef<Monaco | null>(null);
 
-    const schemaStore = useContext(RootStoreContext).schemaStore;
+    const schemaStore = useSchemaStore();
 
     useImperativeHandle(ref, () => ({
       openTopology: (topology: Document) => {

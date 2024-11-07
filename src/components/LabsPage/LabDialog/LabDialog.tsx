@@ -1,12 +1,5 @@
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import {useDeviceStore, useTopologyStore} from '@sb/lib/stores/RootStore';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Edge, Node} from 'vis';
 import {Network} from 'vis-network';
@@ -21,7 +14,6 @@ import './LabDialog.sass';
 import {ContextMenu} from 'primereact/contextmenu';
 import {Checkbox} from 'primereact/checkbox';
 import {drawGrid} from '@sb/lib/utils/Utils';
-import {NotificationControllerContext} from '@sb/lib/NotificationController';
 
 type GraphDefinition = {
   nodes?: Node[];
@@ -42,8 +34,8 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
   const [selectedNode, setSelectedNode] = useState<number | null>(null);
 
-  const topologyStore = useContext(RootStoreContext).topologyStore;
-  const deviceStore = useContext(RootStoreContext).deviceStore;
+  const deviceStore = useDeviceStore();
+  const topologyStore = useTopologyStore();
 
   useResizeObserver(containerRef, () => {
     if (network) {

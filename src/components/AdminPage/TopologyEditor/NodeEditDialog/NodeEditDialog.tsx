@@ -1,12 +1,10 @@
-import {NotificationControllerContext} from '@sb/lib/NotificationController';
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import {useNotifications} from '@sb/lib/NotificationController';
+import {
+  useDeviceStore,
+  useSchemaStore,
+  useTopologyStore,
+} from '@sb/lib/stores/RootStore';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Dropdown} from 'primereact/dropdown';
 import {Accordion, AccordionTab} from 'primereact/accordion';
@@ -33,10 +31,10 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
 ) => {
   const [nodeKind, setNodeKind] = useState('');
 
-  const topologyStore = useContext(RootStoreContext).topologyStore;
-  const schemaStore = useContext(RootStoreContext).schemaStore;
-  const deviceStore = useContext(RootStoreContext).deviceStore;
-  const notificationController = useContext(NotificationControllerContext);
+  const topologyStore = useTopologyStore();
+  const schemaStore = useSchemaStore();
+  const deviceStore = useDeviceStore();
+  const notificationController = useNotifications();
 
   const nodeEditor = useMemo(() => {
     if (

@@ -18,13 +18,13 @@ export class GroupStore {
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
 
-    observe(rootStore.apiConnectorStore, () => this.fetch());
+    observe(rootStore._apiConnectorStore, () => this.fetch());
 
     this.fetch();
   }
 
   public fetch() {
-    this.rootStore.apiConnectorStore.get<Group[]>('/groups').then(data => {
+    this.rootStore._apiConnectorStore.get<Group[]>('/groups').then(data => {
       if (data[0]) {
         this.groups = (data[1] as Group[]).toSorted((a, b) =>
           a.name.localeCompare(b.name)

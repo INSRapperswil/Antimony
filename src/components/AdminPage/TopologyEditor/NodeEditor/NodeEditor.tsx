@@ -2,7 +2,6 @@ import {SpeedDial} from 'primereact/speeddial';
 import React, {
   MouseEvent,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -17,7 +16,7 @@ import {ContextMenu} from 'primereact/contextmenu';
 import useResizeObserver from '@react-hook/resize-observer';
 
 import {TopologyDefinition, YAMLDocument} from '@sb/types/Types';
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
+import {useDeviceStore, useTopologyStore} from '@sb/lib/stores/RootStore';
 
 import './NodeEditor.sass';
 import {drawGrid} from '@sb/lib/utils/Utils';
@@ -40,8 +39,8 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [selectedNode, setSelectedNode] = useState<number | null>(null);
   const [radialTarget, setRadialTarget] = useState<number | null>(null);
 
-  const deviceStore = useContext(RootStoreContext).deviceStore;
-  const topologyStore = useContext(RootStoreContext).topologyStore;
+  const deviceStore = useDeviceStore();
+  const topologyStore = useTopologyStore();
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
   const containerRef = useRef(null);

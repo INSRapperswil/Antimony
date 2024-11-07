@@ -1,13 +1,13 @@
 import TopologyEditor from '@sb/components/AdminPage/TopologyEditor/TopologyEditor';
 import TopologyExplorer from '@sb/components/AdminPage/TopologyExplorer/TopologyExplorer';
-import {NotificationControllerContext} from '@sb/lib/NotificationController';
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
+import {useNotifications} from '@sb/lib/NotificationController';
+import {useTopologyStore} from '@sb/lib/stores/RootStore';
 
 import {Topology} from '@sb/types/Types';
 
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
-import React, {useCallback, useContext, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 
 import './AdminPage.sass';
 import {useSearchParams} from 'react-router-dom';
@@ -17,8 +17,8 @@ const AdminPage: React.FC = observer(() => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const topologyStore = useContext(RootStoreContext).topologyStore;
-  const notificationController = useContext(NotificationControllerContext);
+  const topologyStore = useTopologyStore();
+  const notificationController = useNotifications();
 
   const onTopologyOpen = useCallback(
     (topology: Topology) => {

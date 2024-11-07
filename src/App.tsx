@@ -10,13 +10,17 @@ import {
   NotificationController,
   NotificationControllerContext,
 } from '@sb/lib/NotificationController';
-import {rootStore, RootStoreContext} from '@sb/lib/stores/RootStore';
+import {
+  rootStore,
+  RootStoreContext,
+  useAPIStore,
+} from '@sb/lib/stores/RootStore';
 import {If} from '@sb/types/control';
 import {observer} from 'mobx-react-lite';
 import {PrimeReactProvider} from 'primereact/api';
 
 import {Toast} from 'primereact/toast';
-import React, {useContext, useRef} from 'react';
+import React, {useRef} from 'react';
 
 import {Navigate, Route, Routes} from 'react-router-dom';
 import 'primereact/resources/themes/lara-dark-blue/theme.css';
@@ -25,7 +29,7 @@ const App: React.FC = observer(() => {
   const toastRef = useRef<Toast>(null);
   const confirmationRef = useRef<SBConfirmRef>(null);
 
-  const apiStore = useContext(RootStoreContext).apiConnectorStore;
+  const apiStore = useAPIStore();
 
   return (
     <PrimeReactProvider>

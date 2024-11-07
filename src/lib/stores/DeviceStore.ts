@@ -19,13 +19,13 @@ export class DeviceStore {
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
 
-    observe(rootStore.apiConnectorStore, () => this.fetch());
+    observe(rootStore._apiConnectorStore, () => this.fetch());
 
     this.fetch();
   }
 
   public fetch() {
-    this.rootStore.apiConnectorStore
+    this.rootStore._apiConnectorStore
       .get<DeviceInfo[]>('/devices')
       .then(data => {
         if (data[0]) {

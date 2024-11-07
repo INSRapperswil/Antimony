@@ -73,6 +73,6 @@ deploy_backend:
       --region=europe-west1
       --memory=2Gi
       --ingress=all
-      --port 8100
+      --port 3000
       --cpu=1
 

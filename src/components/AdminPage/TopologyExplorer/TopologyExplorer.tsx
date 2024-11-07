@@ -1,5 +1,5 @@
 import {observer} from 'mobx-react-lite';
-import React, {useCallback, useContext, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 
 import {Tooltip} from 'primereact/tooltip';
 import {TreeNode} from 'primereact/treenode';
@@ -7,8 +7,8 @@ import {Tree, TreeExpandedKeysType, TreeSelectionEvent} from 'primereact/tree';
 
 import {Topology} from '@sb/types/Types';
 import SBConfirm from '@sb/components/common/SBConfirm';
-import {RootStoreContext} from '@sb/lib/stores/RootStore';
-import {NotificationControllerContext} from '@sb/lib/NotificationController';
+import {useGroupStore, useTopologyStore} from '@sb/lib/stores/RootStore';
+import {useNotifications} from '@sb/lib/NotificationController';
 import ExplorerTreeNode from '@sb/components/AdminPage/TopologyExplorer/ExplorerTreeNode/ExplorerTreeNode';
 
 import './TopologyExplorer.sass';
@@ -22,9 +22,9 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   const [topologyTree, setTopologyTree] = useState<TreeNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<TreeExpandedKeysType>({});
 
-  const topologyStore = useContext(RootStoreContext).topologyStore;
-  const groupStore = useContext(RootStoreContext).groupStore;
-  const notificationController = useContext(NotificationControllerContext);
+  const topologyStore = useTopologyStore();
+  const groupStore = useGroupStore();
+  const notificationController = useNotifications();
 
   const generateTopologyTree = useCallback(() => {
     const topologyTree: TreeNode[] = [];

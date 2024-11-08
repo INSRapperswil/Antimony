@@ -9,12 +9,7 @@ import {lorem} from 'txtgen';
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: 'http://localhost:8080',
-    methods: ['GET', 'POST'],
-  },
-});
+const io = new Server(server);
 const port = 3000;
 const secret = 'thisismylittlesecret';
 
@@ -332,6 +327,7 @@ function iterateQueue() {
     const notification = notificationQueue.pop();
     if (!socketMap.has(notification.userId)) return;
 
+    console.log('SEND NOTIFICATION TO FRONTEND');
     socketMap.get(notification.userId).emit('notification', notification.data);
   }
 

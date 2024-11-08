@@ -20,6 +20,7 @@ module.exports = merge(common, {
         pathRewrite: {
           '^/api': '',
         },
+        ws: true,
       },
     },
   },

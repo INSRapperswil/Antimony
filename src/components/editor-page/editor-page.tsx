@@ -1,6 +1,6 @@
 import TopologyEditor from '@sb/components/editor-page/topology-editor/topology-editor';
 import TopologyExplorer from '@sb/components/editor-page/topology-explorer/topology-explorer';
-import {useNotifications} from '@sb/lib/notification-controller';
+import {useNotifications} from '@sb/lib/stores/notification-store';
 import {useTopologyStore} from '@sb/lib/stores/root-store';
 
 import {Topology} from '@sb/types/types';

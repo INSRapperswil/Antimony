@@ -1,3 +1,4 @@
+import {action, observable} from 'mobx';
 import React, {createContext, createRef, useContext} from 'react';
 
 import {Toast} from 'primereact/toast';
@@ -7,9 +8,39 @@ import {
   SBConfirmRef,
 } from '@sb/components/common/sb-confirm/sb-confirm';
 
-export class NotificationController {
+export class NotificationStore {
   private toastRef: React.RefObject<Toast>;
   private confirmRef: React.RefObject<SBConfirmRef>;
+
+  @observable accessor messages: Notification[] = [
+    {
+      summary: 'test message 1',
+      detail: "something happened here, we can't be too sure though",
+      severity: 'warn',
+      timestamp: new Date(),
+      source: 'net',
+    },
+    {
+      summary: 'some error',
+      detail: 'something definitely happened here',
+      severity: 'error',
+      timestamp: new Date(),
+      source: 'parse',
+    },
+    {
+      summary: 'success!!!',
+      detail: 'yay finally something good',
+      severity: 'success',
+      timestamp: new Date(),
+      source: 'server',
+    },
+    {
+      summary: 'something unimportant',
+      detail: 'unbelievable, look at this',
+      severity: 'info',
+      timestamp: new Date(),
+    },
+  ];
 
   constructor(
     toastRef?: React.RefObject<Toast>,
@@ -34,22 +65,45 @@ export class NotificationController {
     this.confirmRef.current.show(props);
   }
 
+  @action
+  public clear() {
+    this.messages = [];
+  }
+
+  @action
   private send(
     message: string,
     title: string,
-    severity: 'success' | 'info' | 'warn' | 'error' | 'secondary' | 'contrast'
+    severity: Severity,
+    source?: string
   ): void {
     if (!this.toastRef.current) return;
-    this.toastRef.current.show({
+    const msg = {
       summary: title,
       detail: message,
       severity: severity,
+    };
+    this.toastRef.current.show(msg);
+    this.messages.push({
+      ...msg,
+      timestamp: new Date(),
+      source: source,
     });
   }
 }
 
+export type Notification = {
+  timestamp: Date;
+  source?: string;
+  summary: string;
+  detail: string;
+  severity: Severity;
+};
+
+export type Severity = 'success' | 'info' | 'warn' | 'error';
+
 export const NotificationControllerContext = createContext(
-  new NotificationController()
+  new NotificationStore()
 );
 
 export const useNotifications = () => useContext(NotificationControllerContext);

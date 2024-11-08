@@ -8,7 +8,7 @@ import {Tree, TreeExpandedKeysType, TreeSelectionEvent} from 'primereact/tree';
 import {Topology} from '@sb/types/types';
 import SbConfirm from '@sb/components/common/sb-confirm/sb-confirm';
 import {useGroupStore, useTopologyStore} from '@sb/lib/stores/root-store';
-import {useNotifications} from '@sb/lib/notification-controller';
+import {useNotifications} from '@sb/lib/stores/notification-store';
 import ExplorerTreeNode from '@sb/components/editor-page/topology-explorer/explorer-tree-node/explorer-tree-node';
 
 import './topology-explorer.sass';

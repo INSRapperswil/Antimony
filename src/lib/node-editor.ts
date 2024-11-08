@@ -14,7 +14,7 @@ import {
 } from '@sb/types/types';
 import {Binding} from '@sb/lib/utils/binding';
 import {arrayOf, filterSchemaEnum} from '@sb/lib/utils/utils';
-import {NotificationController} from '@sb/lib/notification-controller';
+import {NotificationStore} from '@sb/lib/stores/notification-store';
 
 /*
  * Object used by the view to communicate with the Node Editor.
@@ -42,7 +42,7 @@ export type PropertyDefinition = {
 
 export class NodeEditor {
   private readonly originalTopology: YAMLDocument<TopologyDefinition>;
-  private readonly notifications: NotificationController;
+  private readonly notifications: NotificationStore;
   public readonly clabSchema: ClabSchema;
 
   public readonly onEdit: Binding<YAMLDocument<TopologyDefinition>> =
@@ -55,7 +55,7 @@ export class NodeEditor {
     clabSchema: ClabSchema,
     editingNode: string,
     originalTopology: YAMLDocument<TopologyDefinition>,
-    notifications: NotificationController
+    notifications: NotificationStore
   ) {
     this.clabSchema = clabSchema;
     this.editingNode = editingNode;

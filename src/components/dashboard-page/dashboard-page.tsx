@@ -1,4 +1,4 @@
-import {useNotifications} from '@sb/lib/notification-controller';
+import {useNotifications} from '@sb/lib/stores/notification-store';
 import React, {MouseEvent, useEffect, useState} from 'react';
 
 import {Chip} from 'primereact/chip';

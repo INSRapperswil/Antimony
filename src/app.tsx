@@ -10,9 +10,9 @@ import ErrorPage from '@sb/components/error-page/error-page';
 import SBLogin from '@sb/components/common/sb-login/sb-login';
 
 import {
-  NotificationController,
+  NotificationStore,
   NotificationControllerContext,
-} from '@sb/lib/notification-controller';
+} from '@sb/lib/stores/notification-store';
 import {
   rootStore,
   RootStoreContext,
@@ -38,7 +38,7 @@ const App: React.FC = observer(() => {
     <PrimeReactProvider>
       <RootStoreContext.Provider value={rootStore}>
         <NotificationControllerContext.Provider
-          value={new NotificationController(toastRef, confirmationRef)}
+          value={new NotificationStore(toastRef, confirmationRef)}
         >
           <SBLogin />
           <div className="flex flex-column flex-grow-1 m-3 sb-app-container">

@@ -1,68 +1,93 @@
-import {action, observable} from 'mobx';
-import React, {createContext, createRef, useContext} from 'react';
-
-import {Toast} from 'primereact/toast';
-
 import {
   SBConfirmOpenProps,
   SBConfirmRef,
 } from '@sb/components/common/sb-confirm/sb-confirm';
+import {RootStore} from '@sb/lib/stores/root-store';
+import {
+  DefaultFetchReport,
+  ErrorResponse,
+  FetchReport,
+  FetchState,
+  Notification,
+  NotificationOut,
+  Severity,
+  SeverityMapping,
+} from '@sb/types/types';
+import {action, computed, observable} from 'mobx';
+
+import {Toast} from 'primereact/toast';
+import React, {createRef} from 'react';
 
 export class NotificationStore {
-  private toastRef: React.RefObject<Toast>;
-  private confirmRef: React.RefObject<SBConfirmRef>;
+  private rootStore: RootStore;
 
-  @observable accessor messages: Notification[] = [
-    {
-      summary: 'test message 1',
-      detail: "something happened here, we can't be too sure though",
-      severity: 'warn',
-      timestamp: new Date(),
-      source: 'net',
-    },
-    {
-      summary: 'some error',
-      detail: 'something definitely happened here',
-      severity: 'error',
-      timestamp: new Date(),
-      source: 'parse',
-    },
-    {
-      summary: 'success!!!',
-      detail: 'yay finally something good',
-      severity: 'success',
-      timestamp: new Date(),
-      source: 'server',
-    },
-    {
-      summary: 'something unimportant',
-      detail: 'unbelievable, look at this',
-      severity: 'info',
-      timestamp: new Date(),
-    },
-  ];
+  private toastRef: React.RefObject<Toast> | null = null;
+  private confirmRef: React.RefObject<SBConfirmRef> | null = null;
+
+  @observable accessor messages: Notification[] = [];
+  @observable accessor countBySeverity: Map<Severity, number> = new Map();
+  @observable accessor fetchReport: FetchReport = DefaultFetchReport;
 
   constructor(
+    rootStore: RootStore,
     toastRef?: React.RefObject<Toast>,
     confirmRef?: React.RefObject<SBConfirmRef>
   ) {
+    this.rootStore = rootStore;
     this.toastRef = toastRef ?? createRef();
     this.confirmRef = confirmRef ?? createRef();
+
+    this.fetch();
+
+    this.rootStore._apiConnectorStore.socket.on('notification', data => {
+      this.handleNotification(NotificationStore.parseNotification(data));
+    });
   }
 
-  public success = (message: string, title: string = 'Success') =>
-    this.send(message, title, 'success');
-  public info = (message: string, title: string = 'Info') =>
-    this.send(message, title, 'info');
-  public error = (message: string, title: string = 'Error') =>
-    this.send(message, title, 'error');
-  public warning = (message: string, title: string = 'Warning') =>
-    this.send(message, title, 'warn');
+  public fetch() {
+    this.rootStore._apiConnectorStore
+      .get<NotificationOut[]>('/notifications')
+      .then(data => this.update(data));
+  }
+
+  public success = (message: string, title: string = 'Success') => {
+    this.send(message, title, Severity.Success);
+  };
+
+  public info = (message: string, title: string = 'Info') => {
+    this.send(message, title, Severity.Info);
+  };
+
+  public error = (message: string, title: string = 'Error') => {
+    this.send(message, title, Severity.Error);
+  };
+
+  public warning = (message: string, title: string = 'Warning') => {
+    this.send(message, title, Severity.Warning);
+  };
 
   public confirm(props: SBConfirmOpenProps) {
-    if (!this.confirmRef.current) return;
+    if (!this.confirmRef?.current) return;
 
     this.confirmRef.current.show(props);
+  }
+
+  public setToast(toastRef: React.RefObject<Toast>) {
+    this.toastRef = toastRef;
+  }
+
+  public setConfirm(confirmRef: React.RefObject<SBConfirmRef>) {
+    this.confirmRef = confirmRef;
+  }
+
+  @computed
+  public get lookup(): Map<string, Notification> {
+    return new Map(this.messages.map(message => [message.id, message]));
+  }
+
+  @computed
+  public get unreadMessages(): number {
+    return this.messages.filter(msg => !msg.isRead).length;
   }
 
   @action
@@ -71,39 +96,68 @@ export class NotificationStore {
   }
 
   @action
-  private send(
-    message: string,
-    title: string,
-    severity: Severity,
-    source?: string
-  ): void {
-    if (!this.toastRef.current) return;
+  private send(message: string, title: string, severity: Severity): void {
+    if (!this.toastRef?.current) return;
     const msg = {
       summary: title,
       detail: message,
-      severity: severity,
+      severity: SeverityMapping[severity],
     };
     this.toastRef.current.show(msg);
-    this.messages.push({
-      ...msg,
-      timestamp: new Date(),
-      source: source,
-    });
+  }
+
+  @action
+  public maskAsRead(id: string) {
+    if (!this.lookup.has(id)) return;
+
+    this.lookup.get(id)!.isRead = true;
+    this.messages = [...this.messages];
+  }
+
+  @action
+  public markAllAsRead() {
+    this.messages.forEach(msg => (msg.isRead = true));
+    this.messages = [...this.messages];
+  }
+
+  @action
+  private update(data: [boolean, NotificationOut[] | ErrorResponse]) {
+    if (data[0]) {
+      this.messages = (data[1] as NotificationOut[])
+        .map(NotificationStore.parseNotification)
+        .toSorted((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf());
+      this.countBySeverity = new Map(
+        Object.entries(
+          Object.groupBy(this.messages, message => message.severity)
+        ).map(([severity, list]) => [Number(severity), list.length])
+      );
+      this.fetchReport = {state: FetchState.Done};
+    } else {
+      this.fetchReport = {
+        state: FetchState.Error,
+        errorCode: String((data[1] as ErrorResponse).code),
+        errorMessage: (data[1] as ErrorResponse).message,
+      };
+    }
+  }
+
+  @action
+  private handleNotification(notification: Notification) {
+    this.lookup.set(notification.id, notification);
+    this.countBySeverity.set(
+      notification.severity,
+      (this.countBySeverity.get(notification.severity) ?? 0) + 1
+    );
+    this.messages.push(notification);
+    this.messages = [...this.messages];
+    this.send(notification.detail, notification.summary, notification.severity);
+  }
+
+  public static parseNotification(input: NotificationOut): Notification {
+    return {
+      ...input,
+      timestamp: new Date(input.timestamp),
+      isRead: false,
+    };
   }
 }
-
-export type Notification = {
-  timestamp: Date;
-  source?: string;
-  summary: string;
-  detail: string;
-  severity: Severity;
-};
-
-export type Severity = 'success' | 'info' | 'warn' | 'error';
-
-export const NotificationControllerContext = createContext(
-  new NotificationStore()
-);
-
-export const useNotifications = () => useContext(NotificationControllerContext);

@@ -6,9 +6,12 @@ import {TreeNode} from 'primereact/treenode';
 import {Tree, TreeExpandedKeysType, TreeSelectionEvent} from 'primereact/tree';
 
 import {Topology} from '@sb/types/types';
-import SbConfirm from '@sb/components/common/sb-confirm/sb-confirm';
-import {useGroupStore, useTopologyStore} from '@sb/lib/stores/root-store';
-import {useNotifications} from '@sb/lib/stores/notification-store';
+import SBConfirm from '@sb/components/common/sb-confirm/sb-confirm';
+import {
+  useGroupStore,
+  useNotifications,
+  useTopologyStore,
+} from '@sb/lib/stores/root-store';
 import ExplorerTreeNode from '@sb/components/editor-page/topology-explorer/explorer-tree-node/explorer-tree-node';
 
 import './topology-explorer.sass';
@@ -24,7 +27,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
 
   const topologyStore = useTopologyStore();
   const groupStore = useGroupStore();
-  const notificationController = useNotifications();
+  const notificationStore = useNotifications();
 
   const generateTopologyTree = useCallback(() => {
     const topologyTree: TreeNode[] = [];
@@ -74,7 +77,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   }
 
   function onRenameGroup(uuid: string, value: string) {
-    notificationController.success('Successfully renamed group.');
+    notificationStore.success('Successfully renamed group.');
 
     return null;
   }
@@ -82,27 +85,27 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   function onEditGroup(uuid: string) {}
 
   function onDeleteGroupRequest(uuid: string) {
-    notificationController.confirm({
+    notificationStore.confirm({
       message: 'This action cannot be undone!',
       header: 'Delete Group?',
       icon: 'pi pi-exclamation-triangle',
       severity: 'danger',
       onAccept: () => {
         console.log('Deleting Group: ', uuid);
-        notificationController.success('Group was successfully deleted!');
+        notificationStore.success('Group was successfully deleted!');
       },
     });
   }
 
   function onDeleteTopologyRequest(uuid: string) {
-    notificationController.confirm({
+    notificationStore.confirm({
       message: 'This action cannot be undone!',
       header: 'Delete Topology?',
       icon: 'pi pi-exclamation-triangle',
       severity: 'danger',
       onAccept: () => {
         console.log('Deleting Topology: ', uuid);
-        notificationController.success('Topology was successfully deleted!');
+        notificationStore.success('Topology was successfully deleted!');
       },
     });
   }
@@ -134,7 +137,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
         onSelectionChange={onSelectionChange}
         onToggle={e => setExpandedKeys(e.value)}
       />
-      <SbConfirm />
+      <SBConfirm />
     </>
   );
 });

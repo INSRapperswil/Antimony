@@ -1,6 +1,6 @@
-import {useNotifications} from '@sb/lib/stores/notification-store';
 import {
   useDeviceStore,
+  useNotifications,
   useSchemaStore,
   useTopologyStore,
 } from '@sb/lib/stores/root-store';
@@ -34,7 +34,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   const topologyStore = useTopologyStore();
   const schemaStore = useSchemaStore();
   const deviceStore = useDeviceStore();
-  const notificationController = useNotifications();
+  const notificationStore = useNotifications();
 
   const nodeEditor = useMemo(() => {
     if (
@@ -49,13 +49,13 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
       schemaStore.clabSchema,
       props.editingNode,
       props.editingTopology,
-      notificationController
+      notificationStore
     );
   }, [
     schemaStore.clabSchema,
     props.editingNode,
     props.editingTopology,
-    notificationController,
+    notificationStore,
   ]);
 
   const kindList = useMemo(() => {

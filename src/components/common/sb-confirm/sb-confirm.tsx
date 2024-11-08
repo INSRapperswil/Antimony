@@ -35,7 +35,7 @@ interface SBConfirmState {
   rejectText?: string;
 }
 
-const SbConfirm = forwardRef<SBConfirmRef, SBConfirmProps>((props, ref) => {
+const SBConfirm = forwardRef<SBConfirmRef, SBConfirmProps>((props, ref) => {
   const [isOpen, setOpen] = useState(false);
 
   const dialogState = useRef<SBConfirmState>();
@@ -101,4 +101,4 @@ const SbConfirm = forwardRef<SBConfirmRef, SBConfirmProps>((props, ref) => {
   );
 });
 
-export default SbConfirm;
+export default SBConfirm;

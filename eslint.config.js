@@ -78,8 +78,14 @@ export default [
       'unused-imports/no-unused-imports': 'error',
       'jsx-control-statements/jsx-jcs-no-undef': 'off',
 
-      // We don't care about this here since we only use node for the webpack build.
       'n/no-unsupported-features/node-builtins': [
+        'off',
+        {
+          version: '>=21.0.0',
+          ignores: [],
+        },
+      ],
+      'n/no-unsupported-features/es-builtins': [
         'off',
         {
           version: '>=21.0.0',

@@ -3,7 +3,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "noImplicitAny": true,
-    "module": "esnext",
+    "module": "NodeNext",
     "moduleResolution": "node",
     "isolatedModules": true,
     "strict": true,

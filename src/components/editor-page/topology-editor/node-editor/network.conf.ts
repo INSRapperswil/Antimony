@@ -40,7 +40,6 @@ export const NetworkOptions = {
       springConstant: 0.001,
       nodeDistance: 100,
       damping: 0.2,
-      avoidOverlap: 4,
     },
     stabilization: {
       enabled: true,

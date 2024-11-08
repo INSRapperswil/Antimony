@@ -1,10 +1,20 @@
 import express from 'express';
+import http from 'http';
 import fs from 'fs';
 import YAML from 'yaml';
 import jwt from 'jsonwebtoken';
 import bearerToken from 'express-bearer-token';
+import {Server} from 'socket.io';
+import {lorem} from 'txtgen';
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:8080',
+    methods: ['GET', 'POST'],
+  },
+});
 const port = 3000;
 const secret = 'thisismylittlesecret';
 
@@ -14,9 +24,10 @@ const store = {
   devices: [],
   groups: [],
   users: [],
+  notifications: {},
 };
 
-loadTestData();
+await loadTestData();
 
 app.use(express.json());
 app.use(bearerToken());
@@ -55,6 +66,16 @@ app.get('/groups', (req, res) => {
   res.send({payload: getUserGroups(user)});
 });
 
+app.get('/notifications', (req, res) => {
+  const user = authenticateUser(req.token);
+  if (!user) {
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  res.send({payload: getUserNotifications(user)});
+});
+
 app.get('/labs', (req, res) => {
   const user = authenticateUser(req.token);
   if (!user) {
@@ -74,6 +95,8 @@ app.get('/labs', (req, res) => {
       req.query.endDate
     ).toSorted((a, b) => a.name.localeCompare(b.name)),
   });
+
+  addRandomNotification(user.id);
 });
 
 app.post('/users/auth', (req, res) => {
@@ -92,8 +115,27 @@ app.post('/users/auth', (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log('[APP] Antimony server ready');
+const notificationQueue = [];
+const socketMap = new Map();
+
+io.on('connection', socket => {
+  console.log('[SIO] A new client connected via socket.io');
+  const user = authenticateUser(socket.handshake.auth.token);
+  if (!user) {
+    socket.disconnect();
+    return;
+  }
+
+  socketMap.set(user.id, socket);
+
+  socket.on('disconnect', () => {
+    console.log('[SIO] A client has disconnected from socket.io');
+    socketMap.delete(user.id);
+  });
+});
+
+server.listen(port, () => {
+  console.log('[APP] Antimony server ready...');
 });
 
 function generateError(message) {
@@ -188,6 +230,10 @@ function getUserGroups(user) {
   );
 }
 
+function getUserNotifications(user) {
+  return store.notifications[user.id] ?? [];
+}
+
 function getUserTopologies(user) {
   return user.groups
     .map(groupId => store.groups.find(group => group.id === groupId))
@@ -197,12 +243,67 @@ function getUserTopologies(user) {
     );
 }
 
-function loadTestData() {
+function addRandomNotification(userId) {
+  setTimeout(async () => {
+    const notification = await generateRandomNotification();
+    notificationQueue.push({
+      userId: userId,
+      data: notification,
+    });
+
+    if (userId in store.notifications) {
+      store.notifications[userId].push(notification);
+    } else {
+      store.notifications[userId] = [notification];
+    }
+  }, 3000);
+}
+
+async function generateRandomNotification() {
+  return {
+    id: uuidv4(),
+    timestamp: new Date(),
+    summary: makeTitle(lorem(4, 8)) + '.',
+    detail: (await (await fetch('https://meowfacts.herokuapp.com/')).json())[
+      'data'
+    ][0],
+    severity: Math.floor(Math.random() * 4),
+  };
+}
+
+async function generateNotificationTestData(users) {
+  const notifications = {};
+
+  for (const user of users) {
+    notifications[user.id] = [];
+    const amount = Math.floor(Math.random() * 10);
+    for (let i = 0; i < amount; i++) {
+      notifications[user.id].push(await generateRandomNotification());
+    }
+  }
+
+  return notifications;
+}
+
+function makeTitle(value) {
+  return String(value).charAt(0).toUpperCase() + String(value).slice(1);
+}
+
+async function loadTestData() {
   store.topologies = readDataFile('topologies.yaml');
   store.labs = readDataFile('labs.yaml');
   store.devices = readDataFile('devices.yaml');
   store.groups = readDataFile('groups.yaml');
   store.users = readDataFile('users.yaml');
+  store.notifications = await generateNotificationTestData(store.users);
+
+  for (const userId in store.notifications) {
+    for (const notif of store.notifications[userId]) {
+      notif.detail = (
+        await (await fetch('https://meowfacts.herokuapp.com/')).json()
+      )['data'][0];
+    }
+  }
 }
 
 function readDataFile(fileName) {
@@ -214,3 +315,32 @@ function readDataFile(fileName) {
     process.exit(1);
   }
 }
+
+function randomDate(start, end) {
+  return new Date(
+    start.getTime() + Math.random() * (end.getTime() - start.getTime())
+  );
+}
+
+function uuidv4() {
+  return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c =>
+    (
+      +c ^
+      (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (+c / 4)))
+    ).toString(16)
+  );
+}
+
+function iterateQueue() {
+  if (notificationQueue.length > 0) {
+    const notification = notificationQueue.pop();
+    if (!socketMap.has(notification.userId)) return;
+
+    console.log('SENDING NOTIF');
+    socketMap.get(notification.userId).emit('notification', notification.data);
+  }
+
+  setTimeout(iterateQueue, Math.floor(Math.random() * (6 - 2) + 6) * 1000);
+}
+
+iterateQueue();

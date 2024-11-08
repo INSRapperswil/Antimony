@@ -1,5 +1,5 @@
 import EditorPage from '@sb/components/editor-page/editor-page';
-import SbConfirm, {
+import SBConfirm, {
   SBConfirmRef,
 } from '@sb/components/common/sb-confirm/sb-confirm';
 
@@ -10,20 +10,17 @@ import ErrorPage from '@sb/components/error-page/error-page';
 import SBLogin from '@sb/components/common/sb-login/sb-login';
 
 import {
-  NotificationStore,
-  NotificationControllerContext,
-} from '@sb/lib/stores/notification-store';
-import {
   rootStore,
   RootStoreContext,
   useAPIStore,
+  useNotifications,
 } from '@sb/lib/stores/root-store';
-import {If} from '@sb/types/control';
+import {Choose, When} from '@sb/types/control';
 import {observer} from 'mobx-react-lite';
 import {PrimeReactProvider} from 'primereact/api';
 
 import {Toast} from 'primereact/toast';
-import React, {useRef} from 'react';
+import React, {useEffect, useRef} from 'react';
 
 import {Route, Routes} from 'react-router-dom';
 import 'primereact/resources/themes/lara-dark-blue/theme.css';
@@ -33,16 +30,28 @@ const App: React.FC = observer(() => {
   const confirmationRef = useRef<SBConfirmRef>(null);
 
   const apiStore = useAPIStore();
+  const notificationStore = useNotifications();
+
+  useEffect(() => {
+    if (!notificationStore) return;
+
+    notificationStore.setToast(toastRef);
+    notificationStore.setConfirm(confirmationRef);
+  }, [notificationStore]);
 
   return (
     <PrimeReactProvider>
       <RootStoreContext.Provider value={rootStore}>
-        <NotificationControllerContext.Provider
-          value={new NotificationStore(toastRef, confirmationRef)}
-        >
-          <SBLogin />
-          <div className="flex flex-column flex-grow-1 m-3 sb-app-container">
-            <If condition={apiStore.isLoggedIn}>
+        <SBLogin />
+        <div className="flex flex-column flex-grow-1 m-3 sb-app-container">
+          <Choose>
+            <When condition={apiStore.hasNetworkError}>
+              <ErrorPage
+                code="NETERR"
+                message="Failed to connect to the Antimony backend."
+              />
+            </When>
+            <When condition={apiStore.isLoggedIn}>
               <SBDock />
               <div className="flex flex-grow-1 gap-2 min-h-0">
                 <Routes>
@@ -59,12 +68,12 @@ const App: React.FC = observer(() => {
                   />
                 </Routes>
               </div>
-            </If>
-          </div>
-        </NotificationControllerContext.Provider>
+            </When>
+          </Choose>
+        </div>
       </RootStoreContext.Provider>
-      <SbConfirm ref={confirmationRef} />
-      <Toast ref={toastRef} />
+      <SBConfirm ref={confirmationRef} />
+      <Toast ref={toastRef} position="bottom-right" />
     </PrimeReactProvider>
   );
 });

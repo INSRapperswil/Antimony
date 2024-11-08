@@ -1,7 +1,8 @@
 import {RootStore} from '@sb/lib/stores/root-store';
 import {AuthResponse, ErrorResponse, UserCredentials} from '@sb/types/types';
-import {action, makeAutoObservable} from 'mobx';
+import {action, makeAutoObservable, runInAction} from 'mobx';
 import Cookies from 'js-cookie';
+import {io, Socket} from 'socket.io-client';
 
 export class APIStore {
   private readonly apiUrl = process.env.SB_API_SERVER_URL;
@@ -10,6 +11,9 @@ export class APIStore {
 
   public isAdmin = false;
   public isLoggedIn = false;
+  public hasNetworkError = false;
+
+  public socket: Socket = io();
 
   constructor(rootStore: RootStore) {
     makeAutoObservable(this);
@@ -81,6 +85,10 @@ export class APIStore {
         // Logout and remove token if token was invalid
         if (!skipAuthentication && response.status === 403) this.logout();
 
+        if (response.status === 504) {
+          runInAction(() => (this.hasNetworkError = true));
+        }
+
         console.error(
           `[NET] An error occurred while performing GET on ${path}: ${response.status}.`
         );
@@ -103,8 +111,11 @@ export class APIStore {
         return [false, responseBody];
       }
 
+      runInAction(() => (this.hasNetworkError = false));
       return [true, responseBody.payload];
     } catch (e) {
+      runInAction(() => (this.hasNetworkError = true));
+
       console.error(
         `[NET] An error occurred while performing GET ${path}: ${e}`
       );
@@ -146,6 +157,10 @@ export class APIStore {
         // Logout and remove token if token was invalid
         if (!skipAuthentication && response.status === 403) this.logout();
 
+        if (response.status === 504) {
+          runInAction(() => (this.hasNetworkError = true));
+        }
+
         console.error(
           `[NET] An error occurred while performing POST on ${path}: ${response.status}.`
         );
@@ -164,8 +179,11 @@ export class APIStore {
         return [false, responseBody];
       }
 
+      runInAction(() => (this.hasNetworkError = false));
       return [true, responseBody.payload];
     } catch (e) {
+      runInAction(() => (this.hasNetworkError = true));
+
       console.error(
         `[NET] An error occurred while performing POST on ${path}: ${e}`
       );
@@ -186,11 +204,21 @@ export class APIStore {
     this.isLoggedIn = false;
     Cookies.remove('authToken');
     Cookies.remove('isAdmin');
+
+    if (this.socket && this.socket.connected) {
+      this.socket.disconnect();
+    }
   }
 
   private setToken(token: string, isAdmin: boolean) {
     this.authToken = token;
     this.isAdmin = isAdmin;
     this.isLoggedIn = true;
+
+    this.socket = io('ws://localhost:3000', {
+      auth: {
+        token: this.authToken,
+      },
+    });
   }
 }

@@ -1,7 +1,6 @@
 import TopologyEditor from '@sb/components/editor-page/topology-editor/topology-editor';
 import TopologyExplorer from '@sb/components/editor-page/topology-explorer/topology-explorer';
-import {useNotifications} from '@sb/lib/stores/notification-store';
-import {useTopologyStore} from '@sb/lib/stores/root-store';
+import {useNotifications, useTopologyStore} from '@sb/lib/stores/root-store';
 
 import {Topology} from '@sb/types/types';
 
@@ -18,7 +17,7 @@ const EditorPage: React.FC = observer(() => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const topologyStore = useTopologyStore();
-  const notificationController = useNotifications();
+  const notificatioStore = useNotifications();
 
   const onTopologyOpen = useCallback(
     (topology: Topology) => {
@@ -68,7 +67,7 @@ const EditorPage: React.FC = observer(() => {
     if (!topologyStore.lookup.has(id)) return;
 
     if (topologyStore.manager.hasEdits()) {
-      notificationController.confirm({
+      notificatioStore.confirm({
         message: 'Discard unsaved changes?',
         header: 'Unsaved Changes',
         icon: 'pi pi-info-circle',
@@ -88,7 +87,7 @@ const EditorPage: React.FC = observer(() => {
 
   function onSaveTopology() {
     topologyStore.manager.save();
-    notificationController.success('Topology has been saved!');
+    notificatioStore.success('Topology has been saved!');
 
     topologyStore.fetch();
   }

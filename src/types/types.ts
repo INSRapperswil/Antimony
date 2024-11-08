@@ -127,6 +127,39 @@ export interface ClabSchema {
   };
 }
 
+export interface NotificationOut {
+  id: string;
+  timestamp: string;
+  summary: string;
+  detail: string;
+  severity: Severity;
+}
+
+export interface Notification {
+  id: string;
+  timestamp: Date;
+  summary: string;
+  detail: string;
+  severity: Severity;
+  isRead: boolean;
+}
+
+export enum Severity {
+  Error,
+  Warning,
+  Success,
+  Info,
+}
+
+export type PrimeSeverity = 'success' | 'info' | 'warn' | 'error';
+
+export const SeverityMapping: {[key in Severity]: PrimeSeverity} = {
+  [Severity.Error]: 'error',
+  [Severity.Warning]: 'warn',
+  [Severity.Success]: 'success',
+  [Severity.Info]: 'info',
+};
+
 export type FieldType = string | string[] | boolean | number;
 
 export type PropertyType =

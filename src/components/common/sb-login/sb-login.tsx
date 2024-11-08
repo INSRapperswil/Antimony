@@ -133,14 +133,6 @@ const SBLogin = observer(() => {
    * prevent restarting the simulation every time.
    * https://github.com/Wufe/react-particles-js/issues/43
    */
-  useEffect(() => {
-    console.log('CONBINED STATE:', rootStore.combinedFetchState);
-  }, [rootStore.combinedFetchState]);
-
-  useEffect(() => {
-    console.log('TOPO STATE:', rootStore._topologyStore.fetchReport);
-  }, [rootStore._topologyStore.fetchReport]);
-
   return (
     <If condition={particlesReady && !alreadyLoggedIn}>
       <div

@@ -338,7 +338,6 @@ function iterateQueue() {
     const notification = notificationQueue.pop();
     if (!socketMap.has(notification.userId)) return;
 
-    console.log('SENDING NOTIF');
     socketMap.get(notification.userId).emit('notification', notification.data);
   }
 

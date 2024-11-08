@@ -215,7 +215,7 @@ export class APIStore {
     this.isAdmin = isAdmin;
     this.isLoggedIn = true;
 
-    this.socket = io('ws://localhost:3000', {
+    this.socket = io('ws://localhost:8100/api', {
       auth: {
         token: this.authToken,
       },

@@ -120,6 +120,7 @@ const NotificationPanel = observer(
           options={filteredNotificationList}
           optionLabel="name"
           itemTemplate={notificationTemplate}
+          emptyMessage="No notifications found"
         />
       </OverlayPanel>
     );

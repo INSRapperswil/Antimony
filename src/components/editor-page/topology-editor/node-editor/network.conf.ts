@@ -26,14 +26,27 @@ export const NetworkOptions = {
       },
     },
     width: 2,
+    smooth: {
+      enabled: true,
+      type: 'dynamic',
+      roundness: 0,
+    },
   },
   physics: {
-    barnesHut: {
+    solver: 'repulsion',
+    repulsion: {
+      centralGravity: 0,
+      springLength: 250,
+      springConstant: 0.001,
+      nodeDistance: 100,
       damping: 0.2,
-      springConstant: 0.02,
-      springLength: 140,
-      avoidOverlap: 0.9,
-      centralGravity: -0,
+      avoidOverlap: 4,
+    },
+    stabilization: {
+      enabled: true,
+      iterations: 200,
+      updateInterval: 10,
+      fit: true,
     },
     maxVelocity: 40,
     minVelocity: 0.5,

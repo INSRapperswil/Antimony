@@ -96,7 +96,7 @@ app.get('/labs', (req, res) => {
     ).toSorted((a, b) => a.name.localeCompare(b.name)),
   });
 
-  addRandomNotification(user.id);
+  void addRandomNotification(user.id);
 });
 
 app.post('/users/auth', (req, res) => {
@@ -243,20 +243,22 @@ function getUserTopologies(user) {
     );
 }
 
-function addRandomNotification(userId) {
-  setTimeout(async () => {
-    const notification = await generateRandomNotification();
-    notificationQueue.push({
-      userId: userId,
-      data: notification,
-    });
+async function addRandomNotification(userId) {
+  const notification = await generateRandomNotification();
+  notificationQueue.push({
+    userId: userId,
+    data: notification,
+  });
 
-    if (userId in store.notifications) {
-      store.notifications[userId].push(notification);
-    } else {
-      store.notifications[userId] = [notification];
-    }
-  }, 3000);
+  if (userId in store.notifications) {
+    store.notifications[userId].push(notification);
+  } else {
+    store.notifications[userId] = [notification];
+  }
+
+  if (store.notifications[userId].length > 20) {
+    store.notifications[userId].splice(0, 1);
+  }
 }
 
 async function generateRandomNotification() {

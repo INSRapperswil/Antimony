@@ -46,7 +46,6 @@ const EditorPage: React.FC = observer(() => {
   }, [searchParams, topologyStore.lookup, topologyStore.manager]);
 
   useEffect(() => {
-    console.log('TOPOLOGIES:', topologyStore.topologies);
     if (topologyStore.manager.editingTopologyId) {
       if (topologyStore.lookup.has(topologyStore.manager.editingTopologyId)) {
         topologyStore.manager.open(

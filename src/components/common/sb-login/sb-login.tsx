@@ -12,9 +12,9 @@ import {InputText} from 'primereact/inputtext';
 import {Message} from 'primereact/message';
 import {Password} from 'primereact/password';
 import React, {ChangeEvent, FormEvent, useEffect, useState} from 'react';
+import Cookies from 'js-cookie';
 
 import './sb-login.sass';
-import Cookies from 'js-cookie';
 
 const SBLogin = observer(() => {
   const [particlesReady, setParticlesReady] = useState(false);
@@ -88,6 +88,7 @@ const SBLogin = observer(() => {
               <i className="pi pi-user"></i>
             </span>
             <InputText
+              autoComplete="username"
               invalid={loginError !== null}
               value={usernameValue}
               onChange={onUsernameChange}
@@ -100,6 +101,7 @@ const SBLogin = observer(() => {
               <i className="pi pi-lock"></i>
             </span>
             <Password
+              autoComplete="current-password"
               invalid={loginError !== null}
               value={passwordValue}
               onChange={onPasswordChange}
@@ -131,6 +133,14 @@ const SBLogin = observer(() => {
    * prevent restarting the simulation every time.
    * https://github.com/Wufe/react-particles-js/issues/43
    */
+  useEffect(() => {
+    console.log('CONBINED STATE:', rootStore.combinedFetchState);
+  }, [rootStore.combinedFetchState]);
+
+  useEffect(() => {
+    console.log('TOPO STATE:', rootStore._topologyStore.fetchReport);
+  }, [rootStore._topologyStore.fetchReport]);
+
   return (
     <If condition={particlesReady && !alreadyLoggedIn}>
       <div

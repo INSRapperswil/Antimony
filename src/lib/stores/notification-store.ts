@@ -13,10 +13,10 @@ import {
   Severity,
   SeverityMapping,
 } from '@sb/types/types';
-import {action, computed, observable} from 'mobx';
+import {action, computed, observable, observe} from 'mobx';
 
 import {Toast} from 'primereact/toast';
-import React, {createRef} from 'react';
+import React from 'react';
 
 export class NotificationStore {
   private rootStore: RootStore;
@@ -28,14 +28,10 @@ export class NotificationStore {
   @observable accessor countBySeverity: Map<Severity, number> = new Map();
   @observable accessor fetchReport: FetchReport = DefaultFetchReport;
 
-  constructor(
-    rootStore: RootStore,
-    toastRef?: React.RefObject<Toast>,
-    confirmRef?: React.RefObject<SBConfirmRef>
-  ) {
+  constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
-    this.toastRef = toastRef ?? createRef();
-    this.confirmRef = confirmRef ?? createRef();
+
+    observe(rootStore._apiConnectorStore, () => this.fetch());
 
     this.fetch();
 
@@ -48,6 +44,21 @@ export class NotificationStore {
     this.rootStore._apiConnectorStore
       .get<NotificationOut[]>('/notifications')
       .then(data => this.update(data));
+  }
+
+  @computed
+  public get lookup(): Map<string, Notification> {
+    return new Map(this.messages.map(message => [message.id, message]));
+  }
+
+  @computed
+  public get unreadMessages(): number {
+    return this.messages.filter(msg => !msg.isRead).length;
+  }
+
+  @action
+  public clear() {
+    this.messages = [];
   }
 
   public success = (message: string, title: string = 'Success') => {
@@ -80,32 +91,6 @@ export class NotificationStore {
     this.confirmRef = confirmRef;
   }
 
-  @computed
-  public get lookup(): Map<string, Notification> {
-    return new Map(this.messages.map(message => [message.id, message]));
-  }
-
-  @computed
-  public get unreadMessages(): number {
-    return this.messages.filter(msg => !msg.isRead).length;
-  }
-
-  @action
-  public clear() {
-    this.messages = [];
-  }
-
-  @action
-  private send(message: string, title: string, severity: Severity): void {
-    if (!this.toastRef?.current) return;
-    const msg = {
-      summary: title,
-      detail: message,
-      severity: SeverityMapping[severity],
-    };
-    this.toastRef.current.show(msg);
-  }
-
   @action
   public maskAsRead(id: string) {
     if (!this.lookup.has(id)) return;
@@ -118,6 +103,17 @@ export class NotificationStore {
   public markAllAsRead() {
     this.messages.forEach(msg => (msg.isRead = true));
     this.messages = [...this.messages];
+  }
+
+  @action
+  private send(message: string, title: string, severity: Severity): void {
+    if (!this.toastRef?.current) return;
+    const msg = {
+      summary: title,
+      detail: message,
+      severity: SeverityMapping[severity],
+    };
+    this.toastRef.current.show(msg);
   }
 
   @action

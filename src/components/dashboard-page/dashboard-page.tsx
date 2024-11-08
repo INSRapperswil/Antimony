@@ -52,12 +52,16 @@ const DashboardPage: React.FC = () => {
   const [reschedulingDialogLab, setReschedulingDialogLab] =
     useState<Lab | null>(null);
 
-  const labsPath = `/labs?limit=${pageSize}&offset=${currentPage * pageSize}&stateFilter=${selectedFilters.join(',')}&searchQuery=${searchQuery}`;
+  const labsPath = `/labs?limit=${pageSize}&offset=${currentPage * pageSize}&stateFilter=${JSON.stringify(selectedFilters)}&searchQuery=${searchQuery}`;
   const [labQuery] = useResource<Lab[]>(labsPath, useAPIStore(), []);
   useEffect(() => {
     setTotalAmountOfEntries(10); //useResource needs update for api header
     setLabs(labQuery);
   }, [selectedFilters, totalAmountOfEntries, labQuery, currentPage]);
+
+  useEffect(() => {
+    console.log(labsPath);
+  }, [labsPath]);
 
   function getGroupById(groupId?: String): String {
     const group = groupStore.groups.find(group => group.id === groupId);
@@ -66,10 +70,6 @@ const DashboardPage: React.FC = () => {
     }
     return 'No group found';
   }
-
-  const getFilteredLabs = () => {
-    return labs.filter(lab => selectedFilters.includes(lab.state));
-  };
 
   function handleLabDate(lab: Lab): string {
     let timeString: Date;
@@ -186,7 +186,7 @@ const DashboardPage: React.FC = () => {
             <Choose>
               <When condition={labs.length > 0}>
                 <div className="lab-explorer-container">
-                  {getFilteredLabs().map(lab => (
+                  {labs.map(lab => (
                     <div
                       key={lab.id}
                       className="lab-item-card"
@@ -283,14 +283,6 @@ const DashboardPage: React.FC = () => {
                     />
                   </div>
                 </Dialog>
-                <div className="pagination-controls">
-                  <Paginator
-                    first={currentPage * pageSize}
-                    rows={pageSize}
-                    totalRecords={totalAmountOfEntries}
-                    onPageChange={e => setCurrentPage(e.page)}
-                  ></Paginator>
-                </div>
                 {/* Dialog for Lab Details */}
                 <Dialog
                   header={
@@ -322,6 +314,14 @@ const DashboardPage: React.FC = () => {
                 <span>No labs found.</span>
               </Otherwise>
             </Choose>
+            <div className="pagination-controls">
+              <Paginator
+                first={currentPage * pageSize}
+                rows={pageSize}
+                totalRecords={totalAmountOfEntries}
+                onPageChange={e => setCurrentPage(e.page)}
+              ></Paginator>
+            </div>
           </div>
         </div>
       </When>

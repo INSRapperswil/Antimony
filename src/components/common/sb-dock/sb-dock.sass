@@ -1,0 +1,158 @@
+.sb-dock
+  background-color: #283239
+  padding-right: 16px
+  height: 80px
+
+.sb-dock-notifications
+  display: flex
+  flex-direction: column
+  min-width: 700px
+  max-height: 350px
+  border: 1px solid var(--primary-color-border)
+  border-radius: 4px
+
+  .sb-dock-notifications-header
+    padding: 4px 8px 4px 16px
+    display: flex
+    flex-direction: row
+    justify-content: space-between
+    border-radius: 4px 0
+    background-color: var(--overlay-color)
+    border-bottom: 1px solid var(--primary-color-border)
+
+    .sb-dock-notifications-left
+      display: flex
+      gap: 10px
+      align-items: center
+
+      > span
+        color: var(--primary-color-text)
+        margin-right: 4px
+
+    .p-button
+      color: var(--danger-color)
+      filter: brightness(1.5)
+
+      &:focus
+        box-shadow: none
+        outline: none
+
+    .p-chip
+      gap: 8px
+      padding: 2px 8px
+      font-size: 12pt
+      border-radius: 6px
+      background-color: transparent
+      border: 1px solid var(--primary-color-border)
+      cursor: pointer
+
+      &.error > .p-chip-icon
+        color: var(--danger-color)
+
+      &.warn > .p-chip-icon
+        color: var(--warning-color)
+
+      &.info > .p-chip-icon
+        color: var(--info-color)
+
+      &.success > .p-chip-icon
+        color: var(--success-color)
+
+      &:hover
+        filter: brightness(1.2)
+
+      .p-chip-text
+        margin: 0
+
+      .p-chip-icon
+        margin: 0
+        filter: brightness(1.5)
+
+  .p-overlaypanel-content
+    padding: 0
+    display: flex
+    flex-direction: column
+    align-items: stretch
+    overflow-y: hidden
+
+    .p-listbox
+      border: none
+      width: 100% !important
+      overflow-y: scroll
+      background-color: var(--primary-color)
+
+      li:not(:first-child)
+        border-top: 1px solid var(--primary-color-border)
+
+      .p-listbox-list
+        padding: 0
+
+    .p-listbox-item
+      padding: 0
+
+.sb-dock-notification-item-container
+  display: flex
+  flex-grow: 1
+  justify-content: space-between
+  align-items: center
+  padding: 8px 12px
+  cursor: auto
+
+  > span
+    font-weight: 600
+    text-transform: uppercase
+    font-size: 10pt
+
+    &::before
+      content: "<"
+
+    &::after
+      content: ">"
+
+.sb-dock-notification-item
+  display: flex
+  flex-direction: row
+  align-items: center
+  gap: 8px
+  height: 40px
+
+  > span
+    font-weight: 700
+
+  .sb-dock-notification-date
+    opacity: 0.4
+    font-size: 10pt
+
+  .sb-dock-notification-text
+    display: flex
+    flex-direction: column
+
+    .sb-dock-notification-detail
+      font-size: 9pt
+      filter: brightness(0.65)
+      font-style: italic
+
+  i
+    filter: brightness(1.5)
+
+  &.error > i
+    color: var(--danger-color)
+
+  &.warn > i
+    color: var(--warning-color)
+
+  &.info > i
+    color: var(--info-color)
+
+  &.success > i
+    color: var(--success-color)
+
+.sb-logo-tab
+  align-self: stretch
+  width: 180px
+  border-radius: 4px 8px 8px 4px
+  margin-right: 8px
+  //margin: -14px 12px -14px -9px
+  //border: 1px solid var(--primary-color-border)
+
+  color: var(--inverted-color-text)

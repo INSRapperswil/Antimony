@@ -60,7 +60,8 @@ const DashboardPage: React.FC = () => {
     console.log(labsPath);
   }, [labsPath]);
 
-  function getGroupById(groupId?: String): String {
+  function getGroupById(groupId: String): String {
+    console.log(groupId);
     const group = groupStore.groups.find(group => group.id === groupId);
     if (group !== undefined) {
       return group.name;
@@ -118,6 +119,10 @@ const DashboardPage: React.FC = () => {
   }
 
   function onStopConfirm() {}
+
+  function closeDialog() {
+    setSelectedLab(null);
+  }
 
   return (
     <Choose>
@@ -281,31 +286,13 @@ const DashboardPage: React.FC = () => {
                   </div>
                 </Dialog>
                 {/* Dialog for Lab Details */}
-                <Dialog
-                  header={
-                    <div className="dialog-header">
-                      <div style={{flex: 1, textAlign: 'left'}}>
-                        <strong>{getGroupById(selectedLab?.groupId)}</strong>{' '}
-                      </div>
-                      <div style={{flex: 1, textAlign: 'left'}}>
-                        <strong>{selectedLab?.name}</strong>{' '}
-                      </div>
-                    </div>
-                  }
-                  visible={selectedLab !== null}
-                  dismissableMask={true}
-                  className="dialog-lab-details"
-                  onHide={() => setSelectedLab(null)}
-                >
-                  <If condition={selectedLab}>
-                    <div className="height-100">
-                      <LabDialog
-                        lab={selectedLab!}
-                        groupName={getGroupById(selectedLab!.groupId)}
-                      />
-                    </div>
-                  </If>
-                </Dialog>
+                <If condition={selectedLab !== null}>
+                  <LabDialog
+                    lab={selectedLab!}
+                    groupName={getGroupById(selectedLab!.groupId)}
+                    closeDialog={closeDialog}
+                  />
+                </If>
               </When>
               <Otherwise>
                 <span>No labs found.</span>

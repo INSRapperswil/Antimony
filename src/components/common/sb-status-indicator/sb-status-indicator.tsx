@@ -35,7 +35,13 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
         props.setDoneLoading();
       }, 0);
     }
-  }, [apiStore.isLoggedIn, loaderVisible, props, rootStore.combinedFetchState]);
+  }, [
+    apiStore.hasNetworkError,
+    apiStore.isLoggedIn,
+    loaderVisible,
+    props,
+    rootStore.combinedFetchState,
+  ]);
 
   return (
     <>
@@ -57,7 +63,7 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
         </div>
       </div>
       <div
-        className={classNames('sb-indicator-container', 'sb-animated-overlay', {
+        className={classNames('sb-animated-overlay', {
           visible: errorPanelVisible,
         })}
       >

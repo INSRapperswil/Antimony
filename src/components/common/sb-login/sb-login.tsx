@@ -135,7 +135,7 @@ const SBLogin = observer(() => {
     <If condition={particlesReady}>
       <div
         className={classNames('sb-login-container', 'sb-animated-overlay', {
-          visible: !apiStore.isLoggedIn,
+          visible: !apiStore.isLoggedIn && !apiStore.hasNetworkError,
         })}
       >
         <If condition={!apiStore.isLoggedIn}>

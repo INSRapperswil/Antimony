@@ -23,7 +23,8 @@ interface SBInputProps {
   doubleClick?: boolean;
   explicitSubmit?: boolean;
 
-  onValueSubmit?: (value: string) => string | null;
+  validationError?: string;
+  onValueSubmit?: (value: string) => string | null | void;
 }
 
 const SBInput = (props: SBInputProps) => {
@@ -38,11 +39,9 @@ const SBInput = (props: SBInputProps) => {
     }
 
     const error = props.onValueSubmit(value);
-    setValidationError(error);
+    if (error) setValidationError(error);
 
-    if (!error) {
-      setEditing(false);
-    }
+    if (!error) setEditing(false);
   }
 
   function onBlur(event: FocusEvent<HTMLInputElement>) {
@@ -79,19 +78,22 @@ const SBInput = (props: SBInputProps) => {
       </If>
       <InputText
         onClick={onSingleClick}
+        capture={false}
         onDoubleClick={onEnterEditing}
         onChange={e => setContent(e.target.value)}
         disabled={false}
         value={content}
         className={classNames('sb-input', {
           'sb-input-disabled': !isEditing && props.isHidden,
-          'sb-input-error': !!validationError,
+          'sb-input-error': !!validationError && !!props.validationError,
           'sb-input-hidden': props.isHidden,
         })}
         keyfilter={props.keyfilter}
         placeholder={props.placeholder}
         readOnly={!isEditing && props.isHidden}
-        tooltip={validationError ?? props.tooltip ?? undefined}
+        tooltip={
+          validationError ?? props.validationError ?? props.tooltip ?? undefined
+        }
         onBlur={onBlur}
         onKeyDown={onKeyDown}
       />

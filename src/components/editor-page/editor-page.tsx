@@ -1,9 +1,8 @@
 import TopologyEditor from '@sb/components/editor-page/topology-editor/topology-editor';
 import TopologyExplorer from '@sb/components/editor-page/topology-explorer/topology-explorer';
-import {useNotifications} from '@sb/lib/stores/notification-store';
-import {useTopologyStore} from '@sb/lib/stores/root-store';
+import {useNotifications, useTopologyStore} from '@sb/lib/stores/root-store';
 
-import {Topology} from '@sb/types/types';
+import {ErrorResponse, Topology} from '@sb/types/types';
 
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
@@ -18,7 +17,7 @@ const EditorPage: React.FC = observer(() => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const topologyStore = useTopologyStore();
-  const notificationController = useNotifications();
+  const notificatioStore = useNotifications();
 
   const onTopologyOpen = useCallback(
     (topology: Topology) => {
@@ -47,7 +46,6 @@ const EditorPage: React.FC = observer(() => {
   }, [searchParams, topologyStore.lookup, topologyStore.manager]);
 
   useEffect(() => {
-    console.log('TOPOLOGIES:', topologyStore.topologies);
     if (topologyStore.manager.editingTopologyId) {
       if (topologyStore.lookup.has(topologyStore.manager.editingTopologyId)) {
         topologyStore.manager.open(
@@ -68,7 +66,7 @@ const EditorPage: React.FC = observer(() => {
     if (!topologyStore.lookup.has(id)) return;
 
     if (topologyStore.manager.hasEdits()) {
-      notificationController.confirm({
+      notificatioStore.confirm({
         message: 'Discard unsaved changes?',
         header: 'Unsaved Changes',
         icon: 'pi pi-info-circle',
@@ -86,9 +84,13 @@ const EditorPage: React.FC = observer(() => {
     }
   }
 
-  function onSaveTopology() {
-    topologyStore.manager.save();
-    notificationController.success('Topology has been saved!');
+  async function onSaveTopology(): Promise<ErrorResponse | null> {
+    const error = await topologyStore.manager.save();
+    if (error) {
+      notificatioStore.error(error.message, 'Failed to save topology.');
+    } else {
+      notificatioStore.success('Topology has been saved!');
+    }
 
     topologyStore.fetch();
   }

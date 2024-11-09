@@ -1,7 +1,6 @@
 import {ParticlesOptions} from '@sb/components/common/sb-login/particles.conf';
 import {useAPIStore, useRootStore} from '@sb/lib/stores/root-store';
 import {If} from '@sb/types/control';
-import {FetchState} from '@sb/types/types';
 import {loadLinksPreset} from '@tsparticles/preset-links';
 import Particles, {initParticlesEngine} from '@tsparticles/react';
 import classNames from 'classnames';
@@ -14,13 +13,12 @@ import {Password} from 'primereact/password';
 import React, {ChangeEvent, FormEvent, useEffect, useState} from 'react';
 
 import './sb-login.sass';
-import Cookies from 'js-cookie';
 
 const SBLogin = observer(() => {
   const [particlesReady, setParticlesReady] = useState(false);
 
   // This doesn't render the overlay at all if the user is already logged in
-  const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
+  // const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
 
   const rootStore = useRootStore();
   const apiStore = useAPIStore();
@@ -30,7 +28,7 @@ const SBLogin = observer(() => {
       await loadLinksPreset(engine);
     }).then(() => setParticlesReady(true));
 
-    setAlreadyLoggedIn(Cookies.get('authToken') !== undefined);
+    // setAlreadyLoggedIn(Cookies.get('authToken') !== undefined);
   }, []);
 
   const LoginForm = () => {
@@ -88,6 +86,7 @@ const SBLogin = observer(() => {
               <i className="pi pi-user"></i>
             </span>
             <InputText
+              autoComplete="username"
               invalid={loginError !== null}
               value={usernameValue}
               onChange={onUsernameChange}
@@ -100,6 +99,7 @@ const SBLogin = observer(() => {
               <i className="pi pi-lock"></i>
             </span>
             <Password
+              autoComplete="current-password"
               invalid={loginError !== null}
               value={passwordValue}
               onChange={onPasswordChange}
@@ -109,11 +109,16 @@ const SBLogin = observer(() => {
             />
           </div>
           <div className="sb-login-remember">
-            <Checkbox
-              checked={checkedRemember}
-              onChange={e => setCheckedRemember(e.checked ?? false)}
-            />
-            <span>Remember me</span>
+            <div className="flex align-items-center">
+              <Checkbox
+                inputId="login-remember-me"
+                checked={checkedRemember}
+                onChange={e => setCheckedRemember(e.checked ?? false)}
+              />
+              <label htmlFor="login-remember-me" className="ml-2">
+                Remember me
+              </label>
+            </div>
           </div>
 
           <Button label="LOGIN" type="submit" />
@@ -132,12 +137,10 @@ const SBLogin = observer(() => {
    * https://github.com/Wufe/react-particles-js/issues/43
    */
   return (
-    <If condition={particlesReady && !alreadyLoggedIn}>
+    <If condition={particlesReady}>
       <div
-        className={classNames('sb-login-container', {
-          'login-hidden':
-            apiStore.isLoggedIn &&
-            rootStore.combinedFetchState === FetchState.Done,
+        className={classNames('sb-login-container', 'sb-animated-overlay', {
+          visible: !apiStore.isLoggedIn && !apiStore.hasNetworkError,
         })}
       >
         <If condition={!apiStore.isLoggedIn}>

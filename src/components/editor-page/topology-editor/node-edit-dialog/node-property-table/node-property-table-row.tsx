@@ -92,7 +92,7 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
             <Checkbox
               onChange={e => props.property.onUpdateValue(e.checked!)}
               checked={props.property.value as boolean}
-            ></Checkbox>
+            />
           </When>
           <When condition={props.property.isArray}>
             <NodePropertyArray

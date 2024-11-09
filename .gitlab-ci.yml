@@ -39,6 +39,7 @@ deploy_frontend:
   script:
     - >-
       gcloud run deploy antimony-development
+      --set-env-vars "PROXY_URL=https://antimony-backend-development-491689167898.europe-west1.run.app"
       --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-dev:latest
       --allow-unauthenticated
       --region=europe-west1

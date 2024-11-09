@@ -75,3 +75,22 @@ body
   background-color: var(--primary-color-border)
   border-radius: 8px
   background-clip: padding-box
+
+.sb-animated-overlay
+  opacity: 0
+  pointer-events: none
+  transition: opacity ease-in 0.3s
+
+  &.visible
+    opacity: 1
+    animation: 0.2s ease-in appear
+    pointer-events: auto
+
+label
+  user-select: none
+
+@keyframes appear
+  0%
+    opacity: 0
+  100%
+    opacity: 1

@@ -1,4 +1,3 @@
-import {useNotifications} from '@sb/lib/stores/notification-store';
 import React, {MouseEvent, useEffect, useState} from 'react';
 
 import {Chip} from 'primereact/chip';
@@ -9,7 +8,11 @@ import {InputIcon} from 'primereact/inputicon';
 
 import {Lab, LabState} from '@sb/types/types';
 import {useResource} from '@sb/lib/utils/hooks';
-import {useAPIStore, useGroupStore} from '@sb/lib/stores/root-store';
+import {
+  useAPIStore,
+  useGroupStore,
+  useNotifications,
+} from '@sb/lib/stores/root-store';
 import LabDialog from '@sb/components/dashboard-page/lab-dialog/lab-dialog';
 import FilterDialog from '@sb/components/dashboard-page/filter-dialog/filter-dialog';
 import ReservationDialog from '@sb/components/dashboard-page/reservation-dialog/reservation-dialog';
@@ -42,7 +45,7 @@ const DashboardPage: React.FC = () => {
   const [pageSize] = useState<number>(6);
 
   const groupStore = useGroupStore();
-  const notificationController = useNotifications();
+  const notificationStore = useNotifications();
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [reschedulingDialog, setReschedulingDialog] = useState<boolean>(false);
@@ -109,7 +112,7 @@ const DashboardPage: React.FC = () => {
 
   function onStopLab(event: MouseEvent<HTMLButtonElement>, lab: Lab) {
     event.stopPropagation();
-    notificationController.confirm({
+    notificationStore.confirm({
       message: 'This action cannot be undone.',
       header: `Stop Lab '${lab.name}'?`,
       icon: 'pi pi-power-off',

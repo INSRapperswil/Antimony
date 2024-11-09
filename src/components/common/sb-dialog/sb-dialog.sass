@@ -1,14 +1,14 @@
 .sb-dialog-header
-  height: 60px
+  background-color: var(--header-color)
   border: var(--primary-color-border) solid 1px
-  border-radius: 4px
+  height: 60px
+  border-radius: 6px
   margin: -1px
   display: flex
   align-items: center
   justify-content: space-between
   font-size: 26px
   font-weight: 700
-  background-color: var(--header-color)
 
 .sb-dialog-heading
   font-weight: 500
@@ -39,6 +39,17 @@
 .sb-dialog-content
   padding: 16px
   margin-top: 1px
-  height: 100%
+  flex-grow: 1
   overflow-y: auto
   background-color: var(--overlay-color)
+
+.sb-dialog-footer
+  background-color: var(--overlay-color)
+  display: flex
+  justify-content: space-between
+  border-radius: 6px
+  gap: 16px
+  padding: 16px
+
+  .p-button
+    margin: -1px

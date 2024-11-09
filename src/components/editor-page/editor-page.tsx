@@ -2,7 +2,7 @@ import TopologyEditor from '@sb/components/editor-page/topology-editor/topology-
 import TopologyExplorer from '@sb/components/editor-page/topology-explorer/topology-explorer';
 import {useNotifications, useTopologyStore} from '@sb/lib/stores/root-store';
 
-import {Topology} from '@sb/types/types';
+import {ErrorResponse, Topology} from '@sb/types/types';
 
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
@@ -84,9 +84,13 @@ const EditorPage: React.FC = observer(() => {
     }
   }
 
-  function onSaveTopology() {
-    topologyStore.manager.save();
-    notificatioStore.success('Topology has been saved!');
+  async function onSaveTopology(): Promise<ErrorResponse | null> {
+    const error = await topologyStore.manager.save();
+    if (error) {
+      notificatioStore.error(error.message, 'Failed to save topology.');
+    } else {
+      notificatioStore.success('Topology has been saved!');
+    }
 
     topologyStore.fetch();
   }

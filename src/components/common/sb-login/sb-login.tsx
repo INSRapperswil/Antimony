@@ -109,11 +109,16 @@ const SBLogin = observer(() => {
             />
           </div>
           <div className="sb-login-remember">
-            <Checkbox
-              checked={checkedRemember}
-              onChange={e => setCheckedRemember(e.checked ?? false)}
-            />
-            <span>Remember me</span>
+            <div className="flex align-items-center">
+              <Checkbox
+                inputId="login-remember-me"
+                checked={checkedRemember}
+                onChange={e => setCheckedRemember(e.checked ?? false)}
+              />
+              <label htmlFor="login-remember-me" className="ml-2">
+                Remember me
+              </label>
+            </div>
           </div>
 
           <Button label="LOGIN" type="submit" />

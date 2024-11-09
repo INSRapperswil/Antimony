@@ -17,11 +17,18 @@ interface SBDialogProps {
 
   children: React.ReactNode;
   className: string;
+
+  onCancel?: () => void;
+  onSubmit?: () => void;
+
+  cancelLabel?: string;
+  submitLabel?: string;
 }
 
 const SBDialog: React.FC<SBDialogProps> = (props: SBDialogProps) => {
   return (
     <Dialog
+      resizable={false}
       showHeader={false}
       visible={props.isOpen}
       dismissableMask={true}
@@ -45,7 +52,23 @@ const SBDialog: React.FC<SBDialogProps> = (props: SBDialogProps) => {
         </div>
       </div>
 
-      <div className="sb-dialog-content w-full">{props.children}</div>
+      <div className="sb-dialog-content">{props.children}</div>
+      <div className="sb-dialog-footer w-full">
+        <Button
+          icon="pi pi-times"
+          label={props.cancelLabel ?? 'Cancel'}
+          outlined
+          onClick={() => props.onCancel?.call(null)}
+          className="w-8rem"
+        />
+        <Button
+          icon="pi pi-check"
+          label={props.submitLabel ?? 'Submit'}
+          outlined
+          onClick={() => props.onSubmit?.call(null)}
+          className="w-8rem"
+        />
+      </div>
     </Dialog>
   );
 };

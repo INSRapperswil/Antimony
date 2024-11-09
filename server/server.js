@@ -51,6 +51,49 @@ app.get('/topologies', (req, res) => {
   res.send({payload: getUserTopologies(user)});
 });
 
+app.patch('/topologies/:topologyId', (req, res) => {
+  const user = authenticateUser(req.token);
+  if (!user) {
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  const updatedDefinition = req.body.definition;
+  const targetTopology = store.topologies.find(
+    topology => topology.id === req.params.topologyId
+  );
+
+  if (!targetTopology) {
+    res.send(generateError('Specified topology does not exist.'));
+    return;
+  }
+
+  targetTopology.definition = updatedDefinition;
+
+  res.send({});
+});
+
+app.delete('/topologies/:topologyId', (req, res) => {
+  const user = authenticateUser(req.token);
+  if (!user) {
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  const targetTopology = store.topologies.find(
+    topology => topology.id === req.params.groupId
+  );
+
+  if (!targetTopology) {
+    res.send(generateError('Specified topology does not exist.'));
+    return;
+  }
+
+  store.topologies.splice(store.topologies.indexOf(targetTopology), 1);
+
+  res.send({});
+});
+
 app.get('/groups', (req, res) => {
   const user = authenticateUser(req.token);
   if (!user) {
@@ -59,6 +102,56 @@ app.get('/groups', (req, res) => {
   }
 
   res.send({payload: getUserGroups(user)});
+});
+
+app.delete('/groups/:groupId', (req, res) => {
+  const user = authenticateUser(req.token);
+  if (!user) {
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  const targetGroup = store.groups.find(
+    group => group.id === req.params.groupId
+  );
+
+  if (!targetGroup) {
+    res.send(generateError('Specified group does not exist.'));
+    return;
+  }
+
+  store.groups.splice(store.groups.indexOf(targetGroup), 1);
+
+  res.send({});
+});
+
+app.patch('/groups/:groupId', (req, res) => {
+  const user = authenticateUser(req.token);
+  if (!user) {
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  const updatedGroup = req.body;
+  const targetGroup = store.groups.find(
+    group => group.id === req.params.groupId
+  );
+
+  if (!targetGroup) {
+    res.send(generateError('Specified group does not exist.'));
+    return;
+  }
+
+  if (store.groups.filter(group => group.name === updatedGroup.name) > 1) {
+    res.send(generateError('A group with that name already exists.'));
+    return;
+  }
+
+  targetGroup.name = updatedGroup.name;
+  targetGroup.canWrite = updatedGroup.canWrite;
+  targetGroup.canRun = updatedGroup.canRun;
+
+  res.send({});
 });
 
 app.get('/notifications', (req, res) => {

@@ -8,19 +8,22 @@ import {
   FetchReport,
   FetchState,
   Topology,
+  TopologyDefinition,
+  TopologyIn,
   TopologyOut,
 } from '@sb/types/types';
 
 export class TopologyStore {
   private rootStore: RootStore;
+  public manager: TopologyManager;
 
   @observable accessor topologies: Topology[] = [];
   @observable accessor lookup: Map<string, Topology> = new Map();
   @observable accessor fetchReport: FetchReport = DefaultFetchReport;
-  @observable accessor manager = new TopologyManager();
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
+    this.manager = new TopologyManager(this.rootStore._apiConnectorStore);
 
     observe(rootStore._apiConnectorStore, () => this.fetch());
 
@@ -36,11 +39,28 @@ export class TopologyStore {
 
     this.rootStore._apiConnectorStore
       .get<TopologyOut[]>('/topologies')
-      .then(data => this.update(data));
+      .then(data => this.setData(data));
   }
 
   @action
-  private update(data: [boolean, TopologyOut[] | ErrorResponse]) {
+  public async update(
+    id: string,
+    definition: TopologyDefinition
+  ): Promise<ErrorResponse | null> {
+    const response = await this.rootStore._apiConnectorStore.patch<
+      TopologyIn,
+      void
+    >(`/topologies/${id}`, {definition: JSON.stringify(definition)});
+    if (!response[0]) {
+      return response[1] as ErrorResponse;
+    }
+
+    void this.fetch();
+    return null;
+  }
+
+  @action
+  private setData(data: [boolean, TopologyOut[] | ErrorResponse]) {
     if (data[0]) {
       this.topologies = TopologyManager.parseTopologies(
         data[1] as TopologyOut[]

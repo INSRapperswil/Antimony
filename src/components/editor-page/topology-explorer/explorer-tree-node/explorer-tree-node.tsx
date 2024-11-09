@@ -4,14 +4,14 @@ import {Button} from 'primereact/button';
 import {TreeNode} from 'primereact/treenode';
 
 import {Choose, Otherwise, When} from '@sb/types/control';
-import SBInput from '@sb/components/common/sb-input/sb-input';
 
 interface ExplorerTreeNodeProps {
   node: TreeNode;
 
   onDeleteGroup: (uuid: string) => void;
   onEditGroup: (uuid: string) => void;
-  onRenameGroup: (value: string) => string | null;
+  onRenameGroup: (value: string) => void;
+  onRenameTopology: (value: string) => void;
 
   onAddTopology: () => void;
   onDeployTopology: (uuid: string) => void;
@@ -81,14 +81,15 @@ const ExplorerTreeNode: React.FC<ExplorerTreeNodeProps> = (
           </div>
         </When>
         <Otherwise>
-          <SBInput
-            defaultValue={props.node.label}
-            fullyTransparent={true}
-            doubleClick={true}
-            isHidden={true}
-            explicitSubmit={true}
-            onValueSubmit={props.onRenameGroup}
-          />
+          <span
+            className="tree-node p-treenode-label"
+            data-pr-position="right"
+            data-pr-my="left+10 center"
+            data-pr-showdelay={500}
+            data-pr-tooltip={props.node.label}
+          >
+            {props.node.label}
+          </span>
           <div className="sb-explorer-node-buttons">
             <Button
               icon="pi pi-pen-to-square"

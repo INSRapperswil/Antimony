@@ -37,7 +37,6 @@ export class RootStore {
 
   @action
   private getCombinedFetchState() {
-    console.log('SET COMB: ', FetchState[this.combinedFetchState]);
     this.combinedFetchState = combinedFetchState(
       this._topologyStore.fetchReport.state,
       this._deviceStore.fetchReport.state,

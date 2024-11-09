@@ -28,13 +28,9 @@ export type LabIn = {
   templateId: uuid4;
 };
 
-export type Lab = {
+export type Lab = LabIn & {
   id: uuid4;
-  name: string;
-  startDate: string;
-  endDate: string;
   groupId: uuid4;
-  topologyId: uuid4;
   nodeMeta: NodeMeta[];
   edgesharkLink: string;
   runnerId: uuid4;
@@ -43,13 +39,11 @@ export type Lab = {
 };
 
 export type TopologyIn = {
-  name: string;
   definition: string;
 };
 
-export type TopologyOut = {
+export type TopologyOut = TopologyIn & {
   id: uuid4;
-  definition: string;
   groupId: uuid4;
   creatorId: uuid4;
 };
@@ -63,13 +57,12 @@ export type Topology = {
 
 export type GroupIn = {
   name: string;
-  public: boolean;
+  canWrite: boolean;
+  canRun: boolean;
 };
 
-export type Group = {
+export type Group = GroupIn & {
   id: uuid4;
-  name: string;
-  public: boolean;
 };
 
 export type User = {
@@ -135,14 +128,9 @@ export interface NotificationOut {
   severity: Severity;
 }
 
-export interface Notification {
-  id: string;
-  timestamp: Date;
-  summary: string;
-  detail: string;
-  severity: Severity;
+export type Notification = NotificationOut & {
   isRead: boolean;
-}
+};
 
 export enum Severity {
   Error,

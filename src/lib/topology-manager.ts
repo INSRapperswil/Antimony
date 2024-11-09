@@ -1,11 +1,14 @@
+import {APIStore} from '@sb/lib/stores/api-store';
 import _ from 'lodash';
 import {parseDocument} from 'yaml';
 import cloneDeep from 'lodash.clonedeep';
 
 import {Binding} from '@sb/lib/utils/binding';
 import {
+  ErrorResponse,
   Topology,
   TopologyDefinition,
+  TopologyIn,
   TopologyOut,
   YAMLDocument,
 } from '@sb/types/types';
@@ -18,6 +21,7 @@ export type TopologyEditReport = {
 };
 
 export class TopologyManager {
+  private apiStore: APIStore;
   private editingTopology: Topology | null = null;
   private originalTopology: Topology | null = null;
 
@@ -25,7 +29,8 @@ export class TopologyManager {
   public readonly onClose: Binding<void> = new Binding();
   public readonly onEdit: Binding<TopologyEditReport> = new Binding();
 
-  constructor() {
+  constructor(apiStore: APIStore) {
+    this.apiStore = apiStore;
     this.onEdit.register(
       updateReport => (this.editingTopology = updateReport.updatedTopology)
     );
@@ -40,16 +45,28 @@ export class TopologyManager {
   }
 
   /**
-   * Resets the referenced saved topology to the current topology.
+   * Submits the current topology to the API and resets the referenced saved
+   * topology to the current topology if the upload was successful.
    */
-  public save() {
-    if (!this.editingTopology) return;
+  public async save(): Promise<ErrorResponse | null> {
+    if (!this.editingTopology) return null;
+
+    const error = await this.apiStore.patch<TopologyIn, void>(
+      `/topologies/${this.editingTopology.id}`,
+      {
+        definition: this.editingTopology.definition.toString(),
+      }
+    );
+
+    if (error[0]) return error[1] as ErrorResponse;
 
     this.originalTopology = cloneDeep(this.editingTopology);
     this.onEdit.update({
       updatedTopology: this.editingTopology,
       isEdited: false,
     });
+
+    return null;
   }
 
   /**
@@ -187,7 +204,12 @@ export class TopologyManager {
           definition: definition,
         });
       } catch (e) {
-        console.error('[NET] Failed to parse incoming topology: ', topology);
+        console.error(
+          '[NET] Failed to parse incoming topology: ',
+          topology,
+          ':',
+          e
+        );
       }
     }
 

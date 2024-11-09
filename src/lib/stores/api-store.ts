@@ -61,6 +61,60 @@ export class APIStore {
     path: string,
     isExternal = false,
     skipAuthentication = false
+  ) {
+    return this.fetch<void, T>(
+      path,
+      'GET',
+      undefined,
+      isExternal,
+      skipAuthentication
+    );
+  }
+
+  public async delete<T>(
+    path: string,
+    isExternal = false,
+    skipAuthentication = false
+  ) {
+    return this.fetch<void, T>(
+      path,
+      'DELETE',
+      undefined,
+      isExternal,
+      skipAuthentication
+    );
+  }
+
+  public async post<R, T>(
+    path: string,
+    body: R,
+    isExternal = false,
+    skipAuthentication = false
+  ) {
+    return this.fetch<R, T>(path, 'POST', body, isExternal, skipAuthentication);
+  }
+
+  public async patch<R, T>(
+    path: string,
+    body: R,
+    isExternal = false,
+    skipAuthentication = false
+  ) {
+    return this.fetch<R, T>(
+      path,
+      'PATCH',
+      body,
+      isExternal,
+      skipAuthentication
+    );
+  }
+
+  private async fetch<R, T>(
+    path: string,
+    method: string,
+    body?: R,
+    isExternal = false,
+    skipAuthentication = false
   ): Promise<[boolean, T | ErrorResponse]> {
     if (!skipAuthentication && !isExternal && !this.isLoggedIn) {
       return [false, {code: '-1', message: 'Unauthorized'}];
@@ -70,66 +124,13 @@ export class APIStore {
 
     try {
       if (isExternal) {
-        response = await fetch(path, {method: 'GET'});
+        response = await fetch(path, {
+          method: method,
+          body: JSON.stringify(body),
+        });
       } else {
         response = await fetch(this.apiUrl + path, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.authToken}`,
-          },
-        });
-      }
-    } catch {
-      // continue regardless of error
-    }
-
-    if (!response || !response.ok) {
-      this.handleNetworkError(response?.status, isExternal);
-      await new Promise(resolve => setTimeout(resolve, this.retryTimer));
-      return this.get(path, isExternal, skipAuthentication);
-    }
-
-    if (isExternal) {
-      return [true, JSON.parse(await response.text())];
-    }
-
-    const responseBody = await response.json();
-
-    if ('code' in responseBody) {
-      return [false, responseBody];
-    }
-
-    runInAction(() => {
-      if (isExternal) {
-        this.hasExternalError = false;
-      } else {
-        this.hasAPIError = false;
-      }
-    });
-    return [true, responseBody.payload];
-  }
-
-  public async post<T, R>(
-    path: string,
-    body: T,
-    isExternal = false,
-    skipAuthentication = false
-  ): Promise<[boolean, R | ErrorResponse]> {
-    if (!skipAuthentication && !isExternal && this.isLoggedIn) {
-      return [false, {code: '-1', message: 'Unauthorized'}];
-    }
-
-    const url = isExternal ? path : this.apiUrl + path;
-    let response: Response | null = null;
-
-    try {
-      if (isExternal) {
-        response = await fetch(path, {method: 'POST'});
-      } else {
-        response = await fetch(url, {
-          method: 'POST',
+          method: method,
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
@@ -145,7 +146,11 @@ export class APIStore {
     if (!response || !response.ok) {
       this.handleNetworkError(response?.status, isExternal);
       await new Promise(resolve => setTimeout(resolve, this.retryTimer));
-      return this.post(path, body, isExternal, skipAuthentication);
+      return this.fetch(path, method, body, isExternal, skipAuthentication);
+    }
+
+    if (isExternal) {
+      return [true, JSON.parse(await response.text())];
     }
 
     const responseBody = await response.json();

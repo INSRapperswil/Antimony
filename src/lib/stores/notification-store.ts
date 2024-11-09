@@ -41,6 +41,11 @@ export class NotificationStore {
   }
 
   public fetch() {
+    if (!this.rootStore._apiConnectorStore.isLoggedIn) {
+      this.fetchReport = {state: FetchState.Pending};
+      return;
+    }
+
     this.rootStore._apiConnectorStore
       .get<NotificationOut[]>('/notifications')
       .then(data => this.update(data));

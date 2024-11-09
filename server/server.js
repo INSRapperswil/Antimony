@@ -98,7 +98,7 @@ app.post('/users/auth', (req, res) => {
   const body = req.body;
   const user = findUser(body.username, body.password);
   if (!user) {
-    res.status(400).send(generateError('Invalid credentials'));
+    res.send(generateError('Invalid credentials'));
     return;
   }
 

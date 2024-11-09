@@ -20,6 +20,13 @@ module.exports = merge(common, {
         pathRewrite: {
           '^/api': '',
         },
+      },
+      '/socket.io': {
+        target: {
+          host: 'localhost',
+          protocol: 'ws:',
+          port: 3000,
+        },
         ws: true,
       },
     },

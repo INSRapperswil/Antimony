@@ -27,7 +27,13 @@ export class TopologyStore {
     this.fetch();
   }
 
+  @action
   public fetch() {
+    if (!this.rootStore._apiConnectorStore.isLoggedIn) {
+      this.fetchReport = {state: FetchState.Pending};
+      return;
+    }
+
     this.rootStore._apiConnectorStore
       .get<TopologyOut[]>('/topologies')
       .then(data => this.update(data));

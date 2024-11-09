@@ -24,6 +24,11 @@ export class GroupStore {
   }
 
   public fetch() {
+    if (!this.rootStore._apiConnectorStore.isLoggedIn) {
+      this.fetchReport = {state: FetchState.Pending};
+      return;
+    }
+
     this.rootStore._apiConnectorStore
       .get<Group[]>('/groups')
       .then(data => this.update(data));

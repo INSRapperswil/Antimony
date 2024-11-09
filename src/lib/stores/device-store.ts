@@ -7,7 +7,7 @@ import {
   FetchState,
   TopologyNode,
 } from '@sb/types/types';
-import {observable, observe} from 'mobx';
+import {action, observable, observe} from 'mobx';
 
 export class DeviceStore {
   private rootStore: RootStore;
@@ -24,24 +24,30 @@ export class DeviceStore {
     this.fetch();
   }
 
+  @action
   public fetch() {
+    if (!this.rootStore._apiConnectorStore.isLoggedIn) {
+      this.fetchReport = {state: FetchState.Pending};
+      return;
+    }
+
     this.rootStore._apiConnectorStore
       .get<DeviceInfo[]>('/devices')
-      .then(data => {
-        if (data[0]) {
-          this.devices = data[1] as DeviceInfo[];
-          this.lookup = new Map(
-            this.devices.map(device => [device.kind, device])
-          );
-          this.fetchReport = {state: FetchState.Done};
-        } else {
-          this.fetchReport = {
-            state: FetchState.Error,
-            errorCode: String((data[1] as ErrorResponse).code),
-            errorMessage: (data[1] as ErrorResponse).message,
-          };
-        }
-      });
+      .then(data => this.update(data));
+  }
+
+  @action
+  private update(data: [boolean, DeviceInfo[] | ErrorResponse]) {
+    if (data[0]) {
+      this.devices = data[1] as DeviceInfo[];
+      this.fetchReport = {state: FetchState.Done};
+    } else {
+      this.fetchReport = {
+        state: FetchState.Error,
+        errorCode: String((data[1] as ErrorResponse).code),
+        errorMessage: (data[1] as ErrorResponse).message,
+      };
+    }
   }
 
   public getNodeIcon(node: TopologyNode) {

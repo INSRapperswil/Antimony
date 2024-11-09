@@ -1,6 +1,6 @@
 import {RootStore} from '@sb/lib/stores/root-store';
 import {AuthResponse, ErrorResponse, UserCredentials} from '@sb/types/types';
-import {action, makeAutoObservable, runInAction} from 'mobx';
+import {action, computed, observable, runInAction} from 'mobx';
 import Cookies from 'js-cookie';
 import {io, Socket} from 'socket.io-client';
 
@@ -8,27 +8,28 @@ export class APIStore {
   private readonly apiUrl = process.env.SB_API_SERVER_URL;
   private rootStore: RootStore;
   private authToken: string | null = null;
+  private readonly retryTimer = 5000;
 
-  public isAdmin = false;
-  public isLoggedIn = false;
-  public hasNetworkError = false;
+  @observable accessor isAdmin = false;
+  @observable accessor isLoggedIn = false;
+
+  @observable accessor hasAPIError = false;
+  @observable accessor hasSocketError = false;
+  @observable accessor hasExternalError = false;
 
   public socket: Socket = io();
 
   constructor(rootStore: RootStore) {
-    makeAutoObservable(this);
-
     this.rootStore = rootStore;
 
     if (Cookies.get('authToken') !== undefined) {
-      this.setToken(
+      this.setupConnection(
         Cookies.get('authToken')!,
         Boolean(Cookies.get('isAdmin')) ?? false
       );
     }
   }
 
-  @action
   public async login(
     credentials: UserCredentials,
     saveCookie: boolean
@@ -47,7 +48,7 @@ export class APIStore {
     }
 
     const authResponse = tokenResponse[1] as AuthResponse;
-    this.setToken(authResponse.token, authResponse.isAdmin);
+    this.setupConnection(authResponse.token, authResponse.isAdmin);
     if (saveCookie) {
       Cookies.set('authToken', this.authToken!);
       Cookies.set('isAdmin', String(this.isAdmin));
@@ -61,13 +62,13 @@ export class APIStore {
     isExternal = false,
     skipAuthentication = false
   ): Promise<[boolean, T | ErrorResponse]> {
-    if (!skipAuthentication && !isExternal && this.authToken === null) {
+    if (!skipAuthentication && !isExternal && !this.isLoggedIn) {
       return [false, {code: '-1', message: 'Unauthorized'}];
     }
 
-    try {
-      let response: Response | null = null;
+    let response: Response | null = null;
 
+    try {
       if (isExternal) {
         response = await fetch(path, {method: 'GET'});
       } else {
@@ -80,54 +81,34 @@ export class APIStore {
           },
         });
       }
-
-      if (!response.ok) {
-        // Logout and remove token if token was invalid
-        if (!skipAuthentication && response.status === 403) this.logout();
-
-        if (response.status === 504) {
-          runInAction(() => (this.hasNetworkError = true));
-        }
-
-        console.error(
-          `[NET] An error occurred while performing GET on ${path}: ${response.status}.`
-        );
-        return [
-          false,
-          {
-            code: String(response.status),
-            message: await response.text(),
-          },
-        ];
-      }
-
-      if (isExternal) {
-        return [true, JSON.parse(await response.text())];
-      }
-
-      const responseBody = await response.json();
-
-      if ('code' in responseBody) {
-        return [false, responseBody];
-      }
-
-      runInAction(() => (this.hasNetworkError = false));
-      return [true, responseBody.payload];
-    } catch (e) {
-      runInAction(() => (this.hasNetworkError = true));
-
-      console.error(
-        `[NET] An error occurred while performing GET ${path}: ${e}`
-      );
-
-      return [
-        false,
-        {
-          code: 'NETERR',
-          message: `Failed to connect to the requested resource: ${e}`,
-        },
-      ];
+    } catch {
+      // continue regardless of error
     }
+
+    if (!response || !response.ok) {
+      this.handleNetworkError(response?.status, isExternal);
+      await new Promise(resolve => setTimeout(resolve, this.retryTimer));
+      return this.get(path, isExternal, skipAuthentication);
+    }
+
+    if (isExternal) {
+      return [true, JSON.parse(await response.text())];
+    }
+
+    const responseBody = await response.json();
+
+    if ('code' in responseBody) {
+      return [false, responseBody];
+    }
+
+    runInAction(() => {
+      if (isExternal) {
+        this.hasExternalError = false;
+      } else {
+        this.hasAPIError = false;
+      }
+    });
+    return [true, responseBody.payload];
   }
 
   public async post<T, R>(
@@ -136,89 +117,109 @@ export class APIStore {
     isExternal = false,
     skipAuthentication = false
   ): Promise<[boolean, R | ErrorResponse]> {
-    if (!skipAuthentication && this.authToken === null) {
+    if (!skipAuthentication && !isExternal && this.isLoggedIn) {
       return [false, {code: '-1', message: 'Unauthorized'}];
     }
 
+    const url = isExternal ? path : this.apiUrl + path;
+    let response: Response | null = null;
+
     try {
-      const url = isExternal ? path : this.apiUrl + path;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.authToken}`,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        // Logout and remove token if token was invalid
-        if (!skipAuthentication && response.status === 403) this.logout();
-
-        if (response.status === 504) {
-          runInAction(() => (this.hasNetworkError = true));
-        }
-
-        console.error(
-          `[NET] An error occurred while performing POST on ${path}: ${response.status}.`
-        );
-        return [
-          false,
-          {
-            code: String(response.status),
-            message: await response.text(),
+      if (isExternal) {
+        response = await fetch(path, {method: 'POST'});
+      } else {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.authToken}`,
           },
-        ];
+          body: JSON.stringify(body),
+        });
       }
-
-      const responseBody = await response.json();
-
-      if ('code' in responseBody) {
-        return [false, responseBody];
-      }
-
-      runInAction(() => (this.hasNetworkError = false));
-      return [true, responseBody.payload];
-    } catch (e) {
-      runInAction(() => (this.hasNetworkError = true));
-
-      console.error(
-        `[NET] An error occurred while performing POST on ${path}: ${e}`
-      );
-
-      return [
-        false,
-        {
-          code: 'NETERR',
-          message: `Failed to connect to the requested resource: ${e}`,
-        },
-      ];
+    } catch {
+      // continue regardless of error
     }
+
+    if (!response || !response.ok) {
+      this.handleNetworkError(response?.status, isExternal);
+      await new Promise(resolve => setTimeout(resolve, this.retryTimer));
+      return this.post(path, body, isExternal, skipAuthentication);
+    }
+
+    const responseBody = await response.json();
+
+    if ('code' in responseBody) {
+      return [false, responseBody];
+    }
+
+    runInAction(() => {
+      if (isExternal) {
+        this.hasExternalError = false;
+      } else {
+        this.hasAPIError = false;
+      }
+    });
+    return [true, responseBody.payload];
   }
 
   public logout() {
-    this.authToken = null;
-    this.isAdmin = false;
-    this.isLoggedIn = false;
     Cookies.remove('authToken');
     Cookies.remove('isAdmin');
 
     if (this.socket && this.socket.connected) {
       this.socket.disconnect();
     }
+
+    this.authToken = null;
+    this.isAdmin = false;
+    this.isLoggedIn = false;
   }
 
-  private setToken(token: string, isAdmin: boolean) {
+  @computed
+  public get hasNetworkError() {
+    return this.hasAPIError || this.hasSocketError || this.hasExternalError;
+  }
+
+  @action
+  private setupConnection(token: string, isAdmin: boolean) {
     this.authToken = token;
     this.isAdmin = isAdmin;
-    this.isLoggedIn = true;
 
     this.socket = io(window.location.host, {
       auth: {
         token: this.authToken,
       },
     });
+
+    this.socket.on('connect_error', () => {
+      runInAction(() => (this.hasSocketError = true));
+    });
+
+    this.socket.on('connect', () => {
+      runInAction(() => {
+        this.hasSocketError = false;
+        this.isLoggedIn = true;
+      });
+    });
+
+    // this.socket.on('disconnect', () => {
+    //   runInAction(() => (this.hasSocketError = true));
+    // });
+  }
+
+  private handleNetworkError(status: number | undefined, isExternal: boolean) {
+    if (!status || status === 503 || status === 504) {
+      runInAction(() => {
+        if (isExternal) {
+          this.hasExternalError = true;
+        } else {
+          this.hasAPIError = true;
+        }
+      });
+    } else if (status === 403) {
+      this.logout();
+    }
   }
 }

@@ -3,10 +3,10 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {validate} from 'jsonschema';
 import {Button} from 'primereact/button';
-import {Document, parseDocument} from 'yaml';
+import {parseDocument} from 'yaml';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
 
-import {ErrorResponse, Topology} from '@sb/types/types';
+import {ErrorResponse, Topology, uuid4} from '@sb/types/types';
 import {Choose, Otherwise, When} from '@sb/types/control';
 import {
   useNotifications,
@@ -30,6 +30,8 @@ export enum ValidationState {
 interface TopologyEditorProps {
   isMaximized: boolean;
   setMaximized: (isMinimized: boolean) => void;
+
+  onTopologyDeploy: (id: uuid4) => void;
 }
 
 const TopologyEditor: React.FC<TopologyEditorProps> = (
@@ -42,7 +44,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
   const [hasPendingEdits, setPendingEdits] = useState(false);
   const [isNodeEditDialogOpen, setNodeEditDialogOpen] = useState(false);
-  const [openTopology, setOpenTopology] = useState<Document | null>(null);
+  const [openTopology, setOpenTopology] = useState<Topology | null>(null);
   const [currentlyEditedNode, setCurrentlyEditedNode] = useState<string | null>(
     null
   );
@@ -55,7 +57,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
   const onTopologyOpen = useCallback((topology: Topology) => {
     monacoWrapperRef?.current?.openTopology(topology.definition);
-    setOpenTopology(topology.definition);
+    setOpenTopology(topology);
   }, []);
 
   const onTopologyClose = useCallback(() => {
@@ -64,7 +66,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
   const onTopologyEdit = useCallback((editReport: TopologyEditReport) => {
     setPendingEdits(editReport.isEdited);
-    setOpenTopology(editReport.updatedTopology.definition);
+    setOpenTopology(editReport.updatedTopology);
   }, []);
 
   useEffect(() => {
@@ -126,6 +128,11 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     return error;
   }
 
+  function onDeployTopoplogy() {
+    if (!openTopology) return;
+    props.onTopologyDeploy(openTopology.id);
+  }
+
   return (
     <>
       <Choose>
@@ -152,12 +159,12 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
               <div className="flex gap-2">
                 <Button
                   outlined
-                  tooltip="Save"
                   size="large"
                   icon="pi pi-save"
                   disabled={
                     validationState !== ValidationState.Done || !hasPendingEdits
                   }
+                  tooltip="Save"
                   onClick={onSaveTopology}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
@@ -165,8 +172,8 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   outlined
                   icon="pi pi-trash"
                   size="large"
-                  tooltip="Clear"
                   onClick={topologyStore.manager.clear}
+                  tooltip="Clear"
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
                 <Button
@@ -183,6 +190,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   icon="pi pi-play"
                   size="large"
                   tooltip="Deploy Topology"
+                  onClick={onDeployTopoplogy}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
                 <Choose>
@@ -220,7 +228,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                     ref={monacoWrapperRef}
                     validationError={validationError}
                     validationState={validationState}
-                    openTopology={openTopology}
+                    openTopology={openTopology!.definition}
                     language="yaml"
                     setContent={onContentChange}
                     onSaveTopology={onSaveTopology}
@@ -234,7 +242,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   <NodeEditor
                     onAddNode={onAddNode}
                     onEditNode={onNodeEdit}
-                    openTopology={openTopology}
+                    openTopology={openTopology!.definition}
                   />
                 </SplitterPanel>
               </Splitter>
@@ -249,7 +257,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
       </Choose>
       <NodeEditDialog
         isOpen={isNodeEditDialogOpen}
-        editingTopology={openTopology}
+        editingTopology={openTopology?.definition ?? null}
         editingNode={currentlyEditedNode}
         onClose={() => setNodeEditDialogOpen(false)}
       />

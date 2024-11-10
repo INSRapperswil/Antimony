@@ -72,6 +72,7 @@ const NodePropertyArray: React.FC<NodePropertyArrayProps> = (
       <Button
         icon="pi pi-plus"
         className="sb-property-array-add-button"
+        outlined
         onClick={onAddEntry}
       />
     </>

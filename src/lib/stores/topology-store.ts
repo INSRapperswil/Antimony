@@ -60,7 +60,7 @@ export class TopologyStore {
     const response = await this.rootStore._apiConnectorStore.post<
       TopologyIn,
       TopologyResponse
-    >('/topologies/', {
+    >('/topologies', {
       groupId: groupId,
       definition: DefaultTopology,
     });

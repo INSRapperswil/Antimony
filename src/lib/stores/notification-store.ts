@@ -36,7 +36,7 @@ export class NotificationStore {
     this.fetch();
 
     this.rootStore._apiConnectorStore.socket.on('notification', data => {
-      this.handleNotification(NotificationStore.parseNotification(data));
+      this.handleNotification(NotificationStore.parseNotification(data, false));
     });
   }
 
@@ -125,7 +125,7 @@ export class NotificationStore {
   private update(data: [boolean, NotificationOut[] | ErrorResponse]) {
     if (data[0]) {
       this.messages = (data[1] as NotificationOut[])
-        .map(NotificationStore.parseNotification)
+        .map(msg => NotificationStore.parseNotification(msg, true))
         .toSorted((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf());
       this.countBySeverity = new Map(
         Object.entries(
@@ -154,11 +154,14 @@ export class NotificationStore {
     this.send(notification.detail, notification.summary, notification.severity);
   }
 
-  public static parseNotification(input: NotificationOut): Notification {
+  public static parseNotification(
+    input: NotificationOut,
+    isRead: boolean
+  ): Notification {
     return {
       ...input,
       timestamp: new Date(input.timestamp),
-      isRead: false,
+      isRead,
     };
   }
 }

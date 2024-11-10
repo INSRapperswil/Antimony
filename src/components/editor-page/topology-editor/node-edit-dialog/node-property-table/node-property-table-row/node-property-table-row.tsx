@@ -7,7 +7,7 @@ import {Checkbox} from 'primereact/checkbox';
 
 import {PropertyIO} from '@sb/lib/node-editor';
 import SBInput from '@sb/components/common/sb-input/sb-input';
-import SbDropdown from '@sb/components/common/sb-dropdown/sb-dropdown';
+import SBDropdown from '@sb/components/common/sb-dropdown/sb-dropdown';
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 import NodePropertyArray from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-property-table/node-property-array/node-property-array';
 
@@ -79,12 +79,14 @@ const NodePropertyTableRow: React.FC<NodePropertyTableRowProps> = (
       <td>
         <Choose>
           <When condition={dropdownOptions}>
-            <SbDropdown
+            <SBDropdown
               value={props.property.value as string}
               options={dropdownOptions!}
               optionLabel="value"
               isHidden={true}
-              hasFilter={false}
+              hasFilter={true}
+              icon="pi-cog"
+              useItemTemplate={true}
               onValueSubmit={props.property.onUpdateValue}
             />
           </When>

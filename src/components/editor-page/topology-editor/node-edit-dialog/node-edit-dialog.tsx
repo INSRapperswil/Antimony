@@ -1,3 +1,4 @@
+import SBDropdown from '@sb/components/common/sb-dropdown/sb-dropdown';
 import {
   useDeviceStore,
   useNotifications,
@@ -6,7 +7,6 @@ import {
 } from '@sb/lib/stores/root-store';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
-import {Dropdown} from 'primereact/dropdown';
 import {Accordion, AccordionTab} from 'primereact/accordion';
 
 import {If} from '@sb/types/control';
@@ -36,6 +36,14 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   const deviceStore = useDeviceStore();
   const notificationStore = useNotifications();
 
+  const kindList = useMemo(() => {
+    if (!schemaStore.clabSchema) return [];
+
+    return schemaStore.clabSchema['definitions']['node-config']['properties'][
+      'kind'
+    ]['enum']!.map(kind => ({value: kind}));
+  }, [schemaStore.clabSchema]);
+
   const nodeEditor = useMemo(() => {
     if (
       !props.editingNode ||
@@ -57,14 +65,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
     props.editingTopology,
     notificationStore,
   ]);
-
-  const kindList = useMemo(() => {
-    if (!schemaStore.clabSchema) return;
-
-    return schemaStore.clabSchema['definitions']['node-config']['properties'][
-      'kind'
-    ]['enum']!.map(kind => ({value: kind}));
-  }, [schemaStore]);
 
   const onTopologyUpdate = useCallback(() => {
     if (!nodeEditor || !nodeEditor.getNode()) return;
@@ -88,15 +88,42 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
     props.onClose();
   }
 
+  function onCloseRequest() {
+    if (!nodeEditor) return;
+
+    if (nodeEditor.hasEdits()) {
+      notificationStore.confirm({
+        message: 'Discard unsaved changes?',
+        header: 'Unsaved Changes',
+        icon: 'pi pi-info-circle',
+        severity: 'warning',
+        onAccept: props.onClose,
+      });
+    } else {
+      props.onClose();
+    }
+  }
+
+  function onSave() {
+    if (nodeEditor) {
+      topologyStore.manager.apply(nodeEditor.getTopology());
+    }
+
+    props.onClose();
+  }
+
   return (
     <SBDialog
-      onClose={onClose}
       isOpen={props.isOpen}
       headerIcon={
         nodeEditor ? deviceStore.getNodeIcon(nodeEditor.getNode()) : undefined
       }
       headerTitle="Edit Node"
       className="sb-node-edit-dialog"
+      submitLabel="Save"
+      onSubmit={onSave}
+      onClose={onCloseRequest}
+      onCancel={onCloseRequest}
     >
       <If condition={nodeEditor !== null}>
         <div className="flex flex-column gap-2">
@@ -106,18 +133,20 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
             defaultValue={props.editingNode!}
             onValueSubmit={nodeEditor!.onUpdateName}
           />
-          <div className="flex flex-column gap-2">
-            <label htmlFor="sb-node-kind">Kind</label>
-            <Dropdown
-              id="sb-node-kind"
-              value={nodeKind}
-              optionLabel="value"
-              options={kindList}
-              onChange={event =>
-                nodeEditor!.updatePropertyValue('kind', '', event.value)
-              }
-            />
-          </div>
+          <SBDropdown
+            id="node-editor-kind"
+            label="Kind"
+            hasFilter={true}
+            value={nodeKind}
+            options={kindList}
+            icon="pi-cog"
+            useItemTemplate={true}
+            useSelectTemplate={true}
+            optionLabel="value"
+            onValueSubmit={value =>
+              nodeEditor!.updatePropertyValue('kind', '', value)
+            }
+          />
         </div>
         <Accordion multiple activeIndex={0}>
           <AccordionTab header="Node Properties">

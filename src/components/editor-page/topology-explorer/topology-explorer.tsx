@@ -34,7 +34,9 @@ import './topology-explorer.sass';
 
 interface TopologyBrowserProps {
   selectedTopologyId?: string | null;
-  onTopologySelect: (id: string) => void;
+
+  onTopologySelect: (id: uuid4) => void;
+  onTopologyDeploy: (id: uuid4) => void;
 }
 
 const TopologyExplorer = observer((props: TopologyBrowserProps) => {
@@ -212,6 +214,24 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     onDeleteGroupRequest(contextMenuTarget.current);
   };
 
+  const onAddTopologyContext = () => {
+    if (
+      !contextMenuTarget.current ||
+      !topologyStore.lookup.has(contextMenuTarget.current)
+    ) {
+      return;
+    }
+
+    void onAddTopology(
+      topologyStore.lookup.get(contextMenuTarget.current)!.groupId
+    );
+  };
+
+  const onDeployTopologyContext = () => {
+    if (!contextMenuTarget.current) return;
+    props.onTopologyDeploy(contextMenuTarget.current);
+  };
+
   const onDeleteTopologyContext = () => {
     if (!contextMenuTarget.current) return;
     onDeleteTopologyRequest(contextMenuTarget.current);
@@ -252,11 +272,13 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
       id: 'create',
       label: 'Deploy Lab',
       icon: 'pi pi-play',
+      command: onDeployTopologyContext,
     },
     {
       id: 'create',
       label: 'Add Topology',
       icon: 'pi pi-plus',
+      command: onAddTopologyContext,
     },
     {
       id: 'delete',
@@ -285,7 +307,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
             onEditGroup={onEditGroup}
             onDeleteGroup={onDeleteGroupRequest}
             onAddTopology={onAddTopology}
-            onDeployTopology={() => {}}
+            onDeployTopology={props.onTopologyDeploy}
             onDeleteTopology={onDeleteTopologyRequest}
           />
         )}

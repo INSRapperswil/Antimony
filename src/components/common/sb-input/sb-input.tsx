@@ -74,7 +74,9 @@ const SBInput = (props: SBInputProps) => {
   return (
     <div className="flex flex-column gap-2">
       <If condition={props.id && props.label}>
-        <label htmlFor={props.id}>{props.label}</label>
+        <label className="sb-input-label" htmlFor={props.id}>
+          {props.label}
+        </label>
       </If>
       <InputText
         onClick={onSingleClick}

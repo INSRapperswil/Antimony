@@ -240,7 +240,47 @@ app.get('/labs', (req, res) => {
     ).toSorted((a, b) => a.name.localeCompare(b.name)),
   });
 
-  void addRandomNotification(user.id);
+  // void addRandomNotification(user.id);
+});
+
+app.post('/labs', (req, res) => {
+  const user = authenticateUser(req.token);
+  if (!user) {
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  const newLab = req.body;
+  const targetTopology = store.topologies.find(
+    topology => topology.id === req.body.topologyId
+  );
+
+  const lab = {
+    name: newLab.name,
+    startDate: newLab.startDate,
+    endDate: newLab.endDate,
+    groupId: targetTopology.groupId,
+    topologyId: targetTopology.id,
+    nodeMeta: {
+      'srl/nokia_srlinux': {
+        user: 'ins',
+        host: 'example.com',
+        port: 9003,
+        webSsh: 'console.ltb3.network.garden/whatever/stuff',
+      },
+    },
+    edgesharkLink: 'edgeshark.example.com/whatever',
+    runnerId: user.id,
+    latestStateChange: new Date().toISOString(),
+    state: 0,
+  };
+
+  store.labs.push(lab);
+
+  // TODO(kian): Maybe change this to actually take scheduling into account
+  labQueue.push([lab, Date.now(), randomNumber(2000, 4000)]);
+
+  res.send({});
 });
 
 app.post('/users/auth', (req, res) => {
@@ -259,6 +299,7 @@ app.post('/users/auth', (req, res) => {
   });
 });
 
+const labQueue = [];
 const notificationQueue = [];
 const socketMap = new Map();
 
@@ -463,6 +504,10 @@ function readDataFile(fileName) {
   }
 }
 
+function randomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
 function uuidv4() {
   return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c =>
     (
@@ -472,16 +517,74 @@ function uuidv4() {
   );
 }
 
-function iterateQueue() {
-  if (notificationQueue.length > 0) {
-    const notification = notificationQueue.pop();
-    if (!socketMap.has(notification.userId)) return;
+function executeLabStep() {
+  if (labQueue.length === 0) return;
 
-    console.log('SEND NOTIFICATION TO FRONTEND');
-    socketMap.get(notification.userId).emit('notification', notification.data);
+  const [lab] = labQueue.find(
+    ([, start, cooldown]) => start - Date.now() < cooldown
+  );
+  if (!lab) return;
+
+  labQueue.splice(labQueue.indexOf(lab), 1);
+
+  let notificationSummary = '[SERVER] Deployment Update';
+  let notificationDetail = null;
+  let notificationSeverity = '';
+
+  console.log('Executing lab: ', lab);
+
+  switch (lab.state) {
+    case 0:
+      lab.state = 1;
+      lab.latestStateChange = new Date().toISOString();
+      notificationDetail = `Deployment of lab "${lab.name}" has been started.`;
+      notificationSeverity = 2;
+      labQueue.push([lab, Date.now(), randomNumber(5000, 10000)]);
+      break;
+    case 1:
+      if (randomNumber(0, 100) > 50) {
+        lab.state = 2;
+        lab.latestStateChange = new Date().toISOString();
+        notificationDetail = `Lab "${lab.name}" has been successfully deployed.`;
+        notificationSeverity = 2;
+      } else {
+        lab.state = 3;
+        lab.latestStateChange = new Date().toISOString();
+        notificationDetail = `Deployment of lab "${lab.name}" has failed!`;
+        notificationSeverity = 0;
+      }
+      break;
   }
 
-  setTimeout(iterateQueue, Math.floor(Math.random() * (6 - 2) + 6) * 1000);
+  if (notificationDetail) {
+    notificationQueue.push({
+      userId: lab.runnerId,
+      data: {
+        id: uuidv4(),
+        timestamp: new Date(),
+        summary: notificationSummary,
+        detail: notificationDetail,
+        severity: notificationSeverity,
+      },
+    });
+  }
 }
 
-iterateQueue();
+function executeNotificationStep() {
+  if (notificationQueue.length === 0) return;
+
+  const notification = notificationQueue.pop();
+  if (!socketMap.has(notification.userId)) return;
+
+  console.log('SEND NOTIFICATION TO FRONTEND');
+  socketMap.get(notification.userId).emit('notification', notification.data);
+}
+
+function executeSteps() {
+  executeLabStep();
+  executeNotificationStep();
+
+  setTimeout(executeSteps, Math.floor(Math.random() * (6 - 2) + 6) * 1000);
+}
+
+executeSteps();

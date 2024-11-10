@@ -1,23 +1,28 @@
+import TopologyDeployDialog from '@sb/components/editor-page/topology-deploy-dialog/topology-deploy-dialog';
 import TopologyEditor from '@sb/components/editor-page/topology-editor/topology-editor';
 import TopologyExplorer from '@sb/components/editor-page/topology-explorer/topology-explorer';
 import {useNotifications, useTopologyStore} from '@sb/lib/stores/root-store';
 
-import {Topology} from '@sb/types/types';
+import {Topology, uuid4} from '@sb/types/types';
 
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
 import React, {useCallback, useEffect, useState} from 'react';
 
 import {useSearchParams} from 'react-router-dom';
+
 import './editor-page.sass';
 
 const EditorPage: React.FC = observer(() => {
   const [isMaximized, setMaximized] = useState(false);
+  const [deployingTopology, setDeployingTopology] = useState<Topology | null>(
+    null
+  );
 
   const [searchParams, setSearchParams] = useSearchParams();
 
   const topologyStore = useTopologyStore();
-  const notificatioStore = useNotifications();
+  const notificationStore = useNotifications();
 
   const onTopologyOpen = useCallback(
     (topology: Topology) => {
@@ -66,7 +71,7 @@ const EditorPage: React.FC = observer(() => {
     if (!topologyStore.lookup.has(id)) return;
 
     if (topologyStore.manager.hasEdits()) {
-      notificatioStore.confirm({
+      notificationStore.confirm({
         message: 'Discard unsaved changes?',
         header: 'Unsaved Changes',
         icon: 'pi pi-info-circle',
@@ -76,6 +81,12 @@ const EditorPage: React.FC = observer(() => {
     } else {
       onSelectConfirm(id);
     }
+  }
+
+  function onDeployTopology(id: uuid4) {
+    if (!topologyStore.lookup.has(id)) return;
+
+    setDeployingTopology(topologyStore.lookup.get(id)!);
   }
 
   function onSelectConfirm(id: string) {
@@ -103,6 +114,7 @@ const EditorPage: React.FC = observer(() => {
         <TopologyExplorer
           selectedTopologyId={searchParams.get('t')}
           onTopologySelect={onSelectTopology}
+          onTopologyDeploy={onDeployTopology}
         />
       </div>
       <div
@@ -114,9 +126,15 @@ const EditorPage: React.FC = observer(() => {
           <TopologyEditor
             isMaximized={isMaximized}
             setMaximized={setMaximized}
+            onTopologyDeploy={onDeployTopology}
           />
         </div>
       </div>
+      <TopologyDeployDialog
+        key={deployingTopology?.id}
+        deployingTopology={deployingTopology}
+        onClose={() => setDeployingTopology(null)}
+      />
     </>
   );
 });

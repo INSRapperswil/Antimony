@@ -2,6 +2,7 @@ import {APIStore} from '@sb/lib/stores/api-store';
 import {DeviceStore} from '@sb/lib/stores/device-store';
 
 import {GroupStore} from '@sb/lib/stores/group-store';
+import {LabStore} from '@sb/lib/stores/lab-store';
 import {NotificationStore} from '@sb/lib/stores/notification-store';
 import {SchemaStore} from '@sb/lib/stores/schema-store';
 import {TopologyStore} from '@sb/lib/stores/topology-store';
@@ -13,6 +14,7 @@ import {createContext, useContext} from 'react';
 export class RootStore {
   _apiConnectorStore: APIStore;
   _topologyStore: TopologyStore;
+  _labStore: LabStore;
   _deviceStore: DeviceStore;
   _groupStore: GroupStore;
   _schemaStore: SchemaStore;
@@ -23,12 +25,14 @@ export class RootStore {
   constructor() {
     this._apiConnectorStore = new APIStore(this);
     this._topologyStore = new TopologyStore(this);
+    this._labStore = new LabStore(this);
     this._deviceStore = new DeviceStore(this);
     this._groupStore = new GroupStore(this);
     this._schemaStore = new SchemaStore(this);
     this._notificationsStore = new NotificationStore(this);
 
     observe(this._topologyStore, () => this.getCombinedFetchState());
+    observe(this._labStore, () => this.getCombinedFetchState());
     observe(this._deviceStore, () => this.getCombinedFetchState());
     observe(this._groupStore, () => this.getCombinedFetchState());
     observe(this._schemaStore, () => this.getCombinedFetchState());
@@ -39,6 +43,7 @@ export class RootStore {
   private getCombinedFetchState() {
     this.combinedFetchState = combinedFetchState(
       this._topologyStore.fetchReport.state,
+      this._labStore.fetchReport.state,
       this._deviceStore.fetchReport.state,
       this._groupStore.fetchReport.state,
       this._schemaStore.fetchReport.state,
@@ -60,6 +65,10 @@ export const useAPIStore = () => {
 
 export const useTopologyStore = () => {
   return useContext(RootStoreContext)._topologyStore;
+};
+
+export const useLabStore = () => {
+  return useContext(RootStoreContext)._labStore;
 };
 
 export const useDeviceStore = () => {

@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, {isEqual} from 'lodash';
 import objectPath from 'object-path';
 import {validate} from 'jsonschema';
 
@@ -244,6 +244,13 @@ export class NodeEditor {
       updatedTopology,
       `Invalid value for property '${objectRootPath}/${propertyKey}'`
     );
+  }
+
+  /**
+   * Returns whether the current object has been edited.
+   */
+  public hasEdits(): boolean {
+    return !isEqual(this.originalTopology.toJS(), this.editingTopology.toJS());
   }
 
   /**

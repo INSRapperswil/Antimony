@@ -1,20 +1,21 @@
 .p-button
   transition: all 0.1s ease-in
+  background-color: var(--primary-color-border)
+  border-color: transparent
   //color: var(--primary-color-border)
   //border-radius: 3px
 
   &.p-button-icon-only
     padding: 0.75rem 0
+    background-color: transparent
 
   &.p-button-outlined
     color: var(--primary-color-border)
+    border-color: var(--primary-color-border)
     background-color: transparent
 
-  //&:hover
-  //  filter: brightness(0.8)
-  //
-  //&:active
-  //  filter: brightness(0.6)
+  &:hover
+    filter: brightness(1.2)
 
 .p-tooltip
   transition: opacity 0.2s ease-in-out !important
@@ -113,6 +114,7 @@
 
 .p-dropdown-panel
   background-color: var(--overlay-color)
+  border-color: var(--primary-color-border)
 
   .p-dropdown-item
     background-color: transparent
@@ -125,7 +127,11 @@
 
   .p-dropdown-header
     background-color: transparent
-    border: none
+    border-color: var(--primary-color-border)
+    padding: 10px 10px
+
+    .p-dropdown-filter
+      padding: 8px
 
 .pi-severity-success
   color: var(--success-color-text)
@@ -152,3 +158,32 @@
 
   .p-menuitem-icon
     margin-right: 12px
+
+.p-datepicker-trigger
+  background-color: var(--primary-color-border) !important
+
+.p-datepicker
+  background-color: var(--overlay-color)
+  border: 1px solid var(--primary-color-border)
+
+
+  .p-datepicker-header
+    padding-top: 0
+    background-color: var(--overlay-color)
+    border-color: var(--primary-color-border)
+
+  .p-timepicker
+    border-color: var(--primary-color-border)
+
+  .p-datepicker-buttonbar
+    padding: 8px 4px 0 4px
+    border-color: var(--primary-color-border)
+
+    button
+      background-color: transparent
+      border-color: var(--primary-color-border)
+      color: var(--primary-color-border)
+      width: 100px
+
+  td
+    padding: 3px

@@ -73,7 +73,11 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       nodes.push({
         id: index,
         label: !hostsHidden
-          ? `${nodeName}\n${props.lab.nodeMeta[index]?.webSsh + ':' + props.lab.nodeMeta[index]?.port || ''}`
+          ? `${nodeName}\n${
+              props.lab.nodeMeta[index]?.webSsh +
+                ':' +
+                props.lab.nodeMeta[index]?.port || ''
+            }`
           : nodeName,
         image: deviceStore.getNodeIcon(node),
       });
@@ -144,16 +148,11 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     getTopology(props.lab.topologyId);
   }, [props.lab.topologyId, getTopology]);
 
-  function getLogo() {
-    return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPKA-U9m5BxYQDF1O7atMfj9EMMXEoGu4t0Q&s';
-  }
-
   return (
     <SBDialog
       isOpen={props.lab !== null}
       onClose={props.closeDialog}
-      headerTitle={props.groupName + ' ' + props.lab.name}
-      headerIcon={getLogo()}
+      headerTitle={props.groupName + ', ' + props.lab.name}
       className="lab-Dialog overflow-y-hidden overflow-x-hidden"
     >
       <div className="height-100">

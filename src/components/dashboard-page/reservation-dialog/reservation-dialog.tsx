@@ -1,21 +1,21 @@
 import React, {useState} from 'react';
 import {Lab} from '@sb/types/types';
-import {Button} from 'primereact/button';
 import {Calendar} from 'primereact/calendar';
 
 import './reservation-dialog.sass';
 import {InputText} from 'primereact/inputtext';
+import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
 
 interface ReservationDialogProps {
   lab: Lab;
-  setRescheduling: Function;
+  closeDialog: () => void;
 }
 
 const ReservationDialog: React.FC<ReservationDialogProps> = (
   props: ReservationDialogProps
 ) => {
-  const initialStartDate = new Date(props.lab.startDate);
-  const initialEndDate = new Date(props.lab.endDate);
+  const initialStartDate = new Date(props.lab.startDate!);
+  const initialEndDate = new Date(props.lab.endDate!);
 
   const [startDate, setStartDate] = useState<Date | null>(initialStartDate);
   const [startTime, setStartTime] = useState<Date | null>(initialStartDate!);
@@ -44,69 +44,70 @@ const ReservationDialog: React.FC<ReservationDialogProps> = (
   };
 
   return (
-    <div className="update-reservation-container">
-      <div className="form-field">
-        <span>Lab Name:</span>
-        <InputText className="input-field" value={props.lab.name} readOnly />
-      </div>
-      <div className="date-time-form">
+    <SBDialog
+      isOpen={props.lab !== null}
+      onClose={props.closeDialog}
+      headerTitle="Rescheduling Dialog"
+      className="dialog-lab-reservation"
+      onSubmit={() => {
+        handleSave();
+        props.closeDialog();
+      }}
+      onCancel={() => props.closeDialog()}
+    >
+      <div className="update-reservation-container">
         <div className="form-field">
-          <span>Start Date</span>
-          <Calendar
-            value={startDate}
-            onChange={e => setStartDate(e.value!)}
-            dateFormat="yy-mm-dd"
-            showIcon
-          />
+          <span>Lab Name:</span>
+          <InputText className="input-field" value={props.lab.name} readOnly />
         </div>
+        <div className="date-time-form">
+          <div className="form-field">
+            <span>Start Date</span>
+            <Calendar
+              value={startDate}
+              onChange={e => setStartDate(e.value!)}
+              dateFormat="yy-mm-dd"
+              showIcon
+            />
+          </div>
 
-        <div className="form-field">
-          <span>Start Time</span>
-          <Calendar
-            value={startTime}
-            onChange={e => setStartTime(e.value!)}
-            timeOnly
-            hourFormat="24"
-            showIcon
-            icon="pi pi-clock"
-          />
+          <div className="form-field">
+            <span>Start Time</span>
+            <Calendar
+              value={startTime}
+              onChange={e => setStartTime(e.value!)}
+              timeOnly
+              hourFormat="24"
+              showIcon
+              icon="pi pi-clock"
+            />
+          </div>
         </div>
-      </div>
-      <div className="date-time-form">
-        <div className="form-field">
-          <span>End Date</span>
-          <Calendar
-            value={endDate}
-            onChange={e => setEndDate(e.value!)}
-            dateFormat="yy-mm-dd"
-            showIcon
-          />
-        </div>
+        <div className="date-time-form">
+          <div className="form-field">
+            <span>End Date</span>
+            <Calendar
+              value={endDate}
+              onChange={e => setEndDate(e.value!)}
+              dateFormat="yy-mm-dd"
+              showIcon
+            />
+          </div>
 
-        <div className="form-field">
-          <span>End Time</span>
-          <Calendar
-            value={endTime}
-            onChange={e => setEndTime(e.value!)}
-            timeOnly
-            hourFormat="24"
-            showIcon
-            icon="pi pi-clock"
-          />
+          <div className="form-field">
+            <span>End Time</span>
+            <Calendar
+              value={endTime}
+              onChange={e => setEndTime(e.value!)}
+              timeOnly
+              hourFormat="24"
+              showIcon
+              icon="pi pi-clock"
+            />
+          </div>
         </div>
       </div>
-      <div className="dialog-footer">
-        <Button
-          className="ok-button-container"
-          onClick={() => {
-            handleSave();
-            props.setRescheduling(false);
-          }}
-        >
-          Ok
-        </Button>
-      </div>
-    </div>
+    </SBDialog>
   );
 };
 

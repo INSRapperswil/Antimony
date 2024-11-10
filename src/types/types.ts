@@ -26,6 +26,7 @@ export type LabIn = {
   startDate: string;
   endDate: string;
   templateId: uuid4;
+  topologyId: uuid4;
 };
 
 export type Lab = LabIn & {

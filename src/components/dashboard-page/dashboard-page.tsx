@@ -1,7 +1,12 @@
-import React, {MouseEvent, useEffect, useState} from 'react';
+import React, {
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import {Chip} from 'primereact/chip';
-import {Dialog} from 'primereact/dialog';
 import {InputText} from 'primereact/inputtext';
 import {IconField} from 'primereact/iconfield';
 import {InputIcon} from 'primereact/inputicon';
@@ -22,6 +27,8 @@ import './dashboard-page.sass';
 import classNames from 'classnames';
 import {Paginator} from 'primereact/paginator';
 import {Button} from 'primereact/button';
+import {OverlayPanel} from 'primereact/overlaypanel';
+import {useSearchParams} from 'react-router-dom';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
@@ -32,8 +39,6 @@ const statusIcons: Record<LabState, string> = {
 };
 
 const DashboardPage: React.FC = () => {
-  const [FilterDialogVisible, setFilterDialogVisible] =
-    useState<boolean>(false);
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
   const [labs, setLabs] = useState<Lab[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<LabState[]>([
@@ -42,29 +47,39 @@ const DashboardPage: React.FC = () => {
   ]);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(0);
-  const [pageSize] = useState<number>(6);
+  const [pageSize] = useState<number>(5);
 
   const groupStore = useGroupStore();
   const notificationStore = useNotifications();
 
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [reschedulingDialog, setReschedulingDialog] = useState<boolean>(false);
   const [reschedulingDialogLab, setReschedulingDialogLab] =
     useState<Lab | null>(null);
+  const popOver = useRef<OverlayPanel>(null);
+  const [, setSearchParams] = useSearchParams();
+  const typingTimeoutRef = useRef<number | undefined>(undefined);
 
-  const labsPath = `/labs?limit=${pageSize}&offset=${currentPage * pageSize}&stateFilter=${JSON.stringify(selectedFilters)}&searchQuery=${searchQuery}`;
+  const labsPath = `/labs?limit=${pageSize}&offset=${
+    currentPage * pageSize
+  }&stateFilter=${JSON.stringify(selectedFilters)}&searchQuery=${JSON.stringify(searchQuery)}`;
+
+  const handleSearchChange = (value: string) => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = window.setTimeout(() => {
+      setSearchQuery(value);
+    }, 100);
+  };
+
   const [labQuery] = useResource<Lab[]>(labsPath, useAPIStore(), []);
   useEffect(() => {
     setTotalAmountOfEntries(10); //useResource needs update for api header
     setLabs(labQuery);
   }, [selectedFilters, totalAmountOfEntries, labQuery, currentPage]);
 
-  useEffect(() => {
-    console.log(labsPath);
-  }, [labsPath]);
-
   function getGroupById(groupId: String): String {
-    console.log(groupId);
     const group = groupStore.groups.find(group => group.id === groupId);
     if (group !== undefined) {
       return group.name;
@@ -106,7 +121,6 @@ const DashboardPage: React.FC = () => {
 
   function onRescheduleLab(event: MouseEvent<HTMLButtonElement>, lab: Lab) {
     event.stopPropagation();
-    setReschedulingDialog(true);
     setReschedulingDialogLab(lab);
   }
 
@@ -127,6 +141,29 @@ const DashboardPage: React.FC = () => {
     setSelectedLab(null);
   }
 
+  function closeReschedulingDialog() {
+    setReschedulingDialogLab(null);
+  }
+
+  function setFilters(filters: LabState[]) {
+    setSelectedFilters(filters);
+  }
+
+  const onLabOpen = useCallback(
+    (lab: Lab) => {
+      setSearchParams({t: lab.id});
+    },
+    [setSearchParams]
+  );
+
+  useEffect(() => {
+    if (selectedLab !== null) {
+      onLabOpen(selectedLab);
+    } else {
+      setSearchParams('');
+    }
+  }, [selectedLab, onLabOpen, setSearchParams]);
+
   return (
     <Choose>
       <When condition={labs}>
@@ -137,32 +174,20 @@ const DashboardPage: React.FC = () => {
               <InputText
                 className="width-100"
                 placeholder="Search here..."
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={e => handleSearchChange(e.target.value)}
               />
             </IconField>
             <span
               className="search-bar-icon"
-              onClick={() => setFilterDialogVisible(true)}
+              onClick={e => popOver.current?.toggle(e)}
             >
               <i className="pi pi-filter" />
             </span>
-            <Dialog
-              header={
-                <div className="dialog-header">
-                  <strong>Set Filters</strong>
-                </div>
-              }
-              visible={FilterDialogVisible}
-              className="dialog-content"
-              onHide={() => setFilterDialogVisible(false)}
-            >
-              <div>
-                <FilterDialog
-                  filters={selectedFilters}
-                  setFilters={setSelectedFilters}
-                />
-              </div>
-            </Dialog>
+            <FilterDialog
+              filters={selectedFilters}
+              setFilters={setFilters}
+              PopOverVisible={popOver}
+            />
           </div>
           <div style={{display: 'flex', margin: '0 16px', gap: '5px'}}>
             {selectedFilters.map(filter => (
@@ -270,24 +295,12 @@ const DashboardPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
-                <Dialog
-                  header={
-                    <div className="dialog-header">
-                      <strong>Update Reservation</strong>
-                    </div>
-                  }
-                  visible={reschedulingDialog}
-                  className="dialog-lab-reservation"
-                  dismissableMask={true}
-                  onHide={() => setReschedulingDialog(false)}
-                >
-                  <div>
-                    <ReservationDialog
-                      lab={reschedulingDialogLab!}
-                      setRescheduling={setReschedulingDialog}
-                    />
-                  </div>
-                </Dialog>
+                <If condition={reschedulingDialogLab !== null}>
+                  <ReservationDialog
+                    lab={reschedulingDialogLab!}
+                    closeDialog={closeReschedulingDialog}
+                  />
+                </If>
                 {/* Dialog for Lab Details */}
                 <If condition={selectedLab !== null}>
                   <LabDialog

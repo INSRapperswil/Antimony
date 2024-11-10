@@ -273,6 +273,19 @@ function filterLabs(
   } catch (err) {}
 
   try {
+    query = JSON.parse(query);
+    if (query.length > 0) {
+      filteredLabs = filteredLabs.filter(lab => {
+        const nameMatch = lab.name.includes(query.toString());
+        const group = store.groups.find(group => group.id === lab.groupId);
+        const groupMatch = group && group.name.includes(query.toString());
+
+        return nameMatch || groupMatch;
+      });
+    }
+  } catch (err) {}
+
+  try {
     groupFilter = JSON.parse(groupFilter);
     if (groupFilter.length > 0) {
       filteredLabs = filteredLabs.filter(lab =>

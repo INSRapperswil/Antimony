@@ -29,6 +29,7 @@ export function useResource<T>(
   }, [fetchState, fetchData]);
 
   useEffect(() => {
+    console.log(path);
     fetchData();
   }, [fetchData, path]);
 

@@ -1,28 +1,81 @@
 .filters-container
-  padding: 1em
+  padding: 1.5em
+  background-color: #1B2B34 // Match the dialog background with the rest of the website
+  border-radius: 8px
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2)
 
 .filters-title
   color: #C3E4E9
+  font-size: 1.2em
+  font-weight: 600
+  margin-bottom: 1em
 
 .filters-chips-container
-  margin-bottom: 1em
+  margin-bottom: 1.5em
   display: flex
   flex-wrap: wrap
+  gap: 0.5em
 
 .filter-chip
-  margin: 0.5em
-  padding: 0.5em 1em
   cursor: pointer
   border-radius: 16px
-  font-weight: bold
+  font-weight: 500
+  color: #FFFFFF
+  transition: background-color 0.3s ease, transform 0.2s ease
 
-  &.active
-    background-color: #4DB6AC
+  &.running
+    color: var(--success-color-text)
+    &.active
+      background-color: var(--success-color)
+      transform: scale(1.05)
+    &.inactive
+      border: 1px solid var(--success-color-text)
+      background-color: #2A3A44
 
-  &.inactive
-    background-color: #1B2B34
+  &.failed
+    color: var(--danger-color-text)
+    &.active
+      background-color: var(--danger-color)
+      transform: scale(1.05)
+    &.inactive
+      border: 1px solid var(--danger-color-text)
+      background-color: #2A3A44
+
+  &.scheduled
+    color: var(--info-color-text)
+    &.active
+      background-color: var(--info-color)
+      transform: scale(1.05)
+    &.inactive
+      border: 1px solid var(--info-color-text)
+      background-color: #2A3A44
+
+  &.deploying
+    color: var(--warning-color-text)
+    &.active
+      background-color: var(--warning-color)
+      transform: scale(1.05)
+    &.inactive
+      border: 1px solid var(--warning-color-text)
+      background-color: #2A3A44
+
+  &.done
+    color: var(--neutral-color-text)
+    &.active
+      background-color: var(--neutral-color)
+      transform: scale(1.05)
+    &.inactive
+      border: 1px solid var(--neutral-color-text)
+      background-color: #2A3A44
+
+  &:hover
+    transform: scale(1.05)
+
+.Apply-Filters-Container
+  display: flex
+  justify-content: flex-end
 
 .filters-apply-button
-  background-color: #4DB6AC
-  border: none
-  color: #FFFFFF
+  color: var(--primary-color-border)
+  border: 1px solid var(--primary-color-border)
+  background-color: transparent

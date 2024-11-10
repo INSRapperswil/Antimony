@@ -20,7 +20,7 @@ import {If} from '@sb/types/control';
 import {NodeEditor} from '@sb/lib/node-editor';
 import {matchesSearch} from '@sb/lib/utils/utils';
 import {OptionGroupOptions} from '@sb/types/types';
-import NodePropertyTableRow from './node-property-table-row';
+import NodePropertyTableRow from './node-property-table-row/node-property-table-row';
 
 import './node-property-table.sass';
 
@@ -108,8 +108,12 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
     }
 
     setPropertyQuery('');
-    newPropertyOverlayRef.current?.show(event, event.target);
-    newPropertyInputRef.current?.focus();
+    if (newPropertyOverlayRef.current?.isVisible()) {
+      newPropertyOverlayRef.current?.hide();
+    } else {
+      newPropertyOverlayRef.current?.show(event, event.target);
+      newPropertyInputRef.current?.focus();
+    }
   }
 
   function onAddProperty(key: string) {
@@ -162,6 +166,7 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
             icon="pi pi-plus"
             className="sb-property-table-add-button"
             onClick={onAddPropertyClicked}
+            outlined
           />
         </If>
         <If condition={availableProperties}>

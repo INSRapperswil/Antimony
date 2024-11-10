@@ -46,8 +46,8 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
   return (
     <>
       <ErrorPage
-        code="NETERR"
-        message="Failed to connect to the Antimony backend."
+        code="Network Error"
+        message="Antimony was unable to reach some network resources."
         isVisible={errorOverlayVisible}
       />
       <div

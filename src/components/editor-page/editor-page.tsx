@@ -1,23 +1,28 @@
+import TopologyDeployDialog from '@sb/components/editor-page/topology-deploy-dialog/topology-deploy-dialog';
 import TopologyEditor from '@sb/components/editor-page/topology-editor/topology-editor';
 import TopologyExplorer from '@sb/components/editor-page/topology-explorer/topology-explorer';
 import {useNotifications, useTopologyStore} from '@sb/lib/stores/root-store';
 
-import {ErrorResponse, Topology} from '@sb/types/types';
+import {Topology, uuid4} from '@sb/types/types';
 
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
 import React, {useCallback, useEffect, useState} from 'react';
 
 import {useSearchParams} from 'react-router-dom';
+
 import './editor-page.sass';
 
 const EditorPage: React.FC = observer(() => {
   const [isMaximized, setMaximized] = useState(false);
+  const [deployingTopology, setDeployingTopology] = useState<Topology | null>(
+    null
+  );
 
   const [searchParams, setSearchParams] = useSearchParams();
 
   const topologyStore = useTopologyStore();
-  const notificatioStore = useNotifications();
+  const notificationStore = useNotifications();
 
   const onTopologyOpen = useCallback(
     (topology: Topology) => {
@@ -66,7 +71,7 @@ const EditorPage: React.FC = observer(() => {
     if (!topologyStore.lookup.has(id)) return;
 
     if (topologyStore.manager.hasEdits()) {
-      notificatioStore.confirm({
+      notificationStore.confirm({
         message: 'Discard unsaved changes?',
         header: 'Unsaved Changes',
         icon: 'pi pi-info-circle',
@@ -78,21 +83,16 @@ const EditorPage: React.FC = observer(() => {
     }
   }
 
+  function onDeployTopology(id: uuid4) {
+    if (!topologyStore.lookup.has(id)) return;
+
+    setDeployingTopology(topologyStore.lookup.get(id)!);
+  }
+
   function onSelectConfirm(id: string) {
     if (topologyStore.lookup.has(id)) {
       topologyStore.manager.open(topologyStore.lookup.get(id)!);
     }
-  }
-
-  async function onSaveTopology(): Promise<ErrorResponse | null> {
-    const error = await topologyStore.manager.save();
-    if (error) {
-      notificatioStore.error(error.message, 'Failed to save topology.');
-    } else {
-      notificatioStore.success('Topology has been saved!');
-    }
-
-    topologyStore.fetch();
   }
 
   return (
@@ -114,6 +114,7 @@ const EditorPage: React.FC = observer(() => {
         <TopologyExplorer
           selectedTopologyId={searchParams.get('t')}
           onTopologySelect={onSelectTopology}
+          onTopologyDeploy={onDeployTopology}
         />
       </div>
       <div
@@ -123,12 +124,17 @@ const EditorPage: React.FC = observer(() => {
       >
         <div className="bg-primary font-bold height-100 sb-card overflow-y-auto overflow-x-hidden">
           <TopologyEditor
-            onSaveTopology={onSaveTopology}
             isMaximized={isMaximized}
             setMaximized={setMaximized}
+            onTopologyDeploy={onDeployTopology}
           />
         </div>
       </div>
+      <TopologyDeployDialog
+        key={deployingTopology?.id}
+        deployingTopology={deployingTopology}
+        onClose={() => setDeployingTopology(null)}
+      />
     </>
   );
 });

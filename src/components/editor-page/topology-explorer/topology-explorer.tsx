@@ -1,12 +1,27 @@
 import GroupEditDialog from '@sb/components/editor-page/topology-explorer/group-edit-dialog/group-edit-dialog';
+import {Choose, Otherwise, When} from '@sb/types/control';
 import {observer} from 'mobx-react-lite';
-import React, {useEffect, useMemo, useState} from 'react';
+import {ContextMenu} from 'primereact/contextmenu';
+import {MenuItem} from 'primereact/menuitem';
+import {Message} from 'primereact/message';
+import React, {MouseEvent, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Tooltip} from 'primereact/tooltip';
 import {TreeNode} from 'primereact/treenode';
-import {Tree, TreeExpandedKeysType, TreeSelectionEvent} from 'primereact/tree';
+import {
+  Tree,
+  TreeEventNodeEvent,
+  TreeExpandedKeysType,
+  TreeSelectionEvent,
+} from 'primereact/tree';
 
-import {Group, Topology} from '@sb/types/types';
+import {
+  ErrorResponse,
+  Group,
+  Topology,
+  TopologyResponse,
+  uuid4,
+} from '@sb/types/types';
 import SBConfirm from '@sb/components/common/sb-confirm/sb-confirm';
 import {
   useGroupStore,
@@ -19,7 +34,9 @@ import './topology-explorer.sass';
 
 interface TopologyBrowserProps {
   selectedTopologyId?: string | null;
-  onTopologySelect: (id: string) => void;
+
+  onTopologySelect: (id: uuid4) => void;
+  onTopologyDeploy: (id: uuid4) => void;
 }
 
 const TopologyExplorer = observer((props: TopologyBrowserProps) => {
@@ -27,14 +44,21 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
 
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [isEditGroupOpen, setEditGroupOpen] = useState<boolean>(false);
+  const [contextMenuModel, setContextMenuModel] = useState<MenuItem[]>();
 
   const topologyStore = useTopologyStore();
   const groupStore = useGroupStore();
   const notificationStore = useNotifications();
 
+  const contextMenuRef = useRef<ContextMenu | null>(null);
+  const contextMenuTarget = useRef<string | null>(null);
+
   const topologyTree = useMemo(() => {
     const topologyTree: TreeNode[] = [];
     const topologiesByGroup = new Map<string, Topology[]>();
+
+    // DEBUG: UNCOMMENT THIS FOR AN ERORR
+    // console.log('eror:', topologyTree[3].test);
 
     for (const topology of topologyStore.topologies) {
       if (topologiesByGroup.has(topology.groupId)) {
@@ -61,7 +85,6 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
       });
     }
 
-    console.log('REMAKING TOPOTREE:', topologyTree);
     return topologyTree;
   }, [groupStore.groups, topologyStore.topologies]);
 
@@ -77,35 +100,29 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     props.onTopologySelect(e.value as string);
   }
 
-  function onRenameGroup(id: string, value: string) {
-    if (!groupStore.lookup.has(id)) return;
-
-    const targetGroup = groupStore.lookup.get(id)!;
-    const updatedGroup = {
-      name: value,
-      canRun: targetGroup.canRun,
-      canWrite: targetGroup.canWrite,
-    };
-    groupStore.update(id, updatedGroup).then(error => {
+  function onDeleteGroup(id: string) {
+    groupStore.delete(id).then(error => {
       if (error) {
-        notificationStore.error(error.message, 'Failed to rename group');
+        notificationStore.error(error.message, 'Failed to delete group');
       } else {
-        notificationStore.success('Group has been renamed successfully.');
+        notificationStore.success('Group has been deleted.');
       }
     });
   }
 
-  function onRenameTopology(id: string, value: string) {
-    // if (!topologyStore.lookup.has(id)) return;
-    //
-    // const targetTopology = topologyStore.lookup.get(id)!;
-    // groupStore.update(id, editing).then(error => {
-    //   if (error) {
-    //     notificationStore.error(error.message, 'Failed to rename group');
-    //   } else {
-    //     notificationStore.success('Group has been renamed successfully.');
-    //   }
-    // });
+  function onDeleteTopology(id: string) {
+    topologyStore.delete(id).then(error => {
+      if (error) {
+        notificationStore.error(error.message, 'Failed to delete topology');
+      } else {
+        notificationStore.success('Topology has been deleted.');
+      }
+    });
+  }
+
+  function onAddGroup() {
+    setEditingGroup(null);
+    setEditGroupOpen(true);
   }
 
   function onEditGroup(id: string) {
@@ -115,34 +132,164 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     setEditGroupOpen(true);
   }
 
-  function onDeleteGroupRequest(uuid: string) {
+  async function onAddTopology(groupId: uuid4) {
+    const [status, response] = await topologyStore.add(groupId);
+    if (!status) {
+      notificationStore.error(
+        (response as ErrorResponse).message,
+        'Failed to add new topology.'
+      );
+    } else {
+      notificationStore.success('Topology has been created.');
+      props.onTopologySelect((response as TopologyResponse).id);
+    }
+  }
+
+  function onDeleteGroupRequest(id: string) {
+    if (!groupStore.lookup.has(id)) return;
+
+    const childTopologies = topologyStore.topologies.filter(
+      topology => topology.groupId === id
+    );
+
     notificationStore.confirm({
-      message: 'This action cannot be undone!',
-      header: 'Delete Group?',
+      header: `Delete Group "${groupStore.lookup.get(id)!.name}"?`,
+      content: (
+        <Choose>
+          <When condition={childTopologies.length > 0}>
+            <div className="sb-confirm-list">
+              <span>The following topologies will be deleted as well</span>
+              <ul>
+                {childTopologies.map(topology => (
+                  <li>{topology.definition.get('name') as string}</li>
+                ))}
+              </ul>
+              <Message severity="warn" text="This action cannot be undone!" />
+            </div>
+          </When>
+          <Otherwise>{'This action cannot be undone!'}</Otherwise>
+        </Choose>
+      ),
       icon: 'pi pi-exclamation-triangle',
       severity: 'danger',
-      onAccept: () => {
-        console.log('Deleting Group: ', uuid);
-        notificationStore.success('Group was successfully deleted!');
-      },
+      onAccept: () => onDeleteGroup(id),
     });
   }
 
-  function onDeleteTopologyRequest(uuid: string) {
+  function onDeleteTopologyRequest(id: string) {
+    if (!topologyStore.lookup.has(id)) return;
+
     notificationStore.confirm({
+      header: `Delete Topology "${topologyStore.lookup.get(id)!.definition.get('name')}"?`,
       message: 'This action cannot be undone!',
-      header: 'Delete Topology?',
       icon: 'pi pi-exclamation-triangle',
       severity: 'danger',
-      onAccept: () => {
-        console.log('Deleting Topology: ', uuid);
-        notificationStore.success('Topology was successfully deleted!');
-      },
+      onAccept: () => onDeleteTopology(id),
     });
   }
+
+  function onContextMenu(e: MouseEvent<HTMLDivElement>) {
+    setContextMenuModel(containerContextMenu);
+    contextMenuRef!.current!.show(e);
+  }
+
+  function onContextMenuTree(e: TreeEventNodeEvent) {
+    if (e.node.leaf) {
+      setContextMenuModel(topologyContextMenu);
+    } else {
+      setContextMenuModel(groupContextMenu);
+    }
+
+    contextMenuTarget.current = e.node.key as string;
+    contextMenuRef!.current!.show(e.originalEvent);
+  }
+
+  const onEditGroupContext = () => {
+    if (!contextMenuTarget.current) return;
+    onEditGroup(contextMenuTarget.current ?? undefined);
+  };
+
+  const onDeleteGroupContext = () => {
+    if (!contextMenuTarget.current) return;
+    onDeleteGroupRequest(contextMenuTarget.current);
+  };
+
+  const onAddTopologyContext = () => {
+    if (
+      !contextMenuTarget.current ||
+      !topologyStore.lookup.has(contextMenuTarget.current)
+    ) {
+      return;
+    }
+
+    void onAddTopology(
+      topologyStore.lookup.get(contextMenuTarget.current)!.groupId
+    );
+  };
+
+  const onDeployTopologyContext = () => {
+    if (!contextMenuTarget.current) return;
+    props.onTopologyDeploy(contextMenuTarget.current);
+  };
+
+  const onDeleteTopologyContext = () => {
+    if (!contextMenuTarget.current) return;
+    onDeleteTopologyRequest(contextMenuTarget.current);
+  };
+
+  const containerContextMenu = [
+    {
+      id: 'create',
+      label: 'Add Group',
+      icon: 'pi pi-plus',
+      command: onAddGroup,
+    },
+  ];
+
+  const groupContextMenu = [
+    {
+      id: 'create',
+      label: 'Add Group',
+      icon: 'pi pi-plus',
+      command: onAddGroup,
+    },
+    {
+      id: 'edit',
+      label: 'Edit Group',
+      icon: 'pi pi-file-edit',
+      command: onEditGroupContext,
+    },
+    {
+      id: 'delete',
+      label: 'Delete Group',
+      icon: 'pi pi-trash',
+      command: onDeleteGroupContext,
+    },
+  ];
+
+  const topologyContextMenu = [
+    {
+      id: 'create',
+      label: 'Deploy Lab',
+      icon: 'pi pi-play',
+      command: onDeployTopologyContext,
+    },
+    {
+      id: 'create',
+      label: 'Add Topology',
+      icon: 'pi pi-plus',
+      command: onAddTopologyContext,
+    },
+    {
+      id: 'delete',
+      label: 'Delete Topology',
+      icon: 'pi pi-trash',
+      command: onDeleteTopologyContext,
+    },
+  ];
 
   return (
-    <>
+    <div className="w-full h-full" onContextMenu={onContextMenu}>
       <Tooltip target=".tree-node" />
       <Tree
         filter
@@ -157,15 +304,14 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
         nodeTemplate={node => (
           <ExplorerTreeNode
             node={node}
-            onDeleteGroup={onDeleteGroupRequest}
             onEditGroup={onEditGroup}
-            onRenameGroup={value => onRenameGroup(node.key as string, value)}
-            onRenameTopology={value => onRenameGroup(node.key as string, value)}
-            onAddTopology={() => {}}
-            onDeployTopology={() => {}}
+            onDeleteGroup={onDeleteGroupRequest}
+            onAddTopology={onAddTopology}
+            onDeployTopology={props.onTopologyDeploy}
             onDeleteTopology={onDeleteTopologyRequest}
           />
         )}
+        onContextMenu={e => onContextMenuTree(e)}
         onSelectionChange={onSelectionChange}
         onToggle={e => setExpandedKeys(e.value)}
       />
@@ -176,7 +322,8 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
         onClose={() => setEditGroupOpen(false)}
       />
       <SBConfirm />
-    </>
+      <ContextMenu model={contextMenuModel} ref={contextMenuRef} />
+    </div>
   );
 });
 

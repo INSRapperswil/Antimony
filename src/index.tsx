@@ -1,3 +1,4 @@
+import ErrorPage from '@sb/components/error-page/error-page';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 
@@ -27,7 +28,13 @@ if (process.env.NODE_ENV === 'production') {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <RouterProvider
-      router={createBrowserRouter([{path: '*', element: <App />}])}
+      router={createBrowserRouter([
+        {
+          path: '*',
+          element: <App />,
+          errorElement: <ErrorPage isVisible={true} />,
+        },
+      ])}
     />
   </React.StrictMode>
 );

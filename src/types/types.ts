@@ -25,7 +25,6 @@ export type LabIn = {
   name: string;
   startDate: string;
   endDate: string;
-  templateId: uuid4;
   topologyId: uuid4;
 };
 
@@ -39,13 +38,17 @@ export type Lab = LabIn & {
   state: LabState;
 };
 
+export type TopologyResponse = {
+  id: uuid4;
+};
+
 export type TopologyIn = {
+  groupId: uuid4;
   definition: string;
 };
 
 export type TopologyOut = TopologyIn & {
   id: uuid4;
-  groupId: uuid4;
   creatorId: uuid4;
 };
 
@@ -129,8 +132,13 @@ export interface NotificationOut {
   severity: Severity;
 }
 
-export type Notification = NotificationOut & {
+export type Notification = {
+  id: string;
   isRead: boolean;
+  timestamp: Date;
+  summary: string;
+  detail: string;
+  severity: Severity;
 };
 
 export enum Severity {

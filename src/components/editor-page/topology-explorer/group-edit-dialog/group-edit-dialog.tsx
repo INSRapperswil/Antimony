@@ -1,16 +1,16 @@
 import SBInput from '@sb/components/common/sb-input/sb-input';
 import {useGroupStore, useNotifications} from '@sb/lib/stores/root-store';
-import {If} from '@sb/types/control';
 import {Group, GroupIn} from '@sb/types/types';
 import {isEqual} from 'lodash';
 import {Checkbox} from 'primereact/checkbox';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useState} from 'react';
 
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
 
 import './group-edit-dialog.sass';
 
 interface GroupEditDialogProps {
+  // Set to null if the dialog is meant to add a new group
   editingGroup: Group | null;
 
   isOpen: boolean;
@@ -27,17 +27,18 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
     canWrite: props.editingGroup?.canWrite ?? false,
   });
 
-  const nameInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (props.isOpen) {
-      console.log('FOCUSING:', nameInputRef.current);
-      nameInputRef.current?.focus();
-    }
-  }, [props.isOpen]);
-
   async function onSubmit() {
-    if (!props.editingGroup) return;
+    if (!props.editingGroup) {
+      groupStore.add(updatedGroup).then(error => {
+        if (error) {
+          notificationStore.error(error.message, 'Failed to rename group');
+        } else {
+          notificationStore.success('Group has been renamed successfully.');
+          props.onClose();
+        }
+      });
+      return;
+    }
 
     if (
       isEqual(updatedGroup, {
@@ -70,52 +71,49 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
       onSubmit={onSubmit}
       onCancel={props.onClose}
     >
-      <If condition={props.editingGroup}>
-        <div className="flex gap-4 flex-column">
-          <SBInput
-            ref={nameInputRef}
-            onValueSubmit={value =>
-              void setUpdatedGroup({
-                ...props.editingGroup!,
-                name: value,
+      <div className="flex gap-4 flex-column">
+        <SBInput
+          onValueSubmit={value =>
+            void setUpdatedGroup({
+              ...updatedGroup,
+              name: value,
+            })
+          }
+          id="group-edit-name"
+          defaultValue={updatedGroup.name}
+          label="Group Name"
+        />
+        <div className="flex align-items-center">
+          <Checkbox
+            inputId="group-edit-canrun"
+            onChange={e =>
+              setUpdatedGroup({
+                ...updatedGroup,
+                canRun: e.checked!,
               })
             }
-            id="group-edit-name"
-            defaultValue={props.editingGroup!.name}
-            label="Group Name"
+            checked={updatedGroup.canRun}
           />
-          <div className="flex align-items-center">
-            <Checkbox
-              id="group-edit-canrun"
-              onChange={e =>
-                setUpdatedGroup({
-                  ...props.editingGroup!,
-                  canRun: e.checked!,
-                })
-              }
-              checked={props.editingGroup!.canRun}
-            />
-            <label htmlFor="group-edit-canrun" className="ml-2">
-              Can Run
-            </label>
-          </div>
-          <div className="flex align-items-center">
-            <Checkbox
-              id="group-edit-canwrite"
-              onChange={e =>
-                setUpdatedGroup({
-                  ...props.editingGroup!,
-                  canWrite: e.checked!,
-                })
-              }
-              checked={props.editingGroup!.canWrite}
-            />
-            <label htmlFor="group-edit-canwrite" className="ml-2">
-              Can Write
-            </label>
-          </div>
+          <label htmlFor="group-edit-canrun" className="ml-2">
+            Can Run
+          </label>
         </div>
-      </If>
+        <div className="flex align-items-center">
+          <Checkbox
+            inputId="group-edit-canwrite"
+            onChange={e =>
+              setUpdatedGroup({
+                ...updatedGroup,
+                canWrite: e.checked!,
+              })
+            }
+            checked={updatedGroup.canWrite}
+          />
+          <label htmlFor="group-edit-canwrite" className="ml-2">
+            Can Write
+          </label>
+        </div>
+      </div>
     </SBDialog>
   );
 };

@@ -1,6 +1,12 @@
 import {Button} from 'primereact/button';
 import {ConfirmDialog} from 'primereact/confirmdialog';
-import React, {forwardRef, useImperativeHandle, useRef, useState} from 'react';
+import React, {
+  forwardRef,
+  ReactNode,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 
 import './sb-confirm.sass';
 
@@ -20,6 +26,7 @@ interface SBConfirmState {
   onReject?: () => void;
 
   message?: string;
+  content?: ReactNode;
   header?: string;
   icon?: string;
   severity?:
@@ -74,7 +81,9 @@ const SBConfirm = forwardRef<SBConfirmRef, SBConfirmProps>((props, ref) => {
           <span className="font-bold text-2xl block mb-2 mt-4">
             {dialogState.current?.header}
           </span>
-          <p className="mb-0">{dialogState.current?.message}</p>
+          <span className="mb-0">
+            {dialogState.current?.message ?? dialogState.current?.content}
+          </span>
           <div className="flex align-items-center gap-3 mt-4">
             <Button
               label={dialogState.current?.rejectText}

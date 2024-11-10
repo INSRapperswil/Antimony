@@ -1,3 +1,4 @@
+import {MenuItem} from 'primereact/menuitem';
 import {SpeedDial} from 'primereact/speeddial';
 import React, {
   MouseEvent,
@@ -37,12 +38,15 @@ type GraphDefinition = {
 const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
   const [selectedNode, setSelectedNode] = useState<number | null>(null);
-  const [radialTarget, setRadialTarget] = useState<number | null>(null);
+  const [contextMenuModel, setContextMenuModel] = useState<MenuItem[] | null>(
+    null
+  );
 
   const deviceStore = useDeviceStore();
   const topologyStore = useTopologyStore();
 
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
+  const nodeContextMenuTargetRef = useRef<number | null>(null);
   const containerRef = useRef(null);
   const radialMenuRef = useRef<SpeedDial>(null);
 
@@ -80,8 +84,6 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     for (const [index, [nodeName, node]] of Object.entries(
       props.openTopology.toJS().topology.nodes
     ).entries()) {
-      if (!node) continue;
-
       nodeMap.set(nodeName, index);
       nodes.push({
         id: index,
@@ -90,15 +92,15 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       });
     }
 
+    const links = props.openTopology.toJS().topology.links;
+    if (!links) return {nodes: nodes, edges: []};
+
     const edges: Edge[] = [
-      ...props.openTopology
-        .toJS()
-        .topology.links.entries()
-        .map(([index, link]) => ({
-          id: index,
-          from: nodeMap.get(link.endpoints[0].split(':')[0]),
-          to: nodeMap.get(link.endpoints[1].split(':')[0]),
-        })),
+      ...links.entries().map(([index, link]) => ({
+        id: index,
+        from: nodeMap.get(link.endpoints[0].split(':')[0]),
+        to: nodeMap.get(link.endpoints[1].split(':')[0]),
+      })),
     ];
 
     return {nodes: nodes, edges: edges};
@@ -184,60 +186,58 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   }
 
   const onNodeConnect = useCallback(() => {
-    const selectedNodes = network?.getSelectedNodes();
-    if (!selectedNodes || selectedNodes.length < 1) {
-      return;
-    }
-    setRadialTarget(null);
-    nodeConnectTarget.current = selectedNodes[0] as number;
+    if (!nodeContextMenuTargetRef.current) return;
+
+    nodeConnectTarget.current = nodeContextMenuTargetRef.current;
     nodeConnectTargetPosition.current =
-      network?.getPosition(selectedNodes[0]) ?? null;
+      network?.getPosition(nodeContextMenuTargetRef.current) ?? null;
     nodeConnecting.current = nodeConnectTargetPosition.current !== null;
   }, [network]);
 
   const onNodeEdit = useCallback(() => {
-    if (!network || network.getSelectedNodes().length < 1) return;
+    if (!network || !nodeContextMenuTargetRef.current) return;
 
-    setRadialTarget(null);
-    props.onEditNode(nodeLookup.get(network.getSelectedNodes()[0] as number)!);
+    setSelectedNode(null);
+    radialMenuRef.current?.hide();
+    props.onEditNode(nodeLookup.get(nodeContextMenuTargetRef.current)!);
   }, [network, nodeLookup, props]);
 
   const onNodeDelete = useCallback(() => {
-    if (!network || network.getSelectedNodes().length < 1) return;
+    if (!network || !nodeContextMenuTargetRef.current) return;
 
-    setRadialTarget(null);
     topologyStore.manager.deleteNode(
-      nodeLookup.get(network.getSelectedNodes()[0] as number)!
+      nodeLookup.get(nodeContextMenuTargetRef.current)!
     );
-  }, [network, nodeLookup, topologyStore]);
+  }, [network, nodeLookup, topologyStore.manager]);
 
-  const networkContextMenuItems = useMemo(() => {
-    if (selectedNode !== null) {
-      return [
-        {
-          label: 'Connect',
-          icon: 'pi pi-arrow-right-arrow-left',
-          command: onNodeConnect,
-        },
-        {label: 'Edit', icon: 'pi pi-pen-to-square', command: onNodeEdit},
-        {label: 'Delete', icon: 'pi pi-trash', command: onNodeDelete},
-      ];
-    } else {
-      return [
-        {
-          label: 'Add Node',
-          icon: 'pi pi-plus',
-          command: props.onAddNode,
-        },
-      ];
-    }
-  }, [selectedNode, onNodeConnect, onNodeDelete, onNodeEdit, props]);
+  const nodeContextMenuModel = [
+    {
+      label: 'Connect',
+      icon: 'pi pi-arrow-right-arrow-left',
+      command: onNodeConnect,
+    },
+    {label: 'Edit', icon: 'pi pi-pen-to-square', command: onNodeEdit},
+    {label: 'Delete', icon: 'pi pi-trash', command: onNodeDelete},
+  ];
+
+  const networkContextMenuModel = [
+    {
+      label: 'Add Node',
+      icon: 'pi pi-plus',
+      command: props.onAddNode,
+    },
+  ];
 
   function onNetworkClick(selectData: NodeClickEvent) {
     if (!network) return;
 
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
-    if (radialTarget === targetNode) return;
+    if (targetNode === selectedNode) {
+      radialMenuRef.current?.hide();
+      setSelectedNode(null);
+      network.unselectAll();
+      return;
+    }
 
     if (targetNode !== undefined) {
       const targetPosition = network.getPosition(targetNode);
@@ -250,16 +250,14 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
         radialMenuRef.current?.hide();
         setTimeout(() => {
           openRadialMenu(targetPosition);
-        }, 230);
+        }, 200);
       } else {
         openRadialMenu(targetPosition);
       }
       setSelectedNode(targetNode as number);
-      setRadialTarget(targetNode as number);
     } else {
       radialMenuRef.current?.hide();
       setSelectedNode(null);
-      setRadialTarget(null);
       network.unselectAll();
     }
   }
@@ -279,6 +277,8 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
     if (targetNode !== undefined) {
       network?.selectNodes([targetNode]);
+      setSelectedNode(targetNode as number);
+      radialMenuRef.current?.hide();
       onNodeEdit();
     }
   }
@@ -288,10 +288,11 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
 
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
     if (targetNode !== undefined) {
-      network?.selectNodes([targetNode]);
-      setSelectedNode(targetNode as number);
+      setContextMenuModel(nodeContextMenuModel);
+      nodeContextMenuTargetRef.current = targetNode as number;
     } else {
-      setSelectedNode(null);
+      setContextMenuModel(networkContextMenuModel);
+      nodeContextMenuTargetRef.current = null;
     }
 
     nodeContextMenuRef.current.show(selectData.event);
@@ -346,7 +347,10 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
         }}
         getNetwork={setNetwork}
       />
-      <ContextMenu model={networkContextMenuItems} ref={nodeContextMenuRef} />
+      <ContextMenu
+        model={contextMenuModel ?? undefined}
+        ref={nodeContextMenuRef}
+      />
     </div>
   );
 };

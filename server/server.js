@@ -104,6 +104,34 @@ app.get('/groups', (req, res) => {
   res.send({payload: getUserGroups(user)});
 });
 
+app.post('/groups', (req, res) => {
+  const user = authenticateUser(req.token);
+  if (!user) {
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  const newGroup = req.body;
+
+  if (store.groups.filter(group => group.name === newGroup.name) > 0) {
+    res.send(generateError('A group with that name already exists.'));
+    return;
+  }
+
+  const groupId = uuidv4();
+
+  store.groups.push({
+    id: groupId,
+    name: newGroup.name,
+    canWrite: newGroup.canWrite,
+    canRun: newGroup.canRun,
+  });
+
+  user.groups.push(groupId);
+
+  res.send({});
+});
+
 app.delete('/groups/:groupId', (req, res) => {
   const user = authenticateUser(req.token);
   if (!user) {
@@ -120,7 +148,7 @@ app.delete('/groups/:groupId', (req, res) => {
     return;
   }
 
-  store.groups.splice(store.groups.indexOf(targetGroup), 1);
+  store.groups = store.groups.toSpliced(store.groups.indexOf(targetGroup), 1);
 
   res.send({});
 });
@@ -309,13 +337,14 @@ function filterLabs(
 function getUserLabs(user) {
   return user.groups
     .map(groupId => store.groups.find(group => group.id === groupId))
+    .filter(group => group)
     .flatMap(group => store.labs.filter(lab => lab.groupId === group.id));
 }
 
 function getUserGroups(user) {
-  return user.groups.map(groupId =>
-    store.groups.find(group => group.id === groupId)
-  );
+  return user.groups
+    .map(groupId => store.groups.find(group => group.id === groupId))
+    .filter(group => group);
 }
 
 function getUserNotifications(user) {
@@ -324,8 +353,8 @@ function getUserNotifications(user) {
 
 function getUserTopologies(user) {
   return user.groups
-    .map(groupId => store.groups.find(group => group.id === groupId))
-    .filter(group => user.isAdmin || group.public)
+    .map(groupId => store.groups.find(group => group && group.id === groupId))
+    .filter(group => group && (user.isAdmin || group.canRun || group.canWrite))
     .flatMap(group =>
       store.topologies.filter(topology => topology.groupId === group.id)
     );

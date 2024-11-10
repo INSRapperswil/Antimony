@@ -36,6 +36,31 @@ export class GroupStore {
       .then(data => this.setData(data));
   }
 
+  public async add(group: GroupIn): Promise<ErrorResponse | null> {
+    const response = await this.rootStore._apiConnectorStore.post<
+      GroupIn,
+      void
+    >('/groups', group);
+    if (!response[0]) {
+      return response[1] as ErrorResponse;
+    }
+
+    void this.fetch();
+    return null;
+  }
+
+  public async delete(id: string): Promise<ErrorResponse | null> {
+    const response = await this.rootStore._apiConnectorStore.delete<void>(
+      `/groups/${id}`
+    );
+    if (!response[0]) {
+      return response[1] as ErrorResponse;
+    }
+
+    void this.fetch();
+    return null;
+  }
+
   public async update(
     id: uuid4,
     group: GroupIn

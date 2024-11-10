@@ -8,8 +8,8 @@ import {Choose, Otherwise, When} from '@sb/types/control';
 interface ExplorerTreeNodeProps {
   node: TreeNode;
 
-  onDeleteGroup: (uuid: string) => void;
   onEditGroup: (uuid: string) => void;
+  onDeleteGroup: (uuid: string) => void;
   onRenameGroup: (value: string) => void;
   onRenameTopology: (value: string) => void;
 

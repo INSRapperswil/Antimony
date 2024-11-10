@@ -63,7 +63,7 @@ const FilterDialog: React.FC<FilterDialogProps> = (
             onClick={() => {
               props.setFilters(tempFilters);
               console.log('Filters applied:', tempFilters);
-              props.PopOverVisible.current?.hide(); // Hide the overlay when filters are applied
+              props.PopOverVisible.current?.hide();
             }}
             className="filters-apply-button"
           />

@@ -1,3 +1,4 @@
+import {uuid4} from '@sb/types/types';
 import React, {MouseEvent} from 'react';
 
 import {Button} from 'primereact/button';
@@ -8,41 +9,39 @@ import {Choose, Otherwise, When} from '@sb/types/control';
 interface ExplorerTreeNodeProps {
   node: TreeNode;
 
-  onEditGroup: (uuid: string) => void;
-  onDeleteGroup: (uuid: string) => void;
-  onRenameGroup: (value: string) => void;
-  onRenameTopology: (value: string) => void;
+  onEditGroup: (id: uuid4) => void;
+  onDeleteGroup: (id: uuid4) => void;
 
-  onAddTopology: () => void;
-  onDeployTopology: (uuid: string) => void;
-  onDeleteTopology: (uuid: string) => void;
+  onAddTopology: (groupId: uuid4) => void;
+  onDeployTopology: (id: uuid4) => void;
+  onDeleteTopology: (id: uuid4) => void;
 }
 
 const ExplorerTreeNode: React.FC<ExplorerTreeNodeProps> = (
   props: ExplorerTreeNodeProps
 ) => {
   function onAddTopology(event: MouseEvent<HTMLButtonElement>) {
-    props.onAddTopology();
+    props.onAddTopology(props.node.key as uuid4);
     event.stopPropagation();
   }
 
   function onEditGroup(event: MouseEvent<HTMLButtonElement>) {
-    props.onEditGroup(props.node.key as string);
+    props.onEditGroup(props.node.key as uuid4);
     event.stopPropagation();
   }
 
   function onDeleteGroup(event: MouseEvent<HTMLButtonElement>) {
-    props.onDeleteGroup(props.node.key as string);
+    props.onDeleteGroup(props.node.key as uuid4);
     event.stopPropagation();
   }
 
   function onDeployTopology(event: MouseEvent<HTMLButtonElement>) {
-    props.onDeployTopology(props.node.key as string);
+    props.onDeployTopology(props.node.key as uuid4);
     event.stopPropagation();
   }
 
   function onDeleteTopology(event: MouseEvent<HTMLButtonElement>) {
-    props.onDeleteTopology(props.node.key as string);
+    props.onDeleteTopology(props.node.key as uuid4);
     event.stopPropagation();
   }
 

@@ -1,16 +1,17 @@
 import {action, observable, observe} from 'mobx';
 
 import {RootStore} from '@sb/lib/stores/root-store';
-import {TopologyManager} from '@sb/lib/topology-manager';
+import {DefaultTopology, TopologyManager} from '@sb/lib/topology-manager';
 import {
   DefaultFetchReport,
   ErrorResponse,
   FetchReport,
   FetchState,
   Topology,
-  TopologyDefinition,
   TopologyIn,
   TopologyOut,
+  TopologyResponse,
+  uuid4,
 } from '@sb/types/types';
 
 export class TopologyStore {
@@ -23,34 +24,64 @@ export class TopologyStore {
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
-    this.manager = new TopologyManager(this.rootStore._apiConnectorStore);
+    this.manager = new TopologyManager(this.rootStore._apiConnectorStore, this);
 
     observe(rootStore._apiConnectorStore, () => this.fetch());
 
-    this.fetch();
+    void this.fetch();
   }
 
-  @action
-  public fetch() {
+  public async fetch() {
     if (!this.rootStore._apiConnectorStore.isLoggedIn) {
       this.fetchReport = {state: FetchState.Pending};
       return;
     }
 
-    this.rootStore._apiConnectorStore
-      .get<TopologyOut[]>('/topologies')
-      .then(data => this.setData(data));
+    const data =
+      await this.rootStore._apiConnectorStore.get<TopologyOut[]>('/topologies');
+    this.setData(data);
+  }
+
+  public async delete(id: string): Promise<ErrorResponse | null> {
+    const response = await this.rootStore._apiConnectorStore.delete<void>(
+      `/topologies/${id}`
+    );
+    if (!response[0]) {
+      return response[1] as ErrorResponse;
+    }
+
+    void this.fetch();
+    return null;
+  }
+
+  public async add(
+    groupId: uuid4
+  ): Promise<[boolean, ErrorResponse | TopologyResponse]> {
+    const response = await this.rootStore._apiConnectorStore.post<
+      TopologyIn,
+      TopologyResponse
+    >('/topologies/', {
+      groupId: groupId,
+      definition: DefaultTopology,
+    });
+    if (!response[0]) {
+      return [false, response[1]];
+    }
+
+    await this.fetch();
+
+    return [true, response[1]];
   }
 
   @action
-  public async update(
-    id: string,
-    definition: TopologyDefinition
-  ): Promise<ErrorResponse | null> {
+  public async update(topology: Topology): Promise<ErrorResponse | null> {
     const response = await this.rootStore._apiConnectorStore.patch<
       TopologyIn,
       void
-    >(`/topologies/${id}`, {definition: JSON.stringify(definition)});
+    >(`/topologies/${topology.id}`, {
+      groupId: topology.groupId,
+      definition: topology.definition.toString(),
+    });
     if (!response[0]) {
       return response[1] as ErrorResponse;
     }

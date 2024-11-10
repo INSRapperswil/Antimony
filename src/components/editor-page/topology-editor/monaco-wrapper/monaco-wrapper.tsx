@@ -16,7 +16,7 @@ import {Monaco} from '@monaco-editor/react';
 import {configureMonacoYaml} from 'monaco-yaml';
 
 import {Choose, If, Otherwise, When} from '@sb/types/control';
-import {useSchemaStore} from '@sb/lib/stores/root-store';
+import {useSchemaStore, useTopologyStore} from '@sb/lib/stores/root-store';
 import {AntimonyTheme, MonacoOptions} from './monaco.conf';
 
 import './monaco-wrapper.sass';
@@ -38,6 +38,7 @@ interface MonacoWrapperProps {
   validationState: ValidationState;
   openTopology: Document | null;
 
+  onSaveTopology: () => void;
   setContent: (content: string) => void;
   setValidationError: (error: string | null) => void;
 
@@ -60,6 +61,7 @@ const MonacoWrapper = observer(
     const monacoEditorRef = useRef<Monaco | null>(null);
 
     const schemaStore = useSchemaStore();
+    const topologyStore = useTopologyStore();
 
     useImperativeHandle(ref, () => ({
       openTopology: (topology: Document) => {
@@ -71,18 +73,25 @@ const MonacoWrapper = observer(
       redo: onTriggerRedo,
     }));
 
-    const onGlobalKeyPress = useCallback((event: KeyboardEvent) => {
-      if (!event.ctrlKey) return;
+    const onGlobalKeyPress = useCallback(
+      (event: KeyboardEvent) => {
+        if (!event.ctrlKey) return;
 
-      switch (event.key) {
-        case 'z':
-          onTriggerUndo();
-          break;
-        case 'y':
-          onTriggerRedo();
-          break;
-      }
-    }, []);
+        switch (event.key) {
+          case 's':
+            props.onSaveTopology();
+            event.preventDefault();
+            break;
+          case 'z':
+            onTriggerUndo();
+            break;
+          case 'y':
+            onTriggerRedo();
+            break;
+        }
+      },
+      [topologyStore.manager]
+    );
 
     const [content, setContent] = useState('');
 
@@ -167,7 +176,7 @@ const MonacoWrapper = observer(
               <When condition={props.validationState === ValidationState.Error}>
                 <i
                   className="pi pi-times"
-                  style={{color: 'var(--danger-color)'}}
+                  style={{color: 'var(--danger-color-text)'}}
                 ></i>
               </When>
               <When
@@ -178,7 +187,7 @@ const MonacoWrapper = observer(
               <Otherwise>
                 <i
                   className="pi pi-check"
-                  style={{color: 'var(--success-color)'}}
+                  style={{color: 'var(--success-color-text)'}}
                 ></i>
               </Otherwise>
             </Choose>

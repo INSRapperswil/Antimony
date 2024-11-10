@@ -80,8 +80,6 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
     for (const [index, [nodeName, node]] of Object.entries(
       props.openTopology.toJS().topology.nodes
     ).entries()) {
-      if (!node) continue;
-
       nodeMap.set(nodeName, index);
       nodes.push({
         id: index,
@@ -90,15 +88,15 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       });
     }
 
+    const links = props.openTopology.toJS().topology.links;
+    if (!links) return {nodes: nodes, edges: []};
+
     const edges: Edge[] = [
-      ...props.openTopology
-        .toJS()
-        .topology.links.entries()
-        .map(([index, link]) => ({
-          id: index,
-          from: nodeMap.get(link.endpoints[0].split(':')[0]),
-          to: nodeMap.get(link.endpoints[1].split(':')[0]),
-        })),
+      ...links.entries().map(([index, link]) => ({
+        id: index,
+        from: nodeMap.get(link.endpoints[0].split(':')[0]),
+        to: nodeMap.get(link.endpoints[1].split(':')[0]),
+      })),
     ];
 
     return {nodes: nodes, edges: edges};

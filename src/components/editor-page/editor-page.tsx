@@ -2,7 +2,7 @@ import TopologyEditor from '@sb/components/editor-page/topology-editor/topology-
 import TopologyExplorer from '@sb/components/editor-page/topology-explorer/topology-explorer';
 import {useNotifications, useTopologyStore} from '@sb/lib/stores/root-store';
 
-import {ErrorResponse, Topology} from '@sb/types/types';
+import {Topology} from '@sb/types/types';
 
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
@@ -84,17 +84,6 @@ const EditorPage: React.FC = observer(() => {
     }
   }
 
-  async function onSaveTopology(): Promise<ErrorResponse | null> {
-    const error = await topologyStore.manager.save();
-    if (error) {
-      notificatioStore.error(error.message, 'Failed to save topology.');
-    } else {
-      notificatioStore.success('Topology has been saved!');
-    }
-
-    topologyStore.fetch();
-  }
-
   return (
     <>
       <div
@@ -123,7 +112,6 @@ const EditorPage: React.FC = observer(() => {
       >
         <div className="bg-primary font-bold height-100 sb-card overflow-y-auto overflow-x-hidden">
           <TopologyEditor
-            onSaveTopology={onSaveTopology}
             isMaximized={isMaximized}
             setMaximized={setMaximized}
           />

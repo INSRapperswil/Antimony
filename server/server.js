@@ -51,6 +51,34 @@ app.get('/topologies', (req, res) => {
   res.send({payload: getUserTopologies(user)});
 });
 
+app.post('/topologies', (req, res) => {
+  const user = authenticateUser(req.token);
+  if (!user) {
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  const newTopology = req.body;
+
+  const targetGroup = store.groups.find(group => group.id === req.body.groupId);
+
+  if (!targetGroup) {
+    res.send(generateError('Specified group does not exist.'));
+    return;
+  }
+
+  const topologyId = uuidv4();
+
+  store.topologies.push({
+    id: topologyId,
+    creatorId: user.id,
+    groupId: targetGroup.id,
+    definition: newTopology.definition,
+  });
+
+  res.send({payload: {id: topologyId}});
+});
+
 app.patch('/topologies/:topologyId', (req, res) => {
   const user = authenticateUser(req.token);
   if (!user) {
@@ -81,7 +109,7 @@ app.delete('/topologies/:topologyId', (req, res) => {
   }
 
   const targetTopology = store.topologies.find(
-    topology => topology.id === req.params.groupId
+    topology => topology.id === req.params.topologyId
   );
 
   if (!targetTopology) {

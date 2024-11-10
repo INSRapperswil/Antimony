@@ -50,17 +50,17 @@ export class DeviceStore {
     }
   }
 
-  public getNodeIcon(node: TopologyNode) {
-    if (!node) return '';
-
+  public getNodeIcon(node?: TopologyNode) {
     let iconName;
-    const deviceInfo = this.lookup.get(node.kind);
-    if (deviceInfo) {
-      iconName = IconMap.get(deviceInfo?.type);
-    } else {
-      iconName = 'generic';
+    if (node) {
+      const deviceInfo = this.lookup.get(node.kind);
+      if (deviceInfo) {
+        iconName = IconMap.get(deviceInfo?.type);
+      } else {
+        iconName = 'generic';
+      }
     }
-    if (!iconName) iconName = 'generic';
+    if (!node || !iconName) iconName = 'generic';
 
     return '/icons/' + iconName + '.svg';
   }

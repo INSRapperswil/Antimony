@@ -1,4 +1,5 @@
 import {APIStore} from '@sb/lib/stores/api-store';
+import {TopologyStore} from '@sb/lib/stores/topology-store';
 import _ from 'lodash';
 import {parseDocument} from 'yaml';
 import cloneDeep from 'lodash.clonedeep';
@@ -8,7 +9,6 @@ import {
   ErrorResponse,
   Topology,
   TopologyDefinition,
-  TopologyIn,
   TopologyOut,
   YAMLDocument,
 } from '@sb/types/types';
@@ -22,6 +22,7 @@ export type TopologyEditReport = {
 
 export class TopologyManager {
   private apiStore: APIStore;
+  private topologyStore: TopologyStore;
   private editingTopology: Topology | null = null;
   private originalTopology: Topology | null = null;
 
@@ -29,8 +30,9 @@ export class TopologyManager {
   public readonly onClose: Binding<void> = new Binding();
   public readonly onEdit: Binding<TopologyEditReport> = new Binding();
 
-  constructor(apiStore: APIStore) {
+  constructor(apiStore: APIStore, topologyStore: TopologyStore) {
     this.apiStore = apiStore;
+    this.topologyStore = topologyStore;
     this.onEdit.register(
       updateReport => (this.editingTopology = updateReport.updatedTopology)
     );
@@ -51,14 +53,10 @@ export class TopologyManager {
   public async save(): Promise<ErrorResponse | null> {
     if (!this.editingTopology) return null;
 
-    const error = await this.apiStore.patch<TopologyIn, void>(
-      `/topologies/${this.editingTopology.id}`,
-      {
-        definition: this.editingTopology.definition.toString(),
-      }
-    );
+    const error = await this.topologyStore.update(this.editingTopology);
+    if (error) return error;
 
-    if (error[0]) return error[1] as ErrorResponse;
+    this.topologyStore.fetch();
 
     this.originalTopology = cloneDeep(this.editingTopology);
     this.onEdit.update({
@@ -220,3 +218,8 @@ export class TopologyManager {
     );
   }
 }
+
+export const DefaultTopology = `name: topology
+topology:
+  nodes:
+    node1:`;

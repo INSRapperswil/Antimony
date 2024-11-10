@@ -38,13 +38,17 @@ export type Lab = LabIn & {
   state: LabState;
 };
 
+export type TopologyResponse = {
+  id: uuid4;
+};
+
 export type TopologyIn = {
+  groupId: uuid4;
   definition: string;
 };
 
 export type TopologyOut = TopologyIn & {
   id: uuid4;
-  groupId: uuid4;
   creatorId: uuid4;
 };
 

@@ -6,9 +6,13 @@ import {Button} from 'primereact/button';
 import {Document, parseDocument} from 'yaml';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
 
-import {Topology} from '@sb/types/types';
+import {ErrorResponse, Topology} from '@sb/types/types';
 import {Choose, Otherwise, When} from '@sb/types/control';
-import {useSchemaStore, useTopologyStore} from '@sb/lib/stores/root-store';
+import {
+  useNotifications,
+  useSchemaStore,
+  useTopologyStore,
+} from '@sb/lib/stores/root-store';
 import {TopologyEditReport} from '@sb/lib/topology-manager';
 import MonacoWrapper, {
   MonacoWrapperRef,
@@ -26,8 +30,6 @@ export enum ValidationState {
 interface TopologyEditorProps {
   isMaximized: boolean;
   setMaximized: (isMinimized: boolean) => void;
-
-  onSaveTopology: () => void;
 }
 
 const TopologyEditor: React.FC<TopologyEditorProps> = (
@@ -47,6 +49,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
   const schemaStore = useSchemaStore();
   const topologyStore = useTopologyStore();
+  const notificatioStore = useNotifications();
 
   const monacoWrapperRef = useRef<MonacoWrapperRef>(null);
 
@@ -112,6 +115,17 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
   function onAddNode() {}
 
+  async function onSaveTopology(): Promise<ErrorResponse | null> {
+    const error = await topologyStore.manager.save();
+    if (error) {
+      notificatioStore.error(error.message, 'Failed to save topology.');
+    } else {
+      notificatioStore.success('Topology has been saved!');
+    }
+
+    return error;
+  }
+
   return (
     <>
       <Choose>
@@ -144,7 +158,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   disabled={
                     validationState !== ValidationState.Done || !hasPendingEdits
                   }
-                  onClick={props.onSaveTopology}
+                  onClick={onSaveTopology}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
                 <Button
@@ -198,7 +212,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
             <div className="flex-grow-1 min-h-0">
               <Splitter className="h-full">
                 <SplitterPanel
-                  className="flex align-items-center justify-content-center overflow-hidden"
+                  className="flex align-items-center justify-content-center"
                   minSize={10}
                   size={40}
                 >
@@ -209,6 +223,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                     openTopology={openTopology}
                     language="yaml"
                     setContent={onContentChange}
+                    onSaveTopology={onSaveTopology}
                     setValidationError={onSetValidationError}
                   />
                 </SplitterPanel>

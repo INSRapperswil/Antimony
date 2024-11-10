@@ -85,7 +85,7 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
         />
         <div className="flex align-items-center">
           <Checkbox
-            id="group-edit-canrun"
+            inputId="group-edit-canrun"
             onChange={e =>
               setUpdatedGroup({
                 ...updatedGroup,
@@ -100,7 +100,7 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
         </div>
         <div className="flex align-items-center">
           <Checkbox
-            id="group-edit-canwrite"
+            inputId="group-edit-canwrite"
             onChange={e =>
               setUpdatedGroup({
                 ...updatedGroup,

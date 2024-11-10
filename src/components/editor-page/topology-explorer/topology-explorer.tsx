@@ -1,7 +1,9 @@
 import GroupEditDialog from '@sb/components/editor-page/topology-explorer/group-edit-dialog/group-edit-dialog';
+import {Choose, Otherwise, When} from '@sb/types/control';
 import {observer} from 'mobx-react-lite';
 import {ContextMenu} from 'primereact/contextmenu';
 import {MenuItem} from 'primereact/menuitem';
+import {Message} from 'primereact/message';
 import React, {MouseEvent, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Tooltip} from 'primereact/tooltip';
@@ -13,7 +15,13 @@ import {
   TreeSelectionEvent,
 } from 'primereact/tree';
 
-import {Group, Topology} from '@sb/types/types';
+import {
+  ErrorResponse,
+  Group,
+  Topology,
+  TopologyResponse,
+  uuid4,
+} from '@sb/types/types';
 import SBConfirm from '@sb/components/common/sb-confirm/sb-confirm';
 import {
   useGroupStore,
@@ -46,6 +54,9 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   const topologyTree = useMemo(() => {
     const topologyTree: TreeNode[] = [];
     const topologiesByGroup = new Map<string, Topology[]>();
+
+    // DEBUG: UNCOMMENT THIS FOR AN ERORR
+    // console.log('eror:', topologyTree[3].test);
 
     for (const topology of topologyStore.topologies) {
       if (topologiesByGroup.has(topology.groupId)) {
@@ -87,30 +98,22 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     props.onTopologySelect(e.value as string);
   }
 
-  function onRenameGroup(id: string, value: string) {
-    if (!groupStore.lookup.has(id)) return;
-
-    const targetGroup = groupStore.lookup.get(id)!;
-    const updatedGroup = {
-      name: value,
-      canRun: targetGroup.canRun,
-      canWrite: targetGroup.canWrite,
-    };
-    groupStore.update(id, updatedGroup).then(error => {
-      if (error) {
-        notificationStore.error(error.message, 'Failed to rename group');
-      } else {
-        notificationStore.success('Group has been renamed successfully.');
-      }
-    });
-  }
-
   function onDeleteGroup(id: string) {
     groupStore.delete(id).then(error => {
       if (error) {
         notificationStore.error(error.message, 'Failed to delete group');
       } else {
         notificationStore.success('Group has been deleted.');
+      }
+    });
+  }
+
+  function onDeleteTopology(id: string) {
+    topologyStore.delete(id).then(error => {
+      if (error) {
+        notificationStore.error(error.message, 'Failed to delete topology');
+      } else {
+        notificationStore.success('Topology has been deleted.');
       }
     });
   }
@@ -127,12 +130,44 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     setEditGroupOpen(true);
   }
 
+  async function onAddTopology(groupId: uuid4) {
+    const [status, response] = await topologyStore.add(groupId);
+    if (!status) {
+      notificationStore.error(
+        (response as ErrorResponse).message,
+        'Failed to add new topology.'
+      );
+    } else {
+      notificationStore.success('Topology has been created.');
+      props.onTopologySelect((response as TopologyResponse).id);
+    }
+  }
+
   function onDeleteGroupRequest(id: string) {
     if (!groupStore.lookup.has(id)) return;
 
+    const childTopologies = topologyStore.topologies.filter(
+      topology => topology.groupId === id
+    );
+
     notificationStore.confirm({
-      message: 'This action cannot be undone!',
       header: `Delete Group "${groupStore.lookup.get(id)!.name}"?`,
+      content: (
+        <Choose>
+          <When condition={childTopologies.length > 0}>
+            <div className="sb-confirm-list">
+              <span>The following topologies will be deleted as well</span>
+              <ul>
+                {childTopologies.map(topology => (
+                  <li>{topology.definition.get('name') as string}</li>
+                ))}
+              </ul>
+              <Message severity="warn" text="This action cannot be undone!" />
+            </div>
+          </When>
+          <Otherwise>{'This action cannot be undone!'}</Otherwise>
+        </Choose>
+      ),
       icon: 'pi pi-exclamation-triangle',
       severity: 'danger',
       onAccept: () => onDeleteGroup(id),
@@ -143,13 +178,11 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     if (!topologyStore.lookup.has(id)) return;
 
     notificationStore.confirm({
-      message: 'This action cannot be undone!',
       header: `Delete Topology "${topologyStore.lookup.get(id)!.definition.get('name')}"?`,
+      message: 'This action cannot be undone!',
       icon: 'pi pi-exclamation-triangle',
       severity: 'danger',
-      onAccept: () => {
-        notificationStore.success('Topology was successfully deleted!');
-      },
+      onAccept: () => onDeleteTopology(id),
     });
   }
 
@@ -251,9 +284,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
             node={node}
             onEditGroup={onEditGroup}
             onDeleteGroup={onDeleteGroupRequest}
-            onRenameGroup={value => onRenameGroup(node.key as string, value)}
-            onRenameTopology={value => onRenameGroup(node.key as string, value)}
-            onAddTopology={() => {}}
+            onAddTopology={onAddTopology}
             onDeployTopology={() => {}}
             onDeleteTopology={onDeleteTopologyRequest}
           />

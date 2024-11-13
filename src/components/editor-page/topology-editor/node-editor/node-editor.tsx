@@ -195,7 +195,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   }, [network]);
 
   const onNodeEdit = useCallback(() => {
-    if (!network || !nodeContextMenuTargetRef.current) return;
+    if (!network || nodeContextMenuTargetRef.current !== undefined) return;
 
     setSelectedNode(null);
     radialMenuRef.current?.hide();

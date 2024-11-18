@@ -187,7 +187,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   }
 
   const onNodeConnect = useCallback(() => {
-    if (!nodeContextMenuTargetRef.current) return;
+    if (nodeContextMenuTargetRef.current === null) return;
 
     nodeConnectTarget.current = nodeContextMenuTargetRef.current;
     nodeConnectTargetPosition.current =
@@ -196,7 +196,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   }, [network]);
 
   const onNodeEdit = useCallback(() => {
-    if (!network || nodeContextMenuTargetRef.current !== undefined) return;
+    if (!network || nodeContextMenuTargetRef.current === null) return;
 
     setSelectedNode(null);
     radialMenuRef.current?.hide();
@@ -204,7 +204,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
   }, [network, nodeLookup, props]);
 
   const onNodeDelete = useCallback(() => {
-    if (!network || !nodeContextMenuTargetRef.current) return;
+    if (!network || nodeContextMenuTargetRef.current === null) return;
 
     topologyStore.manager.deleteNode(
       nodeLookup.get(nodeContextMenuTargetRef.current)!
@@ -289,6 +289,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
 
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
     if (targetNode !== undefined) {
+      console.log('CONTEXT FOR:', targetNode);
       setContextMenuModel(nodeContextMenuModel);
       nodeContextMenuTargetRef.current = targetNode as number;
     } else {

@@ -55,6 +55,7 @@ export type TopologyOut = TopologyIn & {
 export type Topology = {
   id: uuid4;
   definition: YAMLDocument<TopologyDefinition>;
+  positions: Map<string, Position>;
   groupId: uuid4;
   creatorId: uuid4;
 };
@@ -155,6 +156,11 @@ export const SeverityMapping: {[key in Severity]: PrimeSeverity} = {
   [Severity.Warning]: 'warn',
   [Severity.Success]: 'success',
   [Severity.Info]: 'info',
+};
+
+export type Position = {
+  x: number;
+  y: number;
 };
 
 export type FieldType = string | string[] | boolean | number;

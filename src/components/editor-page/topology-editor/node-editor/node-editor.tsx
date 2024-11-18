@@ -1,3 +1,4 @@
+import NodeToolbar from '@sb/components/editor-page/topology-editor/node-editor/toolbar/node-toolbar';
 import {MenuItem} from 'primereact/menuitem';
 import {SpeedDial} from 'primereact/speeddial';
 import React, {
@@ -326,6 +327,7 @@ const NodeEditor: React.FC<NodeEditorProps> = (props: NodeEditorProps) => {
       ref={containerRef}
       onMouseMove={onMouseMove}
     >
+      <NodeToolbar />
       <SpeedDial
         className="sb-node-editor-dial"
         ref={radialMenuRef}

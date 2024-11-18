@@ -1,4 +1,4 @@
-import {FetchState} from '@sb/types/types';
+import {FetchState, Position} from '@sb/types/types';
 
 export function matchesSearch(value: string, search: string) {
   return value.toLowerCase().includes(search.toLowerCase());
@@ -35,8 +35,10 @@ export function arrayOf(value: string, length: number) {
 export function drawGrid(ctx: CanvasRenderingContext2D) {
   const width = window.outerWidth;
   const height = window.outerHeight;
-  const gridSpacing = 30;
+  const gridSpacing = 50;
   const gridExtent = 4;
+  const gridColor = 'rgb(38,55,55)';
+  const largeGridColor = 'rgb(40,68,71)';
 
   // ctx.globalCompositeOperation = 'destination-over';
   ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
@@ -44,12 +46,12 @@ export function drawGrid(ctx: CanvasRenderingContext2D) {
 
   for (let x = -width * gridExtent; x <= width * gridExtent; x += gridSpacing) {
     ctx.beginPath();
-    if (x % 4 === 0) {
+    if (x % 8 === 0) {
       ctx.lineWidth = 2;
-      ctx.strokeStyle = 'rgb(41,61,67)';
+      ctx.strokeStyle = largeGridColor;
     } else {
       ctx.lineWidth = 1;
-      ctx.strokeStyle = 'rgb(39,58,64)';
+      ctx.strokeStyle = gridColor;
     }
     ctx.moveTo(x, height * gridExtent);
     ctx.lineTo(x, -height * gridExtent);
@@ -61,15 +63,38 @@ export function drawGrid(ctx: CanvasRenderingContext2D) {
     y += gridSpacing
   ) {
     ctx.beginPath();
-    if (y % 4 === 0) {
+    if (y % 8 === 0) {
       ctx.lineWidth = 2;
-      ctx.strokeStyle = 'rgb(41,61,67)';
+      ctx.strokeStyle = largeGridColor;
     } else {
       ctx.lineWidth = 1;
-      ctx.strokeStyle = 'rgb(39,58,64)';
+      ctx.strokeStyle = gridColor;
     }
     ctx.moveTo(width * gridExtent, y);
     ctx.lineTo(-width * gridExtent, y);
     ctx.stroke();
   }
+}
+
+/**
+ * Parses a position string to a position object. Returns null if the parsing
+ * failed.
+ *
+ * Format: pos=[x, y]
+ */
+export function parsePosition(
+  value: string | null | undefined
+): Position | null {
+  if (!value) return null;
+
+  const matches = value.replaceAll(' ', '').match(/pos=\[(\d+),(\d+)]/);
+  if (matches && matches.length === 3) {
+    const x = Number(matches[1]);
+    const y = Number(matches[2]);
+    if (!isNaN(x) && !isNaN(y)) {
+      return {x, y};
+    }
+  }
+
+  return null;
 }

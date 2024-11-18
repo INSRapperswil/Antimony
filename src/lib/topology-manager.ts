@@ -1,12 +1,14 @@
 import {APIStore} from '@sb/lib/stores/api-store';
 import {TopologyStore} from '@sb/lib/stores/topology-store';
+import {parsePosition} from '@sb/lib/utils/utils';
 import _ from 'lodash';
-import {parseDocument} from 'yaml';
+import {parseDocument, Scalar, YAMLMap} from 'yaml';
 import cloneDeep from 'lodash.clonedeep';
 
 import {Binding} from '@sb/lib/utils/binding';
 import {
   ErrorResponse,
+  Position,
   Topology,
   TopologyDefinition,
   TopologyOut,
@@ -18,7 +20,19 @@ export type TopologyEditReport = {
 
   // Whether the topology is different to the saved one
   isEdited: boolean;
+
+  /*
+   * This field makes it so components can identify if the update comes from
+   * them or some other source and update accordingly.
+   */
+  source: TopologyEditSource;
 };
+
+export enum TopologyEditSource {
+  NodeEditor,
+  TextEditor,
+  System,
+}
 
 export class TopologyManager {
   private apiStore: APIStore;
@@ -56,12 +70,13 @@ export class TopologyManager {
     const error = await this.topologyStore.update(this.editingTopology);
     if (error) return error;
 
-    this.topologyStore.fetch();
+    await this.topologyStore.fetch();
 
     this.originalTopology = cloneDeep(this.editingTopology);
     this.onEdit.update({
       updatedTopology: this.editingTopology,
       isEdited: false,
+      source: TopologyEditSource.System,
     });
 
     return null;
@@ -100,8 +115,12 @@ export class TopologyManager {
    * Replaces the current topology with a one and notifies all subscribers.
    *
    * @param updatedTopology The updated topology.
+   * @param source The source of the update.
    */
-  public apply(updatedTopology: YAMLDocument<TopologyDefinition>) {
+  public apply(
+    updatedTopology: YAMLDocument<TopologyDefinition>,
+    source: TopologyEditSource
+  ) {
     if (!this.editingTopology) return;
 
     this.onEdit.update({
@@ -110,9 +129,10 @@ export class TopologyManager {
         definition: updatedTopology,
       },
       isEdited: !_.isEqual(
-        updatedTopology.toJS(),
-        this.originalTopology?.definition.toJS()
+        updatedTopology.toString(),
+        this.originalTopology?.definition.toString()
       ),
+      source: source,
     });
   }
 
@@ -130,7 +150,10 @@ export class TopologyManager {
       },
     };
 
-    this.apply(new YAMLDocument(updatedTopology));
+    this.apply(
+      new YAMLDocument(updatedTopology),
+      TopologyEditSource.NodeEditor
+    );
   }
 
   /**
@@ -149,7 +172,7 @@ export class TopologyManager {
     ]);
     if (!wasDeleted) return;
 
-    this.apply(updatedTopology);
+    this.apply(updatedTopology, TopologyEditSource.NodeEditor);
   }
 
   /**
@@ -163,7 +186,7 @@ export class TopologyManager {
 
     console.log('Connecting nodes: n1:', nodeName1, 'n2:', nodeName2);
 
-    this.apply(this.editingTopology.definition);
+    this.apply(this.editingTopology.definition, TopologyEditSource.NodeEditor);
   }
 
   /**
@@ -176,7 +199,7 @@ export class TopologyManager {
 
     console.log('Add node:', kind);
 
-    this.apply(this.editingTopology.definition);
+    this.apply(this.editingTopology.definition, TopologyEditSource.NodeEditor);
   }
 
   /**
@@ -190,6 +213,10 @@ export class TopologyManager {
     );
   }
 
+  public get topology() {
+    return this.editingTopology;
+  }
+
   public static parseTopologies(input: TopologyOut[]) {
     const topologies: Topology[] = [];
     for (const topology of input) {
@@ -197,9 +224,35 @@ export class TopologyManager {
         const definition = parseDocument((topology as TopologyOut).definition, {
           keepSourceTokens: true,
         });
+        const positions = new Map<string, Position>();
+        const nodes = definition.getIn(['topology', 'nodes']) as YAMLMap;
+        if (nodes && nodes.items.length > 0) {
+          /*
+           * The comment of the first element is actually the comment of the
+           * array itself for some reason.
+           */
+          if (nodes.commentBefore) {
+            const parsed = parsePosition(nodes.commentBefore);
+            if (parsed) {
+              positions.set(
+                (nodes.items[0].key as Scalar).value as string,
+                parsed
+              );
+            }
+          }
+          for (let i = 1; i < nodes.items.length; i++) {
+            // console.log('Node: ', nodes.items[i]);
+            const key = nodes.items[i].key as Scalar;
+            const parsed = parsePosition(key.commentBefore);
+            if (parsed) {
+              positions.set(key.value as string, parsed);
+            }
+          }
+        }
         topologies.push({
           ...topology,
           definition: definition,
+          positions: positions,
         });
       } catch (e) {
         console.error(
@@ -210,6 +263,8 @@ export class TopologyManager {
         );
       }
     }
+
+    console.log('TOPOLOGIES:', topologies);
 
     return topologies.toSorted((a, b) =>
       (a.definition.get('name') as string).localeCompare(

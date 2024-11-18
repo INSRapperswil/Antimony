@@ -14,6 +14,7 @@ import './lab-dialog.sass';
 import {ContextMenu} from 'primereact/contextmenu';
 import {Checkbox} from 'primereact/checkbox';
 import {drawGrid} from '@sb/lib/utils/utils';
+import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
 
 type GraphDefinition = {
   nodes?: Node[];
@@ -23,6 +24,7 @@ type GraphDefinition = {
 interface LabDialogProps {
   lab: Lab;
   groupName: String;
+  closeDialog: () => void;
 }
 
 const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
@@ -71,7 +73,11 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       nodes.push({
         id: index,
         label: !hostsHidden
-          ? `${nodeName}\n${props.lab.nodeMeta[index]?.webSsh + ':' + props.lab.nodeMeta[index]?.port || ''}`
+          ? `${nodeName}\n${
+              props.lab.nodeMeta[index]?.webSsh +
+                ':' +
+                props.lab.nodeMeta[index]?.port || ''
+            }`
           : nodeName,
         image: deviceStore.getNodeIcon(node),
       });
@@ -143,7 +149,12 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   }, [props.lab.topologyId, getTopology]);
 
   return (
-    <div className="height-100 topology-container">
+    <SBDialog
+      isOpen={props.lab !== null}
+      onClose={props.closeDialog}
+      headerTitle={props.groupName + ', ' + props.lab.name}
+      className="lab-Dialog overflow-y-hidden overflow-x-hidden"
+    >
       <div className="height-100">
         <div className="topology-header">
           <Button
@@ -172,41 +183,8 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
           />
         </div>
         <ContextMenu model={networkContextMenuItems} ref={nodeContextMenuRef} />
-        <div className="topology-footer">
-          {/*<Dialog
-            header={
-              <div className="conformation-dialog-header">
-                <strong>Abort?</strong>
-              </div>
-            }
-            visible={dialogVisible}
-            className="dialog-content-second"
-            onHide={() => setDialogVisible(false)}
-          >
-            <div
-              className=""
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <p>do you really want to be abort This Scheduled Lab</p>
-              <p>Lab name: {props.lab.name}</p>
-              <p>Group name: {props.groupName}</p>
-              <div className="abort-buttons">
-                <Button
-                  className="p-button p-component bold"
-                  onClick={() => setDialogVisible(false)}
-                >
-                  Cancel
-                </Button>
-                <Button className="p-button p-component">Abort</Button>
-              </div>
-            </div>
-          </Dialog>*/}
-        </div>
       </div>
-    </div>
+    </SBDialog>
   );
 };
 

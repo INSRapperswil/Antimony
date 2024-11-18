@@ -175,7 +175,14 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
         <div className="height-100 topology-graph-container">
           <Graph
             graph={{nodes: [], edges: []}}
-            options={NetworkOptions}
+            options={{
+              ...NetworkOptions,
+              interaction: {
+                dragNodes: false,
+                dragView: false,
+                zoomView: false,
+              },
+            }}
             events={{
               oncontext: onNetworkContext,
             }}

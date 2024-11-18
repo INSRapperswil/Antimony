@@ -64,11 +64,3 @@ export class LabStore {
     }
   }
 }
-
-const IconMap = new Map([
-  ['VM', 'virtualserver'],
-  ['Generic', 'generic'],
-  ['Router', 'router'],
-  ['Switch', 'switch'],
-  ['Container', 'computer'],
-]);

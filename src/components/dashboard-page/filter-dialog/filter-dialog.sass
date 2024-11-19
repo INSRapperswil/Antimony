@@ -71,6 +71,23 @@
   &:hover
     transform: scale(1.05)
 
+.group-chip
+  cursor: pointer
+  border-radius: 16px
+  font-weight: 500
+  color: #FFFFFF
+  transition: background-color 0.3s ease, transform 0.2s ease
+  &.active
+    color: var(--neutral-color-text)
+    background-color: var(--neutral-color)
+    transform: scale(1.05)
+  &.inactive
+    border: 1px solid var(--neutral-color-text)
+    background-color: #2A3A44
+
+  &:hover
+    transform: scale(1.05)
+
 .Apply-Filters-Container
   display: flex
   justify-content: flex-end

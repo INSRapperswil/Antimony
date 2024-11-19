@@ -11,7 +11,7 @@ import {InputText} from 'primereact/inputtext';
 import {IconField} from 'primereact/iconfield';
 import {InputIcon} from 'primereact/inputicon';
 
-import {Lab, LabState} from '@sb/types/types';
+import {Group, Lab, LabState} from '@sb/types/types';
 import {
   useGroupStore,
   useLabStore,
@@ -44,6 +44,7 @@ const DashboardPage: React.FC = () => {
     LabState.Deploying,
     LabState.Running,
   ]);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(10); // use API header in future
   const [pageSize] = useState<number>(5);
@@ -58,7 +59,7 @@ const DashboardPage: React.FC = () => {
   const [, setSearchParams] = useSearchParams();
   const typingTimeoutRef = useRef<number | undefined>(undefined);
   const [labs, setLabs] = useState<Lab[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [groups, setGroups] = useState<Group[]>([]);
 
   useEffect(() => {
     labStore.setParameters(
@@ -74,7 +75,19 @@ const DashboardPage: React.FC = () => {
       setLabs(labStore.labs);
     });
     return () => dispose();
-  }, [labStore]);
+  }, [labStore.labs]);
+
+  useEffect(() => {
+    const dispose = autorun(() => {
+      setGroups(groupStore.groups);
+    });
+    return () => dispose();
+  }, [groupStore.groups]);
+
+  useEffect(() => {
+    const ids: string[] = groups.map(group => group.id);
+    setSelectedGroups(ids);
+  }, [groups]);
 
   const handleSearchChange = (value: string) => {
     if (typingTimeoutRef.current) {
@@ -151,6 +164,10 @@ const DashboardPage: React.FC = () => {
     setSelectedFilters(filters);
   }
 
+  function setGroupfilter(ids: string[]) {
+    setSelectedGroups(ids);
+  }
+
   const onLabOpen = useCallback(
     (lab: Lab) => {
       setSearchParams({t: lab.id});
@@ -168,7 +185,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Choose>
-      <When condition={!loading}>
+      <When condition={labs}>
         <div className="height-100 width-100 sb-card overflow-y-hidden overflow-x-hidden sb-labs-container">
           <div className="search-bar sb-card">
             <IconField className="search-bar-input" iconPosition="left">
@@ -188,6 +205,8 @@ const DashboardPage: React.FC = () => {
             <FilterDialog
               filters={selectedFilters}
               setFilters={setFilters}
+              groups={selectedGroups}
+              setGroups={setGroupfilter}
               PopOverVisible={popOver}
             />
           </div>
@@ -205,6 +224,24 @@ const DashboardPage: React.FC = () => {
                 className="chip"
               />
             ))}
+            {selectedGroups.map(groupId => {
+              const group = groups.find(g => g.id === groupId);
+              if (!group) return null;
+              return (
+                <Chip
+                  key={group.id}
+                  label={group.name}
+                  removable={true}
+                  onRemove={() =>
+                    setSelectedGroups(prevGroups =>
+                      prevGroups.filter(id => id !== groupId)
+                    )
+                  }
+                  className="chip"
+                />
+              );
+            })}
+
             <If condition={searchQuery !== ''}>
               <Chip
                 label={searchQuery}

@@ -85,7 +85,7 @@ const FilterDialog: React.FC<FilterDialogProps> = (
               onClick={() => toggleTempGroups(group.id)}
               className={classNames('group-chip', {
                 active: tempGroups.includes(group.id),
-                inactive: tempGroups.includes(group.id),
+                inactive: !tempGroups.includes(group.id),
               })}
             />
           ))}

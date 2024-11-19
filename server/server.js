@@ -404,7 +404,6 @@ function filterLabs(
       lab => Date.parse(lab.startDate) < endDate
     );
   }
-
   if (offset !== undefined && !isNaN(Number(offset))) {
     filteredLabs = filteredLabs.slice(Number(offset), filteredLabs.length);
   }

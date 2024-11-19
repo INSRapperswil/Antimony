@@ -6,6 +6,7 @@ import {
   FetchState,
   Lab,
   LabIn,
+  LabState,
 } from '@sb/types/types';
 import {action, observable, observe} from 'mobx';
 
@@ -16,6 +17,10 @@ export class LabStore {
   @observable accessor lookup: Map<string, Lab> = new Map();
   @observable accessor fetchReport: FetchReport = DefaultFetchReport;
 
+  @observable accessor limit: number = 5;
+  @observable accessor offset: number = 0;
+  @observable accessor filters: LabState[] = [1, 2];
+  @observable accessor query: string = '';
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
 
@@ -39,19 +44,43 @@ export class LabStore {
   }
 
   @action
+  public setParameters(
+    limit: number,
+    offset: number,
+    query: string,
+    filters: LabState[]
+  ) {
+    this.limit = limit;
+    this.offset = offset;
+    this.query = query;
+    this.filters = filters;
+    this.fetch();
+  }
+
+  @action
   public fetch() {
     if (!this.rootStore._apiConnectorStore.isLoggedIn) {
       this.fetchReport = {state: FetchState.Pending};
-      return;
     }
 
-    this.rootStore._apiConnectorStore
-      .get<Lab[]>('/labs')
-      .then(data => this.update(data));
+    try {
+      this.rootStore._apiConnectorStore
+        .get<
+          Lab[]
+        >(`/labs?limit=${this.limit}&offset=${this.offset}&stateFilter=${JSON.stringify(this.filters)}&searchQuery=${JSON.stringify(this.query)}`)
+        .then(data => this.update(data));
+    } catch (error) {
+      this.fetchReport = {
+        state: FetchState.Error,
+        errorCode: '500',
+        errorMessage: 'Failed to fetch labs.',
+      };
+    }
   }
 
   @action
   private update(data: [boolean, Lab[] | ErrorResponse]) {
+    console.log(data);
     if (data[0]) {
       this.labs = data[1] as Lab[];
       this.fetchReport = {state: FetchState.Done};
@@ -64,11 +93,3 @@ export class LabStore {
     }
   }
 }
-
-const IconMap = new Map([
-  ['VM', 'virtualserver'],
-  ['Generic', 'generic'],
-  ['Router', 'router'],
-  ['Switch', 'switch'],
-  ['Container', 'computer'],
-]);

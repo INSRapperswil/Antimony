@@ -12,10 +12,9 @@ import {IconField} from 'primereact/iconfield';
 import {InputIcon} from 'primereact/inputicon';
 
 import {Lab, LabState} from '@sb/types/types';
-import {useResource} from '@sb/lib/utils/hooks';
 import {
-  useAPIStore,
   useGroupStore,
+  useLabStore,
   useNotifications,
 } from '@sb/lib/stores/root-store';
 import LabDialog from '@sb/components/dashboard-page/lab-dialog/lab-dialog';
@@ -29,6 +28,7 @@ import {Paginator} from 'primereact/paginator';
 import {Button} from 'primereact/button';
 import {OverlayPanel} from 'primereact/overlaypanel';
 import {useSearchParams} from 'react-router-dom';
+import {autorun} from 'mobx';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
@@ -40,17 +40,16 @@ const statusIcons: Record<LabState, string> = {
 
 const DashboardPage: React.FC = () => {
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
-  const [labs, setLabs] = useState<Lab[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<LabState[]>([
     LabState.Deploying,
     LabState.Running,
   ]);
   const [currentPage, setCurrentPage] = useState<number>(0);
-  const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(0);
+  const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(10); // use API header in future
   const [pageSize] = useState<number>(5);
-
   const groupStore = useGroupStore();
   const notificationStore = useNotifications();
+  const labStore = useLabStore();
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [reschedulingDialogLab, setReschedulingDialogLab] =
@@ -58,10 +57,24 @@ const DashboardPage: React.FC = () => {
   const popOver = useRef<OverlayPanel>(null);
   const [, setSearchParams] = useSearchParams();
   const typingTimeoutRef = useRef<number | undefined>(undefined);
+  const [labs, setLabs] = useState<Lab[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const labsPath = `/labs?limit=${pageSize}&offset=${
-    currentPage * pageSize
-  }&stateFilter=${JSON.stringify(selectedFilters)}&searchQuery=${JSON.stringify(searchQuery)}`;
+  useEffect(() => {
+    labStore.setParameters(
+      pageSize,
+      pageSize * currentPage,
+      searchQuery,
+      selectedFilters
+    );
+  }, [pageSize, currentPage, searchQuery, selectedFilters]);
+
+  useEffect(() => {
+    const dispose = autorun(() => {
+      setLabs(labStore.labs);
+    });
+    return () => dispose();
+  }, [labStore]);
 
   const handleSearchChange = (value: string) => {
     if (typingTimeoutRef.current) {
@@ -72,13 +85,6 @@ const DashboardPage: React.FC = () => {
       setSearchQuery(value);
     }, 100);
   };
-
-  const [labQuery] = useResource<Lab[]>(labsPath, useAPIStore(), []);
-  useEffect(() => {
-    setTotalAmountOfEntries(10); //useResource needs update for api header
-    setLabs(labQuery);
-  }, [selectedFilters, totalAmountOfEntries, labQuery, currentPage]);
-
   function getGroupById(groupId: String): String {
     const group = groupStore.groups.find(group => group.id === groupId);
     if (group !== undefined) {
@@ -86,19 +92,16 @@ const DashboardPage: React.FC = () => {
     }
     return 'No group found';
   }
-
   function handleLabDate(lab: Lab): string {
     let timeString: Date;
 
     switch (lab.state) {
       case LabState.Scheduled:
-        // In the Scheduled state, return just the day and month in DD-MM format
         timeString = new Date(lab.startDate);
         return timeString.toISOString().split('T')[0];
 
       case LabState.Deploying:
       case LabState.Running:
-        // In Deploying or Running state, return hh:mm from the start date
         timeString = new Date(lab.startDate);
         return timeString.toLocaleTimeString([], {
           hour: '2-digit',
@@ -107,7 +110,6 @@ const DashboardPage: React.FC = () => {
 
       case LabState.Done:
       case LabState.Failed:
-        // In Done or Failed state, return hh:mm from the end date
         timeString = new Date(lab.endDate);
         return timeString.toLocaleTimeString([], {
           hour: '2-digit',
@@ -166,7 +168,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Choose>
-      <When condition={labs}>
+      <When condition={!loading}>
         <div className="height-100 width-100 sb-card overflow-y-hidden overflow-x-hidden sb-labs-container">
           <div className="search-bar sb-card">
             <IconField className="search-bar-input" iconPosition="left">
@@ -214,9 +216,9 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="sb-labs-content">
             <Choose>
-              <When condition={labs.length > 0}>
+              <When condition={labs!.length > 0}>
                 <div className="lab-explorer-container">
-                  {labs.map(lab => (
+                  {labs!.map(lab => (
                     <div
                       key={lab.id}
                       className="lab-item-card"

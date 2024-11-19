@@ -180,7 +180,9 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     if (!topologyStore.lookup.has(id)) return;
 
     notificationStore.confirm({
-      header: `Delete Topology "${topologyStore.lookup.get(id)!.definition.get('name')}"?`,
+      header: `Delete Topology "${topologyStore.lookup
+        .get(id)!
+        .definition.get('name')}"?`,
       message: 'This action cannot be undone!',
       icon: 'pi pi-exclamation-triangle',
       severity: 'danger',

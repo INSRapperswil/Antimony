@@ -37,9 +37,8 @@ export class TopologyStore {
       return;
     }
 
-    const data = await this.rootStore._apiConnectorStore.get<TopologyOut[]>(
-      '/topologies'
-    );
+    const data =
+      await this.rootStore._apiConnectorStore.get<TopologyOut[]>('/topologies');
     this.setData(data);
   }
 

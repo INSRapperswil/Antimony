@@ -1,4 +1,17 @@
+import {Monaco} from '@monaco-editor/react';
+import {ValidationState} from '@sb/components/editor-page/topology-editor/topology-editor';
+import {useSchemaStore, useTopologyStore} from '@sb/lib/stores/root-store';
+import {TopologyEditReport, TopologyEditSource} from '@sb/lib/topology-manager';
+
+import {Choose, If, Otherwise, When} from '@sb/types/control';
+import {Topology} from '@sb/types/types';
+import {isEqual} from 'lodash';
+
+import {toJS} from 'mobx';
 import {observer} from 'mobx-react-lite';
+import {editor} from 'monaco-editor';
+import {configureMonacoYaml} from 'monaco-yaml';
+import {Tooltip} from 'primereact/tooltip';
 import React, {
   forwardRef,
   useCallback,
@@ -7,23 +20,11 @@ import React, {
   useRef,
   useState,
 } from 'react';
-
-import {toJS} from 'mobx';
+import {monaco} from 'react-monaco-editor';
 import MonacoEditor from 'react-monaco-editor/lib/editor';
-import {Document} from 'yaml';
-import {editor} from 'monaco-editor';
-import {Monaco} from '@monaco-editor/react';
-import {configureMonacoYaml} from 'monaco-yaml';
-
-import {Choose, If, Otherwise, When} from '@sb/types/control';
-import {useSchemaStore, useTopologyStore} from '@sb/lib/stores/root-store';
 import {AntimonyTheme, MonacoOptions} from './monaco.conf';
 
 import './monaco-wrapper.sass';
-import {isEqual} from 'lodash';
-import {ValidationState} from '@sb/components/editor-page/topology-editor/topology-editor';
-import {Tooltip} from 'primereact/tooltip';
-import {monaco} from 'react-monaco-editor';
 
 const schemaModelUri = 'inmemory://schema.yaml';
 
@@ -36,7 +37,6 @@ window.MonacoEnvironment = {
 interface MonacoWrapperProps {
   validationError: string | null;
   validationState: ValidationState;
-  openTopology: Document | null;
 
   onSaveTopology: () => void;
   setContent: (content: string) => void;
@@ -46,29 +46,67 @@ interface MonacoWrapperProps {
 }
 
 export interface MonacoWrapperRef {
-  /*
-   * We need to have this imperative function here for the parent to tell the wrapper that a new
-   * topology has been opened instead of just changing the content like in regular updates.
-   */
-  openTopology: (topology: Document) => void;
   undo: () => void;
   redo: () => void;
 }
 
 const MonacoWrapper = observer(
   forwardRef<MonacoWrapperRef, MonacoWrapperProps>((props, ref) => {
+    // const [openTopology, setOpenTopology] = useState<Topology | null>(null);
+
     const textModelRef = useRef<editor.ITextModel | null>(null);
     const monacoEditorRef = useRef<Monaco | null>(null);
 
     const schemaStore = useSchemaStore();
     const topologyStore = useTopologyStore();
 
-    useImperativeHandle(ref, () => ({
-      openTopology: (topology: Document) => {
-        if (textModelRef.current) {
-          textModelRef.current.setValue(topology.toString());
+    const onTopologyOpen = useCallback((topology: Topology) => {
+      if (textModelRef.current) {
+        textModelRef.current.setValue(topology.definition.toString());
+      }
+    }, []);
+
+    const onTopologyEdit = useCallback((editReport: TopologyEditReport) => {
+      if (editReport.source !== TopologyEditSource.TextEditor) {
+        const updatedContent = editReport.updatedTopology.definition.toString();
+        if (!textModelRef.current) {
+          setContent(updatedContent);
+          return;
         }
-      },
+
+        const existingContent = textModelRef.current.getValue();
+        const updatedContentStripped = updatedContent.replaceAll(' ', '');
+        const existingContentStripped = existingContent.replaceAll(' ', '');
+
+        if (!isEqual(updatedContentStripped, existingContentStripped)) {
+          setContent(updatedContent);
+        }
+      }
+    }, []);
+
+    useEffect(() => {
+      topologyStore.manager.onEdit.register(onTopologyEdit);
+      topologyStore.manager.onOpen.register(onTopologyOpen);
+
+      if (textModelRef.current) {
+        textModelRef.current.setValue(
+          topologyStore.manager.topology?.definition.toString() ?? ''
+        );
+      }
+
+      return () => {
+        topologyStore.manager.onEdit.unregister(onTopologyEdit);
+        topologyStore.manager.onOpen.unregister(onTopologyOpen);
+      };
+    }, [
+      onTopologyOpen,
+      onTopologyEdit,
+      topologyStore.manager.onEdit,
+      topologyStore.manager.onOpen,
+      topologyStore.manager.onClose,
+    ]);
+
+    useImperativeHandle(ref, () => ({
       undo: onTriggerUndo,
       redo: onTriggerRedo,
     }));
@@ -90,28 +128,28 @@ const MonacoWrapper = observer(
             break;
         }
       },
-      [topologyStore.manager]
+      [props]
     );
 
     const [content, setContent] = useState('');
 
-    useEffect(() => {
-      if (!props.openTopology) return;
-
-      const updatedContent = props.openTopology?.toString();
-      if (!textModelRef.current) {
-        setContent(updatedContent);
-        return;
-      }
-
-      const existingContent = textModelRef.current.getValue();
-      const updatedContentStripped = updatedContent.replaceAll(' ', '');
-      const existingContentStripped = existingContent.replaceAll(' ', '');
-
-      if (!isEqual(updatedContentStripped, existingContentStripped)) {
-        setContent(updatedContent);
-      }
-    }, [props.openTopology]);
+    // useEffect(() => {
+    //   if (!props.openTopology) return;
+    //
+    //   const updatedContent = props.openTopology?.toString();
+    //   if (!textModelRef.current) {
+    //     setContent(updatedContent);
+    //     return;
+    //   }
+    //
+    //   const existingContent = textModelRef.current.getValue();
+    //   const updatedContentStripped = updatedContent.replaceAll(' ', '');
+    //   const existingContentStripped = existingContent.replaceAll(' ', '');
+    //
+    //   if (!isEqual(updatedContentStripped, existingContentStripped)) {
+    //     setContent(updatedContent);
+    //   }
+    // }, [props.openTopology]);
 
     useEffect(() => {
       window.addEventListener('keydown', onGlobalKeyPress);

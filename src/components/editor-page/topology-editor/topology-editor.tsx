@@ -1,23 +1,23 @@
+import MonacoWrapper, {
+  MonacoWrapperRef,
+} from '@sb/components/editor-page/topology-editor/monaco-wrapper/monaco-wrapper';
+import NodeEditDialog from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-edit-dialog';
 import NodeEditor from '@sb/components/editor-page/topology-editor/node-editor/node-editor';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-
-import {validate} from 'jsonschema';
-import {Button} from 'primereact/button';
-import {parseDocument} from 'yaml';
-import {Splitter, SplitterPanel} from 'primereact/splitter';
-
-import {ErrorResponse, Topology, uuid4} from '@sb/types/types';
-import {Choose, Otherwise, When} from '@sb/types/control';
 import {
   useNotifications,
   useSchemaStore,
   useTopologyStore,
 } from '@sb/lib/stores/root-store';
-import {TopologyEditReport} from '@sb/lib/topology-manager';
-import MonacoWrapper, {
-  MonacoWrapperRef,
-} from '@sb/components/editor-page/topology-editor/monaco-wrapper/monaco-wrapper';
-import NodeEditDialog from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-edit-dialog';
+import {TopologyEditReport, TopologyEditSource} from '@sb/lib/topology-manager';
+import {Choose, Otherwise, When} from '@sb/types/control';
+
+import {Topology, uuid4} from '@sb/types/types';
+
+import {validate} from 'jsonschema';
+import {Button} from 'primereact/button';
+import {Splitter, SplitterPanel} from 'primereact/splitter';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {parseDocument} from 'yaml';
 
 import './topology-editor.sass';
 
@@ -56,7 +56,6 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
   const monacoWrapperRef = useRef<MonacoWrapperRef>(null);
 
   const onTopologyOpen = useCallback((topology: Topology) => {
-    monacoWrapperRef?.current?.openTopology(topology.definition);
     setOpenTopology(topology);
   }, []);
 
@@ -79,7 +78,14 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
       topologyStore.manager.onOpen.unregister(onTopologyOpen);
       topologyStore.manager.onClose.unregister(onTopologyClose);
     };
-  }, [topologyStore.manager, onTopologyOpen, onTopologyEdit]);
+  }, [
+    onTopologyOpen,
+    onTopologyEdit,
+    onTopologyClose,
+    topologyStore.manager.onEdit,
+    topologyStore.manager.onOpen,
+    topologyStore.manager.onClose,
+  ]);
 
   function onContentChange(content: string) {
     try {
@@ -90,7 +96,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
         validate(obj.toJS(), schemaStore.clabSchema).errors.length === 0
       ) {
         setValidationState(ValidationState.Done);
-        topologyStore.manager.apply(obj);
+        topologyStore.manager.apply(obj, TopologyEditSource.TextEditor);
       } else {
         // Set this to working until the monaco worker has finished and generated the error
         setValidationState(ValidationState.Working);
@@ -117,7 +123,17 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
 
   function onAddNode() {}
 
-  async function onSaveTopology(): Promise<ErrorResponse | null> {
+  async function onSaveTopology() {
+    if (!hasPendingEdits) return;
+
+    if (validationState !== ValidationState.Done) {
+      notificatioStore.warning(
+        'Your schema is not valid.',
+        'Failed to save topology.'
+      );
+      return;
+    }
+
     const error = await topologyStore.manager.save();
     if (error) {
       notificatioStore.error(error.message, 'Failed to save topology.');
@@ -125,7 +141,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
       notificatioStore.success('Topology has been saved!');
     }
 
-    return error;
+    return;
   }
 
   function onDeployTopoplogy() {
@@ -166,14 +182,6 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   }
                   tooltip="Save"
                   onClick={onSaveTopology}
-                  tooltipOptions={{position: 'bottom', showDelay: 500}}
-                />
-                <Button
-                  outlined
-                  icon="pi pi-trash"
-                  size="large"
-                  onClick={topologyStore.manager.clear}
-                  tooltip="Clear"
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
                 <Button
@@ -228,7 +236,6 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                     ref={monacoWrapperRef}
                     validationError={validationError}
                     validationState={validationState}
-                    openTopology={openTopology!.definition}
                     language="yaml"
                     setContent={onContentChange}
                     onSaveTopology={onSaveTopology}

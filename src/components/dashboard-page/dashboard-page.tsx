@@ -131,7 +131,7 @@ const DashboardPage: React.FC = () => {
     notificationStore.confirm({
       message: 'This action cannot be undone.',
       header: `Stop Lab '${lab.name}'?`,
-      icon: 'pi pi-power-off',
+      icon: 'pi pi-stop',
       severity: 'danger',
       onAccept: onStopConfirm,
     });
@@ -262,7 +262,7 @@ const DashboardPage: React.FC = () => {
                             />
                           </If>
                           <Button
-                            icon="pi pi-power-off"
+                            icon="pi pi-stop"
                             severity="danger"
                             rounded
                             text

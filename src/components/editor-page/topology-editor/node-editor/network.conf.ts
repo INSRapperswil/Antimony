@@ -33,18 +33,17 @@ export const NetworkOptions = {
     },
   },
   physics: {
-    solver: 'repulsion',
-    repulsion: {
-      centralGravity: 0,
-      springLength: 250,
-      springConstant: 0.001,
-      nodeDistance: 100,
-      damping: 0.2,
+    solver: 'forceAtlas2Based',
+    forceAtlas2Based: {
+      theta: 0.5,
+      damping: 0.7,
+      springConstant: 0.2,
+      avoidOverlap: 0,
     },
     stabilization: {
       enabled: true,
-      iterations: 200,
-      updateInterval: 10,
+      iterations: 800,
+      updateInterval: 8,
       fit: true,
     },
     maxVelocity: 40,

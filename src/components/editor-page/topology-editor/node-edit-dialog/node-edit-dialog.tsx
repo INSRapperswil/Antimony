@@ -1,22 +1,23 @@
+import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
 import SBDropdown from '@sb/components/common/sb-dropdown/sb-dropdown';
+import SBInput from '@sb/components/common/sb-input/sb-input';
+import NodePropertyTable from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-property-table/node-property-table';
+
+import './node-edit-dialog.sass';
+import {NodeEditor} from '@sb/lib/node-editor';
 import {
   useDeviceStore,
   useNotifications,
   useSchemaStore,
   useTopologyStore,
 } from '@sb/lib/stores/root-store';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-
-import {Accordion, AccordionTab} from 'primereact/accordion';
+import {TopologyEditSource} from '@sb/lib/topology-manager';
 
 import {If} from '@sb/types/control';
-import {NodeEditor} from '@sb/lib/node-editor';
-import SBInput from '@sb/components/common/sb-input/sb-input';
 import {TopologyDefinition, YAMLDocument} from '@sb/types/types';
-import NodePropertyTable from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-property-table/node-property-table';
 
-import './node-edit-dialog.sass';
-import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
+import {Accordion, AccordionTab} from 'primereact/accordion';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 interface NodeEditDialogProps {
   editingTopology: YAMLDocument<TopologyDefinition> | null;
@@ -81,13 +82,6 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
     return () => nodeEditor.onEdit.unregister(onTopologyUpdate);
   }, [nodeEditor, onTopologyUpdate]);
 
-  function onClose() {
-    if (!nodeEditor) return;
-
-    topologyStore.manager.apply(nodeEditor.getTopology());
-    props.onClose();
-  }
-
   function onCloseRequest() {
     if (!nodeEditor) return;
 
@@ -106,7 +100,10 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
 
   function onSave() {
     if (nodeEditor) {
-      topologyStore.manager.apply(nodeEditor.getTopology());
+      topologyStore.manager.apply(
+        nodeEditor.getTopology(),
+        TopologyEditSource.NodeEditor
+      );
     }
 
     props.onClose();

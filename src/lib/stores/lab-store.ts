@@ -20,6 +20,7 @@ export class LabStore {
   @observable accessor limit: number = 5;
   @observable accessor offset: number = 0;
   @observable accessor filters: LabState[] = [1, 2];
+  @observable accessor groupFilter: string[] = [];
   @observable accessor query: string = '';
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
@@ -48,12 +49,14 @@ export class LabStore {
     limit: number,
     offset: number,
     query: string,
-    filters: LabState[]
+    filters: LabState[],
+    selectedGroups: string[]
   ) {
     this.limit = limit;
     this.offset = offset;
     this.query = query;
     this.filters = filters;
+    this.groupFilter = selectedGroups;
     this.fetch();
   }
 
@@ -65,10 +68,16 @@ export class LabStore {
 
     try {
       this.rootStore._apiConnectorStore
-        .get<
-          Lab[]
-        >(`/labs?limit=${this.limit}&offset=${this.offset}&stateFilter=${JSON.stringify(this.filters)}&searchQuery=${JSON.stringify(this.query)}`)
-        .then(data => this.update(data));
+        .get<Lab[]>(
+          `/labs?limit=${this.limit}&offset=${
+            this.offset
+          }&stateFilter=${JSON.stringify(
+            this.filters
+          )}&searchQuery=${JSON.stringify(
+            this.query
+          )}&groupFilter=${JSON.stringify(this.groupFilter)}`
+        )
+        .then(data => this.updateStore(data));
     } catch (error) {
       this.fetchReport = {
         state: FetchState.Error,
@@ -79,8 +88,7 @@ export class LabStore {
   }
 
   @action
-  private update(data: [boolean, Lab[] | ErrorResponse]) {
-    console.log(data);
+  private updateStore(data: [boolean, Lab[] | ErrorResponse]) {
     if (data[0]) {
       this.labs = data[1] as Lab[];
       this.fetchReport = {state: FetchState.Done};
@@ -91,5 +99,23 @@ export class LabStore {
         errorMessage: (data[1] as ErrorResponse).message,
       };
     }
+  }
+  @action
+  public async update(lab: Lab): Promise<ErrorResponse | null> {
+    const response = await this.rootStore._apiConnectorStore.patch<LabIn, void>(
+      `/labs/${lab.id}`,
+      {
+        name: lab.name,
+        startDate: lab.startDate,
+        endDate: lab.endDate,
+        topologyId: lab.topologyId,
+      }
+    );
+    if (!response[0]) {
+      return response[1] as ErrorResponse;
+    }
+
+    void this.fetch();
+    return null;
   }
 }

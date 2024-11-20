@@ -5,6 +5,8 @@ import {Calendar} from 'primereact/calendar';
 import './reservation-dialog.sass';
 import {InputText} from 'primereact/inputtext';
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
+import {Nullable} from 'primereact/ts-helpers';
+import {useLabStore, useNotifications} from '@sb/lib/stores/root-store';
 
 interface ReservationDialogProps {
   lab: Lab;
@@ -14,34 +16,32 @@ interface ReservationDialogProps {
 const ReservationDialog: React.FC<ReservationDialogProps> = (
   props: ReservationDialogProps
 ) => {
+  const labStore = useLabStore();
+  const notificationStore = useNotifications();
   const initialStartDate = new Date(props.lab.startDate!);
   const initialEndDate = new Date(props.lab.endDate!);
+  const [deployingLab, setDeployingLab] = useState<Lab>(props.lab);
+  const [startDate, setStartDate] = useState<Nullable<Date>>(initialStartDate);
+  const [endDate, setEndDate] = useState<Nullable<Date>>(initialEndDate);
 
-  const [startDate, setStartDate] = useState<Date | null>(initialStartDate);
-  const [startTime, setStartTime] = useState<Date | null>(initialStartDate!);
-  const [endDate, setEndDate] = useState<Date | null>(initialEndDate!);
-  const [endTime, setEndTime] = useState<Date | null>(initialEndDate!);
+  function onDeploy() {
+    if (!deployingLab || !startDate || !endDate) return;
 
-  const combineDateAndTime = (date: Date | null, time: Date | null): string => {
-    if (date && time) {
-      const combinedDate = new Date(date);
-      combinedDate.setHours(time.getHours());
-      combinedDate.setMinutes(time.getMinutes());
-      combinedDate.setSeconds(time.getSeconds());
-      return combinedDate.toISOString();
-    }
-    return '';
-  };
-  const handleSave = () => {
-    const newStartDate = combineDateAndTime(startDate, startTime);
-    const newEndDate = combineDateAndTime(endDate, endTime);
+    const updatedLab = {
+      ...deployingLab,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    };
 
-    // Print or use the updated ISO strings
-    console.log('New Start Date:', newStartDate);
-    console.log('New End Date:', newEndDate);
-
-    // You can now send these updated values to an API if needed
-  };
+    labStore.update(updatedLab).then(error => {
+      if (error) {
+        notificationStore.error(error.message, 'Failed to deploy topology');
+      } else {
+        notificationStore.success('Deployment has been scheduled.');
+        props.closeDialog();
+      }
+    });
+  }
 
   return (
     <SBDialog
@@ -50,8 +50,7 @@ const ReservationDialog: React.FC<ReservationDialogProps> = (
       headerTitle="Rescheduling Dialog"
       className="dialog-lab-reservation"
       onSubmit={() => {
-        handleSave();
-        props.closeDialog();
+        onDeploy();
       }}
       onCancel={() => props.closeDialog()}
     >
@@ -61,48 +60,32 @@ const ReservationDialog: React.FC<ReservationDialogProps> = (
           <InputText className="input-field" value={props.lab.name} readOnly />
         </div>
         <div className="date-time-form">
-          <div className="form-field">
-            <span>Start Date</span>
+          <span>Start Date</span>
+          <Calendar
+            id="deploy-date-start"
+            className="w-full"
+            value={startDate}
+            onChange={e => setStartDate(e.value as Nullable<Date | null>)}
+            selectionMode="single"
+            placeholder="Start Time"
+            showIcon
+            showTime
+            showButtonBar
+          />
+          <div className="flex-auto">
+            <label htmlFor="deploy-date-end" className="font-bold block mb-2">
+              End Time
+            </label>
             <Calendar
-              value={startDate}
-              onChange={e => setStartDate(e.value!)}
-              dateFormat="yy-mm-dd"
-              showIcon
-            />
-          </div>
-
-          <div className="form-field">
-            <span>Start Time</span>
-            <Calendar
-              value={startTime}
-              onChange={e => setStartTime(e.value!)}
-              timeOnly
-              hourFormat="24"
-              showIcon
-              icon="pi pi-clock"
-            />
-          </div>
-        </div>
-        <div className="date-time-form">
-          <div className="form-field">
-            <span>End Date</span>
-            <Calendar
+              id="deploy-date-end"
+              className="w-full"
               value={endDate}
-              onChange={e => setEndDate(e.value!)}
-              dateFormat="yy-mm-dd"
+              onChange={e => setEndDate(e.value as Nullable<Date | null>)}
+              selectionMode="single"
+              placeholder="End Time"
               showIcon
-            />
-          </div>
-
-          <div className="form-field">
-            <span>End Time</span>
-            <Calendar
-              value={endTime}
-              onChange={e => setEndTime(e.value!)}
-              timeOnly
-              hourFormat="24"
-              showIcon
-              icon="pi pi-clock"
+              showTime
+              showButtonBar
             />
           </div>
         </div>

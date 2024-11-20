@@ -283,6 +283,29 @@ app.post('/labs', (req, res) => {
   res.send({});
 });
 
+app.patch('/labs/:id', (req, res) => {
+  const user = authenticateUser(req.token);
+  if (!user) {
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  const targetLab = store.labs.find(lab => lab.id === req.params.id);
+  if (!targetLab) {
+    res.status(404).send({message: 'Lab not found.'});
+    return;
+  }
+  const now = new Date(Date.now());
+  targetLab.startDate = req.body.startDate;
+  if (req.body.endDate !== '') {
+    targetLab.enddate = req.body.endDate;
+  }
+
+  res.send({});
+
+  labQueue.push([targetLab, Date.now(), randomNumber(2000, 4000)]);
+});
+
 app.post('/users/auth', (req, res) => {
   const body = req.body;
   const user = findUser(body.username, body.password);
@@ -381,7 +404,6 @@ function filterLabs(
       });
     }
   } catch (err) {}
-
   try {
     groupFilter = JSON.parse(groupFilter);
     if (groupFilter.length > 0) {

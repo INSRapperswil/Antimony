@@ -66,9 +66,10 @@ const DashboardPage: React.FC = () => {
       pageSize,
       pageSize * currentPage,
       searchQuery,
-      selectedFilters
+      selectedFilters,
+      selectedGroups
     );
-  }, [pageSize, currentPage, searchQuery, selectedFilters]);
+  }, [pageSize, currentPage, searchQuery, selectedFilters, selectedGroups]);
 
   useEffect(() => {
     const dispose = autorun(() => {

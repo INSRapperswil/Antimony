@@ -122,7 +122,9 @@ export class NotificationStore {
   }
 
   @action
-  private update(data: [boolean, NotificationOut[] | ErrorResponse]) {
+  private update(
+    data: [boolean, NotificationOut[] | ErrorResponse, Headers | null]
+  ) {
     if (data[0]) {
       this.messages = (data[1] as NotificationOut[])
         .map(msg => NotificationStore.parseNotification(msg, true))

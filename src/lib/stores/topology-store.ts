@@ -91,7 +91,9 @@ export class TopologyStore {
   }
 
   @action
-  private setData(data: [boolean, TopologyOut[] | ErrorResponse]) {
+  private setData(
+    data: [boolean, TopologyOut[] | ErrorResponse, Headers | null]
+  ) {
     if (data[0]) {
       this.topologies = TopologyManager.parseTopologies(
         data[1] as TopologyOut[]

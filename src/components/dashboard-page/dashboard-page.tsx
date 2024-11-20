@@ -72,6 +72,9 @@ const DashboardPage: React.FC = () => {
   }, [pageSize, currentPage, searchQuery, selectedFilters, selectedGroups]);
 
   useEffect(() => {
+    if (labStore.header) {
+      setTotalAmountOfEntries(Number(labStore.header));
+    }
     const dispose = autorun(() => {
       setLabs(labStore.labs);
     });

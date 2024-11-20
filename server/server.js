@@ -227,17 +227,21 @@ app.get('/labs', (req, res) => {
     return;
   }
 
+  const {filteredLabs, totalLabsCount} = filterLabs(
+    getUserLabs(user),
+    req.query.limit,
+    req.query.offset,
+    req.query.searchQuery,
+    req.query.stateFilter,
+    req.query.groupFilter,
+    req.query.startDate,
+    req.query.endDate
+  );
+
+  res.setHeader('X-Total-Count', totalLabsCount);
+
   res.send({
-    payload: filterLabs(
-      getUserLabs(user),
-      req.query.limit,
-      req.query.offset,
-      req.query.searchQuery,
-      req.query.stateFilter,
-      req.query.groupFilter,
-      req.query.startDate,
-      req.query.endDate
-    ).toSorted((a, b) => a.name.localeCompare(b.name)),
+    payload: filteredLabs.toSorted((a, b) => a.name.localeCompare(b.name)),
   });
 
   // void addRandomNotification(user.id);
@@ -413,6 +417,8 @@ function filterLabs(
     }
   } catch (err) {}
 
+  const totalLabsCount = filteredLabs.length;
+
   if (startDate && !isNaN(Date.parse(startDate))) {
     startDate = Date.parse(startDate);
     filteredLabs = filteredLabs.filter(
@@ -426,6 +432,7 @@ function filterLabs(
       lab => Date.parse(lab.startDate) < endDate
     );
   }
+
   if (offset !== undefined && !isNaN(Number(offset))) {
     filteredLabs = filteredLabs.slice(Number(offset), filteredLabs.length);
   }
@@ -434,7 +441,7 @@ function filterLabs(
     filteredLabs = filteredLabs.slice(0, Number(limit));
   }
 
-  return filteredLabs;
+  return {filteredLabs, totalLabsCount};
 }
 
 function getUserLabs(user) {

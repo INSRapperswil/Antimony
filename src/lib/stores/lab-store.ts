@@ -16,6 +16,7 @@ export class LabStore {
   @observable accessor labs: Lab[] = [];
   @observable accessor lookup: Map<string, Lab> = new Map();
   @observable accessor fetchReport: FetchReport = DefaultFetchReport;
+  @observable accessor header: string | null = null;
 
   @observable accessor limit: number = 5;
   @observable accessor offset: number = 0;
@@ -82,7 +83,10 @@ export class LabStore {
   }
 
   @action
-  private updateStore(data: [boolean, Lab[] | ErrorResponse]) {
+  private updateStore(data: [boolean, Lab[] | ErrorResponse, Headers | null]) {
+    if (data[2]) {
+      this.header = data[2].get('X-Total-Count');
+    }
     if (data[0]) {
       this.labs = data[1] as Lab[];
       this.fetchReport = {state: FetchState.Done};

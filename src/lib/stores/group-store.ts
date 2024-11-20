@@ -78,7 +78,7 @@ export class GroupStore {
   }
 
   @action
-  private setData(data: [boolean, Group[] | ErrorResponse]) {
+  private setData(data: [boolean, Group[] | ErrorResponse, Headers | null]) {
     if (data[0]) {
       this.groups = (data[1] as Group[]).toSorted((a, b) =>
         a.name.localeCompare(b.name)

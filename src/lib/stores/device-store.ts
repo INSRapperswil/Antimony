@@ -37,7 +37,9 @@ export class DeviceStore {
   }
 
   @action
-  private update(data: [boolean, DeviceInfo[] | ErrorResponse]) {
+  private update(
+    data: [boolean, DeviceInfo[] | ErrorResponse, Headers | null]
+  ) {
     if (data[0]) {
       this.devices = data[1] as DeviceInfo[];
       this.fetchReport = {state: FetchState.Done};

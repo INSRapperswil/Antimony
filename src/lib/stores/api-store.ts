@@ -115,9 +115,9 @@ export class APIStore {
     body?: R,
     isExternal = false,
     skipAuthentication = false
-  ): Promise<[boolean, T | ErrorResponse]> {
+  ): Promise<[boolean, T | ErrorResponse, Headers | null]> {
     if (!skipAuthentication && !isExternal && !this.isLoggedIn) {
-      return [false, {code: '-1', message: 'Unauthorized'}];
+      return [false, {code: '-1', message: 'Unauthorized'}, null];
     }
 
     let response: Response | null = null;
@@ -150,13 +150,14 @@ export class APIStore {
     }
 
     if (isExternal) {
-      return [true, JSON.parse(await response.text())];
+      return [true, JSON.parse(await response.text()), response.headers];
     }
 
+    const headers = response.headers;
     const responseBody = await response.json();
 
     if ('code' in responseBody) {
-      return [false, responseBody];
+      return [false, responseBody, headers];
     }
 
     runInAction(() => {
@@ -166,7 +167,7 @@ export class APIStore {
         this.hasAPIError = false;
       }
     });
-    return [true, responseBody.payload];
+    return [true, responseBody.payload, headers];
   }
 
   public logout() {

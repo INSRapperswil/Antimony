@@ -68,15 +68,9 @@ export class LabStore {
 
     try {
       this.rootStore._apiConnectorStore
-        .get<Lab[]>(
-          `/labs?limit=${this.limit}&offset=${
-            this.offset
-          }&stateFilter=${JSON.stringify(
-            this.filters
-          )}&searchQuery=${JSON.stringify(
-            this.query
-          )}&groupFilter=${JSON.stringify(this.groupFilter)}`
-        )
+        .get<
+          Lab[]
+        >(`/labs?limit=${this.limit}&offset=${this.offset}&stateFilter=${JSON.stringify(this.filters)}&searchQuery=${JSON.stringify(this.query)}&groupFilter=${JSON.stringify(this.groupFilter)}`)
         .then(data => this.updateStore(data));
     } catch (error) {
       this.fetchReport = {

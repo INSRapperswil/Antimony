@@ -47,7 +47,7 @@ const DashboardPage: React.FC = () => {
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [totalAmountOfEntries, setTotalAmountOfEntries] = useState<number>(10); // use API header in future
-  const [pageSize] = useState<number>(5);
+  const [pageSize, setPageSize] = useState<number>(5);
   const groupStore = useGroupStore();
   const notificationStore = useNotifications();
   const labStore = useLabStore();
@@ -60,6 +60,32 @@ const DashboardPage: React.FC = () => {
   const typingTimeoutRef = useRef<number | undefined>(undefined);
   const [labs, setLabs] = useState<Lab[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState<number>(0);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const {height} = containerRef.current.getBoundingClientRect();
+        const adjustedHeight = height - 68; // Adjust for padding/margins
+        setContentHeight(adjustedHeight);
+        setPageSize(Math.floor(adjustedHeight / 80)); // Calculate page size directly
+      }
+    };
+
+    // Add event listeners for both resize and fullscreen change
+    window.addEventListener('resize', updateHeight);
+    document.addEventListener('fullscreenchange', updateHeight); // Listen for fullscreen changes
+
+    // Initial calculation
+    updateHeight();
+
+    return () => {
+      // Cleanup listeners
+      window.removeEventListener('resize', updateHeight);
+      document.removeEventListener('fullscreenchange', updateHeight);
+    };
+  }, [containerRef]);
 
   useEffect(() => {
     labStore.setParameters(
@@ -255,7 +281,7 @@ const DashboardPage: React.FC = () => {
               />
             </If>
           </div>
-          <div className="sb-labs-content">
+          <div className="sb-labs-content" ref={containerRef}>
             <Choose>
               <When condition={labs!.length > 0}>
                 <div className="lab-explorer-container">

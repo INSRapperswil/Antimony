@@ -7,7 +7,7 @@ import Graph from 'react-graph-vis';
 import {Button} from 'primereact/button';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import {Lab, TopologyDefinition, YAMLDocument} from '@sb/types/types';
+import {Lab, NodeMeta, TopologyDefinition, YAMLDocument} from '@sb/types/types';
 import {NetworkOptions} from '@sb/components/editor-page/topology-editor/node-editor/network.conf';
 
 import './lab-dialog.sass';
@@ -15,6 +15,7 @@ import {ContextMenu} from 'primereact/contextmenu';
 import {Checkbox} from 'primereact/checkbox';
 import {drawGrid} from '@sb/lib/utils/utils';
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
+import {If} from '@sb/types/control';
 
 type GraphDefinition = {
   nodes?: Node[];
@@ -35,6 +36,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const [hostsHidden, setHostsHidden] = useState<boolean>(false);
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
   const [selectedNode, setSelectedNode] = useState<number | null>(null);
+  const [menuVisibility, setMenuVisibility] = useState<boolean>(false);
 
   const deviceStore = useDeviceStore();
   const topologyStore = useTopologyStore();
@@ -122,6 +124,41 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     }
   }
 
+  function onNetworkClick(selectData: NodeClickEvent) {
+    if (!network) return;
+
+    const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+
+    if (targetNode !== undefined) {
+      setSelectedNode(targetNode as number);
+      setMenuVisibility(true);
+    } else {
+      setMenuVisibility(false);
+      setSelectedNode(null);
+    }
+  }
+
+  function copyNodeHost(meta: NodeMeta) {
+    if (meta) {
+      const textToCopy = meta.webSsh + ':' + meta.port;
+
+      navigator.clipboard
+        .writeText(textToCopy)
+        .then(() => {
+          console.log('Copied to clipboard:', textToCopy);
+        })
+        .catch(err => {
+          console.error('Failed to copy to clipboard:', err);
+        });
+    }
+  }
+
+  function openNodeHost(meta: NodeMeta) {
+    if (meta) {
+      window.open(meta.webSsh);
+    }
+  }
+
   const networkContextMenuItems = useMemo(() => {
     if (selectedNode !== null) {
       return [
@@ -158,11 +195,32 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       <div className="height-100">
         <div className="topology-header">
           <Button
+            className="menu-button"
             onClick={() => window.open(props.lab.edgesharkLink, '_blank')}
-            className="topology-button"
           >
             🦈 Start EdgeShark
           </Button>
+          <If condition={menuVisibility && selectedNode !== null}>
+            <div className="node-menu">
+              <Button
+                className="menu-button"
+                label="Copy Host"
+                icon="pi pi-copy"
+                onClick={() => {
+                  copyNodeHost(props.lab.nodeMeta[selectedNode!]);
+                }}
+              />
+              <Button
+                className="menu-button"
+                label="Web SSH"
+                icon="pi pi-external-link"
+                onClick={() => {
+                  // Logic for opening Web SSH
+                  openNodeHost(props.lab.nodeMeta[selectedNode!]);
+                }}
+              />
+            </div>
+          </If>
           <div className="dialog-actions">
             <Checkbox
               inputId="hostsVisibleCheckbox"
@@ -185,6 +243,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
             }}
             events={{
               oncontext: onNetworkContext,
+              click: onNetworkClick,
             }}
             getNetwork={setNetwork}
           />

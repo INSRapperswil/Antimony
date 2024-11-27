@@ -249,7 +249,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   <NodeEditor
                     onAddNode={onAddNode}
                     onEditNode={onNodeEdit}
-                    openTopology={openTopology!.definition}
+                    openTopology={openTopology!}
                   />
                 </SplitterPanel>
               </Splitter>

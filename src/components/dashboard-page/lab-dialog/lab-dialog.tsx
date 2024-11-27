@@ -7,7 +7,13 @@ import Graph from 'react-graph-vis';
 import {Button} from 'primereact/button';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import {Lab, NodeMeta, TopologyDefinition, YAMLDocument} from '@sb/types/types';
+import {
+  Lab,
+  GraphNodeClickEvent,
+  NodeMeta,
+  TopologyDefinition,
+  YAMLDocument,
+} from '@sb/types/types';
 import {NetworkOptions} from '@sb/components/editor-page/topology-editor/node-editor/network.conf';
 
 import './lab-dialog.sass';
@@ -16,11 +22,7 @@ import {Checkbox} from 'primereact/checkbox';
 import {drawGrid} from '@sb/lib/utils/utils';
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
 import {If} from '@sb/types/control';
-
-type GraphDefinition = {
-  nodes?: Node[];
-  edges?: Edge[];
-};
+import {Data} from 'vis-network/declarations/network/Network';
 
 interface LabDialogProps {
   lab: Lab;
@@ -58,7 +60,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     [topologyStore.topologies]
   );
 
-  const graph: GraphDefinition = useMemo(() => {
+  const graph: Data = useMemo(() => {
     if (!topologyDefinition) return {nodes: [], edges: []};
 
     const nodeMap = new Map<string, number>();
@@ -113,7 +115,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     }
   }, [network, updateGraphData]);
 
-  function onNetworkContext(selectData: NodeClickEvent) {
+  function onNetworkContext(selectData: GraphNodeClickEvent) {
     if (!nodeContextMenuRef.current) return;
 
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
@@ -124,7 +126,7 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     }
   }
 
-  function onNetworkClick(selectData: NodeClickEvent) {
+  function onNetworkClick(selectData: GraphNodeClickEvent) {
     if (!network) return;
 
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
@@ -253,21 +255,5 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     </SBDialog>
   );
 };
-
-interface NodeClickEvent {
-  nodes: Node[];
-  edges: Edge[];
-  event: React.SyntheticEvent;
-  pointer: {
-    DOM: {
-      x: number;
-      y: number;
-    };
-    canvas: {
-      x: number;
-      y: number;
-    };
-  };
-}
 
 export default LabDialog;

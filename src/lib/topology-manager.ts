@@ -1,6 +1,5 @@
 import {APIStore} from '@sb/lib/stores/api-store';
 import {TopologyStore} from '@sb/lib/stores/topology-store';
-import {parsePosition} from '@sb/lib/utils/utils';
 import _ from 'lodash';
 import {parseDocument, Scalar, YAMLMap} from 'yaml';
 import cloneDeep from 'lodash.clonedeep';
@@ -54,6 +53,7 @@ export class TopologyManager {
     // Bind these functions to the class so they can be called from the view directly
     this.clear = this.clear.bind(this);
     this.save = this.save.bind(this);
+    this.writePositions = this.writePositions.bind(this);
   }
 
   public get editingTopologyId(): string | null {
@@ -146,7 +146,6 @@ export class TopologyManager {
       name: this.editingTopology.definition.toJS().name,
       topology: {
         nodes: {},
-        links: [],
       },
     };
 
@@ -208,9 +207,47 @@ export class TopologyManager {
   public hasEdits() {
     if (!this.editingTopology || !this.originalTopology) return false;
     return !_.isEqual(
-      this.editingTopology.definition.toJS(),
-      this.originalTopology.definition.toJS()
+      this.editingTopology.definition.toString(),
+      this.originalTopology.definition.toString()
     );
+  }
+
+  /**
+   * Writes the positions from the position map to the topology definition.
+   */
+  public writePositions() {
+    if (!this.editingTopology) return;
+
+    const yamlNodes = this.editingTopology.definition.getIn([
+      'topology',
+      'nodes',
+    ]) as YAMLMap;
+
+    const nodeKeys = Object.keys(
+      yamlNodes.toJS(this.editingTopology.definition)
+    );
+    if (nodeKeys.length === 0) return;
+
+    /*
+     * We need to write the first comment differently as it belongs to the node
+     * list and not to the actual node.
+     */
+    if (this.editingTopology.positions.has(nodeKeys[0])) {
+      yamlNodes.commentBefore = TopologyManager.writePosition(
+        this.editingTopology.positions.get(nodeKeys[0])!
+      );
+    }
+
+    for (let i = 1; i < yamlNodes.items.length; i++) {
+      if (!this.editingTopology.positions.has(nodeKeys[i])) continue;
+
+      const key = yamlNodes.items[i].key as Scalar;
+      key.commentBefore = TopologyManager.writePosition(
+        this.editingTopology.positions.get(nodeKeys[i])!
+      );
+    }
+
+    this.apply(this.editingTopology.definition, TopologyEditSource.System);
   }
 
   public get topology() {
@@ -226,13 +263,15 @@ export class TopologyManager {
         });
         const positions = new Map<string, Position>();
         const nodes = definition.getIn(['topology', 'nodes']) as YAMLMap;
-        if (nodes && nodes.items.length > 0) {
+        if (!nodes) {
+          definition.setIn(['topology', 'nodes'], {});
+        } else if (nodes.items.length > 0) {
           /*
-           * The comment of the first element is actually the comment of the
-           * array itself for some reason.
+           * We need to parse the first comment differently as it belongs to the
+           * node list and not to the actual node.
            */
           if (nodes.commentBefore) {
-            const parsed = parsePosition(nodes.commentBefore);
+            const parsed = TopologyManager.readPosition(nodes.commentBefore);
             if (parsed) {
               positions.set(
                 (nodes.items[0].key as Scalar).value as string,
@@ -241,14 +280,14 @@ export class TopologyManager {
             }
           }
           for (let i = 1; i < nodes.items.length; i++) {
-            // console.log('Node: ', nodes.items[i]);
             const key = nodes.items[i].key as Scalar;
-            const parsed = parsePosition(key.commentBefore);
+            const parsed = TopologyManager.readPosition(key.commentBefore);
             if (parsed) {
               positions.set(key.value as string, parsed);
             }
           }
         }
+
         topologies.push({
           ...topology,
           definition: definition,
@@ -264,17 +303,42 @@ export class TopologyManager {
       }
     }
 
-    console.log('TOPOLOGIES:', topologies);
-
     return topologies.toSorted((a, b) =>
-      (a.definition.get('name') as string).localeCompare(
+      (a.definition.get('name') as string)?.localeCompare(
         b.definition.get('name') as string
       )
     );
   }
-}
 
-export const DefaultTopology = `name: topology
-topology:
-  nodes:
-    node1:`;
+  /**
+   * Parses a position string to a position object. Returns null if the parsing
+   * failed.
+   *
+   * Format: pos=[x, y]
+   */
+  private static readPosition(
+    value: string | null | undefined
+  ): Position | null {
+    if (!value) return null;
+
+    const matches = value.replaceAll(' ', '').match(/pos=\[-?(\d+),-?(\d+)]/);
+    if (matches && matches.length === 3) {
+      const x = Number(matches[1]);
+      const y = Number(matches[2]);
+      if (!isNaN(x) && !isNaN(y)) {
+        return {x, y};
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Creates a position string from a position object.
+   *
+   * Format: pos=[x, y]
+   */
+  private static writePosition(position: Position) {
+    return ' pos=[' + position.x + ',' + position.y + ']';
+  }
+}

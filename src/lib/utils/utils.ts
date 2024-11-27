@@ -1,4 +1,4 @@
-import {FetchState, Position} from '@sb/types/types';
+import {FetchState} from '@sb/types/types';
 
 export function matchesSearch(value: string, search: string) {
   return value.toLowerCase().includes(search.toLowerCase());
@@ -74,27 +74,4 @@ export function drawGrid(ctx: CanvasRenderingContext2D) {
     ctx.lineTo(-width * gridExtent, y);
     ctx.stroke();
   }
-}
-
-/**
- * Parses a position string to a position object. Returns null if the parsing
- * failed.
- *
- * Format: pos=[x, y]
- */
-export function parsePosition(
-  value: string | null | undefined
-): Position | null {
-  if (!value) return null;
-
-  const matches = value.replaceAll(' ', '').match(/pos=\[(\d+),(\d+)]/);
-  if (matches && matches.length === 3) {
-    const x = Number(matches[1]);
-    const y = Number(matches[2]);
-    if (!isNaN(x) && !isNaN(y)) {
-      return {x, y};
-    }
-  }
-
-  return null;
 }

@@ -5,7 +5,12 @@ import React from 'react';
 
 import './node-toolbar.sass';
 
-const NodeToolbar = () => {
+interface NodeToolbarProps {
+  onAutoLayout: () => void;
+  onFitLayout: () => void;
+}
+
+const NodeToolbar = (props: NodeToolbarProps) => {
   const topologyStore = useTopologyStore();
 
   return (
@@ -23,8 +28,24 @@ const NodeToolbar = () => {
         onClick={topologyStore.manager.clear}
         tooltip="Clear"
       />
-      <Button icon="pi pi-undo" text tooltip="Reset Layout" />
-      <Button icon="pi pi-save" text tooltip="Save Layout" />
+      <Button
+        icon="pi pi-sparkles"
+        text
+        tooltip="Auto Layout"
+        onClick={props.onAutoLayout}
+      />
+      <Button
+        icon="pi pi-save"
+        text
+        tooltip="Save Layout"
+        onClick={topologyStore.manager.writePositions}
+      />
+      <Button
+        icon="pi pi-search-plus"
+        text
+        tooltip="Fit Layout"
+        onClick={props.onFitLayout}
+      />
     </div>
   );
 };

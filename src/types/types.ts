@@ -1,3 +1,5 @@
+import React from 'react';
+import {IdType} from 'vis-network';
 import {Document, ToJSOptions} from 'yaml';
 
 /*
@@ -217,6 +219,22 @@ export enum FetchState {
   Pending,
   Done,
   Error,
+}
+
+export interface GraphNodeClickEvent {
+  nodes: IdType[];
+  edges: IdType[];
+  event: React.SyntheticEvent;
+  pointer: {
+    DOM: {
+      x: number;
+      y: number;
+    };
+    canvas: {
+      x: number;
+      y: number;
+    };
+  };
 }
 
 export const DefaultFetchReport = {

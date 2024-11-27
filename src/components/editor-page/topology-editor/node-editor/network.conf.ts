@@ -1,6 +1,7 @@
 export const NetworkOptions = {
   layout: {
     hierarchical: false,
+    randomSeed: 69,
   },
   nodes: {
     shape: 'image',
@@ -33,17 +34,18 @@ export const NetworkOptions = {
     },
   },
   physics: {
+    enabled: true,
     solver: 'forceAtlas2Based',
     forceAtlas2Based: {
-      theta: 0.5,
-      damping: 0.7,
-      springConstant: 0.2,
-      avoidOverlap: 0,
+      theta: 0.7,
+      damping: 0.2,
+      springConstant: 0.04,
+      avoidOverlap: 0.5,
     },
     stabilization: {
       enabled: true,
       iterations: 800,
-      updateInterval: 8,
+      updateInterval: 150,
       fit: true,
     },
     maxVelocity: 40,

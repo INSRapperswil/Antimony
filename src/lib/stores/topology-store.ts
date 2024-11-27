@@ -1,7 +1,7 @@
 import {action, observable, observe} from 'mobx';
 
 import {RootStore} from '@sb/lib/stores/root-store';
-import {DefaultTopology, TopologyManager} from '@sb/lib/topology-manager';
+import {TopologyManager} from '@sb/lib/topology-manager';
 import {
   DefaultFetchReport,
   ErrorResponse,
@@ -13,6 +13,9 @@ import {
   TopologyResponse,
   uuid4,
 } from '@sb/types/types';
+import YAML from 'yaml';
+
+const TopologyDefaultName = 'topology';
 
 export class TopologyStore {
   private rootStore: RootStore;
@@ -62,7 +65,10 @@ export class TopologyStore {
       TopologyResponse
     >('/topologies', {
       groupId: groupId,
-      definition: DefaultTopology,
+      definition: YAML.stringify({
+        name: this.generateUniqueName(groupId),
+        topology: {nodes: {}},
+      }),
     });
     if (!response[0]) {
       return [false, response[1]];
@@ -73,7 +79,6 @@ export class TopologyStore {
     return [true, response[1]];
   }
 
-  @action
   public async update(topology: Topology): Promise<ErrorResponse | null> {
     const response = await this.rootStore._apiConnectorStore.patch<
       TopologyIn,
@@ -109,5 +114,22 @@ export class TopologyStore {
         errorMessage: (data[1] as ErrorResponse).message,
       };
     }
+  }
+
+  private generateUniqueName(groupId: uuid4) {
+    const groupTopologies = this.topologies
+      .filter(topology => topology.groupId === groupId)
+      .map(topology => topology.definition.getIn(['name']) as string);
+
+    let equalNames = 0;
+    let nameIndex = 0;
+    do {
+      nameIndex++;
+      equalNames = groupTopologies.filter(
+        topology => topology === TopologyDefaultName + String(nameIndex)
+      ).length;
+    } while (equalNames > 0);
+
+    return TopologyDefaultName + String(nameIndex);
   }
 }

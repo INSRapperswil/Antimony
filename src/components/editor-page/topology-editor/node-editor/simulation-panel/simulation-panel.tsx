@@ -43,7 +43,7 @@ const SimulationPanel = observer((props: SimulationPanelProps) => {
       <ConfigSlider
         header="Link Length"
         minValue={0}
-        maxValue={500}
+        maxValue={200}
         value={simulationConfig.springLength}
         onChange={simulationConfig.setSpringLength}
         defaultValue={SimulationConfig.DefaultSpringLength}
@@ -51,7 +51,7 @@ const SimulationPanel = observer((props: SimulationPanelProps) => {
       <ConfigSlider
         header="Central Gravity"
         minValue={0}
-        maxValue={0.1}
+        maxValue={0.05}
         multiplier={0.001}
         value={simulationConfig.centralGravity}
         onChange={simulationConfig.setCentralGravity}

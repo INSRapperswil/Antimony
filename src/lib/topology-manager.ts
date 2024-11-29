@@ -116,16 +116,19 @@ export class TopologyManager {
    *
    * @param updatedTopology The updated topology.
    * @param source The source of the update.
+   * @param updatedPositions (Optional) The updated positions map.
    */
   public apply(
     updatedTopology: YAMLDocument<TopologyDefinition>,
-    source: TopologyEditSource
+    source: TopologyEditSource,
+    updatedPositions: Map<string, Position> | undefined = undefined
   ) {
     if (!this.editingTopology) return;
 
     this.onEdit.update({
       updatedTopology: {
         ...this.editingTopology,
+        positions: updatedPositions ?? this.editingTopology.positions,
         definition: updatedTopology,
       },
       isEdited: !_.isEqual(
@@ -254,39 +257,46 @@ export class TopologyManager {
     return this.editingTopology;
   }
 
+  public static parseTopology(
+    definitionString: string
+  ): [YAMLDocument<TopologyDefinition>, Map<string, Position>] {
+    const definition = parseDocument(definitionString, {
+      keepSourceTokens: true,
+    });
+    const positions = new Map<string, Position>();
+    const nodes = definition.getIn(['topology', 'nodes']) as YAMLMap;
+    if (!nodes) {
+      definition.setIn(['topology', 'nodes'], {});
+    } else if (nodes.items.length > 0) {
+      /*
+       * We need to parse the first comment differently as it belongs to the
+       * node list and not to the actual node.
+       */
+      if (nodes.commentBefore) {
+        const parsed = TopologyManager.readPosition(nodes.commentBefore);
+        if (parsed) {
+          positions.set((nodes.items[0].key as Scalar).value as string, parsed);
+        }
+      }
+      for (let i = 1; i < nodes.items.length; i++) {
+        const key = nodes.items[i].key as Scalar;
+        const parsed = TopologyManager.readPosition(key.commentBefore);
+        if (parsed) {
+          positions.set(key.value as string, parsed);
+        }
+      }
+    }
+
+    return [definition, positions];
+  }
+
   public static parseTopologies(input: TopologyOut[]) {
     const topologies: Topology[] = [];
     for (const topology of input) {
       try {
-        const definition = parseDocument((topology as TopologyOut).definition, {
-          keepSourceTokens: true,
-        });
-        const positions = new Map<string, Position>();
-        const nodes = definition.getIn(['topology', 'nodes']) as YAMLMap;
-        if (!nodes) {
-          definition.setIn(['topology', 'nodes'], {});
-        } else if (nodes.items.length > 0) {
-          /*
-           * We need to parse the first comment differently as it belongs to the
-           * node list and not to the actual node.
-           */
-          if (nodes.commentBefore) {
-            const parsed = TopologyManager.readPosition(nodes.commentBefore);
-            if (parsed) {
-              positions.set(
-                (nodes.items[0].key as Scalar).value as string,
-                parsed
-              );
-            }
-          }
-          for (let i = 1; i < nodes.items.length; i++) {
-            const key = nodes.items[i].key as Scalar;
-            const parsed = TopologyManager.readPosition(key.commentBefore);
-            if (parsed) {
-              positions.set(key.value as string, parsed);
-            }
-          }
-        }
+        const [definition, positions] = TopologyManager.parseTopology(
+          topology.definition
+        );
 
         topologies.push({
           ...topology,
@@ -321,7 +331,7 @@ export class TopologyManager {
   ): Position | null {
     if (!value) return null;
 
-    const matches = value.replaceAll(' ', '').match(/pos=\[-?(\d+),-?(\d+)]/);
+    const matches = value.replaceAll(' ', '').match(/pos=\[(-?\d+),(-?\d+)]/);
     if (matches && matches.length === 3) {
       const x = Number(matches[1]);
       const y = Number(matches[2]);

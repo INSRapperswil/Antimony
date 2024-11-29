@@ -1,9 +1,10 @@
 .p-button
   transition: all 0.1s ease-in
-  background-color: var(--primary-color-border)
   border-color: transparent
-  //color: var(--primary-color-border)
-  //border-radius: 3px
+
+  &:not(.p-button-danger,.p-button-outlined,.p-button-icon-only)
+    color: white
+    background-color: var(--primary-color-border)
 
   &.p-button-icon-only
     padding: 0.75rem 0
@@ -14,8 +15,17 @@
     border-color: var(--primary-color-border)
     background-color: transparent
 
+  // We compensate for the iconoir icons being slightly smaller by giving it less padding
+  &.sb-iconoir-button
+    padding: 6px !important
+
   &:hover
     filter: brightness(1.2)
+
+  .p-badge
+    width: 0.75rem
+    height: 0.75rem
+    min-width: unset
 
 .p-tooltip
   transition: opacity 0.2s ease-in-out !important
@@ -36,7 +46,7 @@
   border-radius: 4px
 
 .p-treenode-content
-  padding: 4px
+  padding: 0
   box-shadow: none
   outline: none
 
@@ -187,3 +197,12 @@
 
   td
     padding: 3px
+
+.p-slider-handle
+  border-color: var(--primary-color-border)
+
+  &:hover
+    background-color: var(--primary-color-border)
+
+.p-slider-range
+  background-color: var(--primary-color-border)

@@ -72,13 +72,13 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
       topologyTree.push({
         key: group.id,
         label: group.name,
-        icon: 'pi pi-users',
+        icon: 'pi pi-folder',
         selectable: false,
         leaf: false,
         children: topologiesByGroup.get(group.id)?.map(topology => ({
           key: topology.id,
           label: topology.definition.getIn(['name']) as string,
-          icon: 'pi pi-file',
+          icon: <span className="material-symbols-outlined">lan</span>,
           leaf: true,
           selectable: true,
         })),

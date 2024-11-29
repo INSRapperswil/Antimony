@@ -4745,6 +4745,11 @@ human-signals@^2.1.0:
   resolved "https://registry.yarnpkg.com/human-signals/-/human-signals-2.1.0.tgz#dc91fcba42e4d06e4abaed33b3e7a3c02f514ea0"
   integrity sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==
 
+iconoir-react@^7.10.1:
+  version "7.10.1"
+  resolved "https://registry.yarnpkg.com/iconoir-react/-/iconoir-react-7.10.1.tgz#3898d758a0ff3c0fc3d4b6c18c4f51664b8f6ae8"
+  integrity sha512-Zqxwx+cUfXSrHWn82DNVWCPLq5RKUcDLevUvl37GdYaB73EJ+eNGdpdifGzhIWZ21U7/z0KVcdOJZp5BNyXzBw==
+
 iconv-lite@0.4.24, iconv-lite@^0.4.24:
   version "0.4.24"
   resolved "https://registry.yarnpkg.com/iconv-lite/-/iconv-lite-0.4.24.tgz#2022b4b25fbddc21d2f524974a474aafe733908b"
@@ -5504,6 +5509,11 @@ map-obj@^4.0.0:
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/map-obj/-/map-obj-4.3.0.tgz#9304f906e93faae70880da102a9f1df0ea8bb05a"
   integrity sha512-hdN1wVrZbb29eBGiGjJbeP8JbKjq1urkHJ/LIP/NY48MZ1QVXUsQBV1G1zvYFHn1XE06cwjBsOI2K3Ulnj1YXQ==
+
+material-symbols@^0.27.1:
+  version "0.27.1"
+  resolved "https://registry.yarnpkg.com/material-symbols/-/material-symbols-0.27.1.tgz#ba6152be598f36cdcc23bb6b060ef54621fbb2fe"
+  integrity sha512-ICw3sP2EyCsxo1T2vvQGhxcUX8sqb3FYLF0vTUOjCNPdJ8G1Z3bn3wjAh2ZIdP/AfGy96zuBY5okK3Ag4XLyVw==
 
 mdn-data@2.0.28:
   version "2.0.28"

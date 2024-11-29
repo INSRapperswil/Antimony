@@ -64,7 +64,6 @@ const SBDialog: React.FC<SBDialogProps> = (props: SBDialogProps) => {
         <Button
           icon="pi pi-check"
           label={props.submitLabel ?? 'Submit'}
-          outlined
           onClick={() => props.onSubmit?.call(null)}
           className="w-8rem"
         />

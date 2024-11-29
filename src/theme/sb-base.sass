@@ -1,9 +1,13 @@
+$material-symbols-font-path: '~material-symbols/'
+
 @import "primeflex/primeflex"
 @import "primeicons/primeicons.css"
+@import "material-symbols/outlined"
 
 @import "sb-fonts"
 @import "sb-colors"
 @import "sb-prime"
+
 
 :root
   --font-family: 'Figtree', Roboto, sans-serif
@@ -88,6 +92,12 @@ body
 
 label
   user-select: none
+
+// Styles to match material symbols with prime icons
+.material-symbols-outlined
+  font-size: 1rem
+  margin-right: 8px
+  color: rgba(255, 255, 255, 0.6)
 
 @keyframes appear
   0%

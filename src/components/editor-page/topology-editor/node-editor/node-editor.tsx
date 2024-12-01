@@ -56,13 +56,9 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
     // Reference to the currently targeted node for the radial and context menu
     const menuTargetRef = useRef<IdType | null>(null);
 
-    // Referece to the current graph data since we can't get it from the network
-    // const currentNetworkData = useRef<Data | null>(null);
-
     const nodeConnectTarget = useRef<IdType | null>(null);
     const nodeConnectTargetPosition = useRef<Position | null>(null);
     const nodeConnectDestination = useRef<Position | null>(null);
-    const nodeConnecting = useRef(false);
 
     useResizeObserver(containerRef, () => {
       if (network) {
@@ -112,46 +108,51 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       return {nodes: nodes, edges: edges};
     }, [props.openTopology, deviceStore]);
 
-    /*
-     * We need to use the imperative way here to update the data in order to
-     * allow for smooth transitions and other side effects.
-     */
-    useEffect(() => {
-      if (!network) return;
-
-      // Ignore update if graph hasn't changed
-      // if (isEqual(currentNetworkData.current, graphData)) return;
-      // currentNetworkData.current = graphData;
-
-      const position = network.getViewPosition();
-      const scale = network.getScale();
-      setSelectedNode(null);
-      radialMenuRef.current?.hide();
-      network.setData(graphData);
-      network.moveTo({position, scale});
-    }, [network, graphData]);
+    const onKeyDown = useCallback(
+      (event: KeyboardEvent) => {
+        console.log('ONKEYDOWN', event.key);
+        if (event.key === 'Escape') {
+          console.log('DISABLE');
+          nodeConnectTarget.current = null;
+          nodeConnectDestination.current = null;
+          network?.redraw();
+        }
+      },
+      [network]
+    );
 
     const drawConnectionLine = useCallback(
       (ctx: CanvasRenderingContext2D) => {
         if (
           !network ||
           !nodeConnectTargetPosition.current ||
-          !nodeConnectDestination.current
+          !nodeConnectDestination.current ||
+          !containerRef.current
         ) {
           return;
         }
 
         const target = nodeConnectTargetPosition.current;
-        // const destination = getMousePosition(
-        //   ctx.canvas,
-        //   nodeConnectDestination.current
-        // );
-        const destination = network.canvasToDOM(nodeConnectDestination.current);
+        const canvasPosition = (
+          containerRef.current as HTMLElement
+        ).getBoundingClientRect();
+        const relativeDestination = network.DOMtoCanvas(
+          nodeConnectDestination.current
+        );
+        const destination = {
+          x: relativeDestination.x - canvasPosition.x,
+          y: relativeDestination.y - canvasPosition.y,
+        };
 
         ctx.lineWidth = 2;
         ctx.strokeStyle = 'rgb(66 181 172)';
         ctx.moveTo(target.x, target.y);
         ctx.lineTo(destination.x, destination.y);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(destination.x, destination.y, 4, 0, 2 * Math.PI);
+        ctx.fill();
         ctx.stroke();
       },
       [network]
@@ -173,7 +174,6 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       nodeConnectTarget.current = menuTargetRef.current;
       nodeConnectTargetPosition.current =
         network?.getPosition(menuTargetRef.current) ?? null;
-      nodeConnecting.current = nodeConnectTargetPosition.current !== null;
     }, [network]);
 
     const onNodeEdit = useCallback(() => {
@@ -204,23 +204,32 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
     );
 
     function onMouseMove(event: MouseEvent<HTMLDivElement>) {
-      if (!nodeConnecting.current || !network) return;
+      if (!nodeConnectTarget.current || !network) return;
+
+      console.log('<BVE>');
 
       nodeConnectDestination.current = {x: event.clientX, y: event.clientY};
       network?.redraw();
     }
 
-    function getMousePosition(
-      canvas: HTMLCanvasElement,
-      evt: Position
-    ): Position {
-      const rect = canvas.getBoundingClientRect();
+    useEffect(() => {
+      if (!network) return;
 
-      return {
-        x: (evt.x - rect.left) * (canvas.width / rect.width),
-        y: (evt.y - rect.top) * (canvas.height / rect.height),
+      const position = network.getViewPosition();
+      const scale = network.getScale();
+      setSelectedNode(null);
+      radialMenuRef.current?.hide();
+      network.setData(graphData);
+      network.moveTo({position, scale});
+    }, [network, graphData]);
+
+    useEffect(() => {
+      window.addEventListener('keydown', onKeyDown);
+
+      return () => {
+        window.removeEventListener('keydown', onKeyDown);
       };
-    }
+    }, [onKeyDown]);
 
     useEffect(() => {
       if (!network) return;

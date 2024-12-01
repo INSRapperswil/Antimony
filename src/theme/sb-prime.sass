@@ -55,7 +55,10 @@
   overflow: hidden
 
 .p-contextmenu
+  background-color: var(--header-color)
   border-left: 3px solid var(--primary-color-border)
+  max-height: 300px
+  overflow-y: auto
 
   // This makes it so context menus can expand if the content too wide
   min-width: 12.5rem
@@ -117,10 +120,6 @@
 
 .p-image
   display: flex
-
-.p-contextmenu
-  max-height: 300px
-  overflow-y: auto
 
 .p-dropdown-panel
   background-color: var(--overlay-color)

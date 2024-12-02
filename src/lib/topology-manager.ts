@@ -1,5 +1,4 @@
 import {APIStore} from '@sb/lib/stores/api-store';
-import {TopologyStore} from '@sb/lib/stores/topology-store';
 import _ from 'lodash';
 import {parseDocument, Scalar, YAMLMap, YAMLSeq} from 'yaml';
 import cloneDeep from 'lodash.clonedeep';
@@ -16,11 +15,13 @@ import {
   TopologyDefinition,
   TopologyMeta,
   TopologyOut,
+  uuid4,
   YAMLDocument,
 } from '@sb/types/types';
 import {validate} from 'jsonschema';
 import {DeviceStore} from '@sb/lib/stores/device-store';
 import {pushOrCreateList} from '@sb/lib/utils/utils';
+import {TopologyStore} from '@sb/lib/stores/topology-store';
 
 export type TopologyEditReport = {
   updatedTopology: Topology;
@@ -81,7 +82,10 @@ export class TopologyManager {
   public async save(): Promise<ErrorResponse | null> {
     if (!this.editingTopology) return null;
 
-    const error = await this.topologyStore.update(this.editingTopology);
+    const error = await this.topologyStore.update(this.editingTopology.id, {
+      groupId: this.editingTopology.groupId,
+      definition: this.editingTopology.definition.toString(),
+    });
     if (error) return error;
 
     await this.topologyStore.fetch();
@@ -200,7 +204,7 @@ export class TopologyManager {
    * @param nodeName2 The name of ths second node to connect.
    */
   public connectNodes(nodeName1: string, nodeName2: string) {
-    if (!this.editingTopology || !this.deviceStore.devices) return;
+    if (!this.editingTopology || !this.deviceStore.data) return;
 
     const updatedTopology = this.editingTopology.definition.clone();
     const hostInterface = this.getNextInterface(
@@ -353,6 +357,17 @@ export class TopologyManager {
       }
     }
 
+    if (!definition.hasIn(['topology', 'links'])) {
+      return [
+        definition,
+        {
+          positions,
+          connections: [],
+          connectionMap: new Map<string, NodeConnection[]>(),
+        },
+      ];
+    }
+
     const links = (definition.getIn(['topology', 'links']) as YAMLSeq).toJS(
       definition
     );
@@ -494,7 +509,29 @@ export class TopologyManager {
   private static writePosition(position: Position) {
     return ' pos=[' + position.x + ',' + position.y + ']';
   }
+
+  /**
+   * Generates a unique new name for a topology in a given group.
+   */
+  public static generateUniqueName(groupId: uuid4, topologies: Topology[]) {
+    const groupTopologies = topologies
+      .filter(topology => topology.groupId === groupId)
+      .map(topology => topology.definition.getIn(['name']) as string);
+
+    let equalNames = 0;
+    let nameIndex = 0;
+    do {
+      nameIndex++;
+      equalNames = groupTopologies.filter(
+        topology => topology === TopologyDefaultName + String(nameIndex)
+      ).length;
+    } while (equalNames > 0);
+
+    return TopologyDefaultName + String(nameIndex);
+  }
 }
+
+const TopologyDefaultName = 'topology';
 
 const DefaultDeviceConfig: InterfaceConfig = {
   interfacePattern: 'eth$',

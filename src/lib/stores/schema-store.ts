@@ -1,39 +1,21 @@
-import {RootStore} from '@sb/lib/stores/root-store';
-import {
-  ClabSchema,
-  DefaultFetchReport,
-  ErrorResponse,
-  FetchReport,
-  FetchState,
-} from '@sb/types/types';
+import {ClabSchema, DefaultFetchReport, FetchReport} from '@sb/types/types';
 import {observable} from 'mobx';
+import {DataStore} from '@sb/lib/stores/data-store';
 
-export class SchemaStore {
-  private rootStore: RootStore;
-
-  @observable accessor clabSchema: ClabSchema | null = null;
+export class SchemaStore extends DataStore<ClabSchema, void, ClabSchema> {
   @observable accessor fetchReport: FetchReport = DefaultFetchReport;
+  @observable accessor clabSchema: ClabSchema | null = null;
 
-  constructor(rootStore: RootStore) {
-    this.rootStore = rootStore;
-
-    this.fetch();
+  protected get isExternal(): boolean {
+    return true;
   }
 
-  public fetch() {
-    this.rootStore._apiConnectorStore
-      .get<ClabSchema>(process.env.SB_CLAB_SCHEMA_URL!, true)
-      .then(data => {
-        if (data[0]) {
-          this.clabSchema = data[1] as ClabSchema;
-          this.fetchReport = {state: FetchState.Done};
-        } else {
-          this.fetchReport = {
-            state: FetchState.Error,
-            errorCode: String((data[1] as ErrorResponse).code),
-            errorMessage: (data[1] as ErrorResponse).message,
-          };
-        }
-      });
+  protected get resourcePath(): string {
+    return process.env.SB_CLAB_SCHEMA_URL!;
+  }
+
+  protected handleUpdate(updatedData: ClabSchema[]): void {
+    // We do this here as it's the only resource that doesn't come as a list
+    this.clabSchema = updatedData as unknown as ClabSchema;
   }
 }

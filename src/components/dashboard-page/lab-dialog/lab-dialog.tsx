@@ -51,13 +51,13 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
 
   const getTopology = useCallback(
     (id: string): void => {
-      for (const topology of topologyStore.topologies) {
+      for (const topology of topologyStore.data) {
         if (topology.id === id) {
           setTopologyDefinition(topology.definition);
         }
       }
     },
-    [topologyStore.topologies]
+    [topologyStore.data]
   );
 
   const graph: Data = useMemo(() => {

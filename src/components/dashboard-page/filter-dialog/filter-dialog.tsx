@@ -78,7 +78,7 @@ const FilterDialog: React.FC<FilterDialogProps> = (
         </div>
         <p className="filters-title">Select groups</p>
         <div className="filters-chips-container">
-          {groupStore.groups.map(group => (
+          {groupStore.data.map(group => (
             <Chip
               key={group.id}
               label={group.name}

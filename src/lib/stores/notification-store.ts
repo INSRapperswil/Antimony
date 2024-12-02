@@ -4,66 +4,62 @@ import {
 } from '@sb/components/common/sb-confirm/sb-confirm';
 import {RootStore} from '@sb/lib/stores/root-store';
 import {
-  DefaultFetchReport,
-  ErrorResponse,
-  FetchReport,
-  FetchState,
   Notification,
   NotificationOut,
   Severity,
   SeverityMapping,
 } from '@sb/types/types';
-import {action, computed, observable, observe} from 'mobx';
+import {action, computed, observable} from 'mobx';
 
 import {Toast} from 'primereact/toast';
 import React from 'react';
+import {DataStore} from '@sb/lib/stores/data-store';
 
-export class NotificationStore {
-  private rootStore: RootStore;
-
+export class NotificationStore extends DataStore<
+  Notification,
+  void,
+  NotificationOut
+> {
   private toastRef: React.RefObject<Toast> | null = null;
   private confirmRef: React.RefObject<SBConfirmRef> | null = null;
 
-  @observable accessor messages: Notification[] = [];
   @observable accessor countBySeverity: Map<Severity, number> = new Map();
-  @observable accessor fetchReport: FetchReport = DefaultFetchReport;
 
   constructor(rootStore: RootStore) {
-    this.rootStore = rootStore;
-
-    observe(rootStore._apiConnectorStore, () => this.fetch());
-
-    this.fetch();
+    super(rootStore);
 
     this.rootStore._apiConnectorStore.socket.on('notification', data => {
       this.handleNotification(NotificationStore.parseNotification(data, false));
     });
   }
 
-  public fetch() {
-    if (!this.rootStore._apiConnectorStore.isLoggedIn) {
-      this.fetchReport = {state: FetchState.Pending};
-      return;
-    }
-
-    this.rootStore._apiConnectorStore
-      .get<NotificationOut[]>('/notifications')
-      .then(data => this.update(data));
+  protected get resourcePath(): string {
+    return '/notifications';
+  }
+  protected handleUpdate(updatedData: NotificationOut[]): void {
+    this.data = updatedData
+      .map(msg => NotificationStore.parseNotification(msg, true))
+      .toSorted((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf());
+    this.countBySeverity = new Map(
+      Object.entries(
+        Object.groupBy(this.data, message => message.severity)
+      ).map(([severity, list]) => [Number(severity), list.length])
+    );
   }
 
   @computed
   public get lookup(): Map<string, Notification> {
-    return new Map(this.messages.map(message => [message.id, message]));
+    return new Map(this.data.map(message => [message.id, message]));
   }
 
   @computed
   public get unreadMessages(): number {
-    return this.messages.filter(msg => !msg.isRead).length;
+    return this.data.filter(msg => !msg.isRead).length;
   }
 
   @action
   public clear() {
-    this.messages = [];
+    this.data = [];
   }
 
   public success = (message: string, title: string = 'Success') => {
@@ -101,13 +97,13 @@ export class NotificationStore {
     if (!this.lookup.has(id)) return;
 
     this.lookup.get(id)!.isRead = true;
-    this.messages = [...this.messages];
+    this.data = [...this.data];
   }
 
   @action
   public markAllAsRead() {
-    this.messages.forEach(msg => (msg.isRead = true));
-    this.messages = [...this.messages];
+    this.data.forEach(msg => (msg.isRead = true));
+    this.data = [...this.data];
   }
 
   @action
@@ -122,37 +118,14 @@ export class NotificationStore {
   }
 
   @action
-  private update(
-    data: [boolean, NotificationOut[] | ErrorResponse, Headers | null]
-  ) {
-    if (data[0]) {
-      this.messages = (data[1] as NotificationOut[])
-        .map(msg => NotificationStore.parseNotification(msg, true))
-        .toSorted((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf());
-      this.countBySeverity = new Map(
-        Object.entries(
-          Object.groupBy(this.messages, message => message.severity)
-        ).map(([severity, list]) => [Number(severity), list.length])
-      );
-      this.fetchReport = {state: FetchState.Done};
-    } else {
-      this.fetchReport = {
-        state: FetchState.Error,
-        errorCode: String((data[1] as ErrorResponse).code),
-        errorMessage: (data[1] as ErrorResponse).message,
-      };
-    }
-  }
-
-  @action
   private handleNotification(notification: Notification) {
     this.lookup.set(notification.id, notification);
     this.countBySeverity.set(
       notification.severity,
       (this.countBySeverity.get(notification.severity) ?? 0) + 1
     );
-    this.messages.push(notification);
-    this.messages = [...this.messages];
+    this.data.push(notification);
+    this.data = [...this.data];
     this.send(notification.detail, notification.summary, notification.severity);
   }
 

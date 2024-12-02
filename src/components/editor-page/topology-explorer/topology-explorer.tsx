@@ -19,7 +19,7 @@ import {
   ErrorResponse,
   Group,
   Topology,
-  TopologyResponse,
+  PostResponse,
   uuid4,
 } from '@sb/types/types';
 import SBConfirm from '@sb/components/common/sb-confirm/sb-confirm';
@@ -31,6 +31,8 @@ import {
 import ExplorerTreeNode from '@sb/components/editor-page/topology-explorer/explorer-tree-node/explorer-tree-node';
 
 import './topology-explorer.sass';
+import YAML from 'yaml';
+import {TopologyManager} from '@sb/lib/topology-manager';
 
 interface TopologyBrowserProps {
   selectedTopologyId?: string | null;
@@ -60,7 +62,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     // DEBUG: UNCOMMENT THIS FOR AN ERORR
     // console.log('eror:', topologyTree[3].test);
 
-    for (const topology of topologyStore.topologies) {
+    for (const topology of topologyStore.data) {
       if (topologiesByGroup.has(topology.groupId)) {
         topologiesByGroup.get(topology.groupId)!.push(topology);
       } else {
@@ -68,7 +70,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
       }
     }
 
-    for (const group of groupStore.groups) {
+    for (const group of groupStore.data) {
       topologyTree.push({
         key: group.id,
         label: group.name,
@@ -86,7 +88,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     }
 
     return topologyTree;
-  }, [groupStore.groups, topologyStore.topologies]);
+  }, [groupStore.data, topologyStore.data]);
 
   useEffect(() => {
     setExpandedKeys(
@@ -133,7 +135,14 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   }
 
   async function onAddTopology(groupId: uuid4) {
-    const [status, response] = await topologyStore.add(groupId);
+    const [status, response] = await topologyStore.add({
+      groupId: groupId,
+      definition: YAML.stringify({
+        name: TopologyManager.generateUniqueName(groupId, topologyStore.data),
+        topology: {nodes: {}},
+      }),
+    });
+
     if (!status) {
       notificationStore.error(
         (response as ErrorResponse).message,
@@ -141,14 +150,14 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
       );
     } else {
       notificationStore.success('Topology has been created.');
-      props.onTopologySelect((response as TopologyResponse).id);
+      props.onTopologySelect((response as PostResponse).id);
     }
   }
 
   function onDeleteGroupRequest(id: string) {
     if (!groupStore.lookup.has(id)) return;
 
-    const childTopologies = topologyStore.topologies.filter(
+    const childTopologies = topologyStore.data.filter(
       topology => topology.groupId === id
     );
 

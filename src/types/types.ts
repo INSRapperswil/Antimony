@@ -40,7 +40,7 @@ export type Lab = LabIn & {
   state: LabState;
 };
 
-export type TopologyResponse = {
+export type PostResponse = {
   id: uuid4;
 };
 

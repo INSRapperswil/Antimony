@@ -105,14 +105,14 @@ const DashboardPage: React.FC = () => {
       setLabs(labStore.labs);
     });
     return () => dispose();
-  }, [labStore.labs]);
+  }, [labStore.header, labStore.labs]);
 
   useEffect(() => {
     const dispose = autorun(() => {
-      setGroups(groupStore.groups);
+      setGroups(groupStore.data);
     });
     return () => dispose();
-  }, [groupStore.groups]);
+  }, [groupStore.data]);
 
   useEffect(() => {
     const ids: string[] = groups.map(group => group.id);
@@ -129,7 +129,7 @@ const DashboardPage: React.FC = () => {
     }, 100);
   };
   function getGroupById(groupId: String): String {
-    const group = groupStore.groups.find(group => group.id === groupId);
+    const group = groupStore.data.find(group => group.id === groupId);
     if (group !== undefined) {
       return group.name;
     }

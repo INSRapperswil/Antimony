@@ -1,6 +1,6 @@
 import SBInput from '@sb/components/common/sb-input/sb-input';
 import {useGroupStore, useNotifications} from '@sb/lib/stores/root-store';
-import {Group, GroupIn} from '@sb/types/types';
+import {ErrorResponse, Group, GroupIn} from '@sb/types/types';
 import {isEqual} from 'lodash';
 import {Checkbox} from 'primereact/checkbox';
 import React, {useState} from 'react';
@@ -29,9 +29,12 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
 
   async function onSubmit() {
     if (!props.editingGroup) {
-      groupStore.add(updatedGroup).then(error => {
-        if (error) {
-          notificationStore.error(error.message, 'Failed to rename group');
+      groupStore.add(updatedGroup).then(([success, error]) => {
+        if (!success) {
+          notificationStore.error(
+            (error as ErrorResponse).message,
+            'Failed to rename group'
+          );
         } else {
           notificationStore.success('Group has been renamed successfully.');
           props.onClose();

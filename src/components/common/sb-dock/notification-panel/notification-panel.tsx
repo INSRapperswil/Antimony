@@ -71,13 +71,12 @@ const NotificationPanel = observer(
     };
 
     const filteredNotificationList = useMemo(() => {
-      if (severityFilter.size < 1)
-        return notificationStore.messages.toReversed();
+      if (severityFilter.size < 1) return notificationStore.data.toReversed();
 
-      return notificationStore.messages
+      return notificationStore.data
         .filter(msg => severityFilter.has(msg.severity))
         .toReversed();
-    }, [notificationStore.messages, severityFilter]);
+    }, [notificationStore.data, severityFilter]);
 
     const NotificationFilterChip = ({severity}: {severity: Severity}) => {
       const label = notificationStore.countBySeverity.has(severity)

@@ -1,54 +1,13 @@
-import {RootStore} from '@sb/lib/stores/root-store';
-import {
-  DefaultFetchReport,
-  DeviceInfo,
-  ErrorResponse,
-  FetchReport,
-  FetchState,
-} from '@sb/types/types';
-import {action, observable, observe} from 'mobx';
+import {DeviceInfo} from '@sb/types/types';
+import {DataStore} from '@sb/lib/stores/data-store';
 
-export class DeviceStore {
-  private rootStore: RootStore;
-
-  @observable accessor devices: DeviceInfo[] = [];
-  @observable accessor lookup: Map<string, DeviceInfo> = new Map();
-  @observable accessor fetchReport: FetchReport = DefaultFetchReport;
-
-  constructor(rootStore: RootStore) {
-    this.rootStore = rootStore;
-
-    observe(rootStore._apiConnectorStore, () => this.fetch());
-
-    this.fetch();
+export class DeviceStore extends DataStore<DeviceInfo, DeviceInfo, DeviceInfo> {
+  protected get resourcePath(): string {
+    return '/devices';
   }
 
-  @action
-  public fetch() {
-    if (!this.rootStore._apiConnectorStore.isLoggedIn) {
-      this.fetchReport = {state: FetchState.Pending};
-      return;
-    }
-
-    this.rootStore._apiConnectorStore
-      .get<DeviceInfo[]>('/devices')
-      .then(data => this.update(data));
-  }
-
-  @action
-  private update(
-    data: [boolean, DeviceInfo[] | ErrorResponse, Headers | null]
-  ) {
-    if (data[0]) {
-      this.devices = data[1] as DeviceInfo[];
-      this.fetchReport = {state: FetchState.Done};
-    } else {
-      this.fetchReport = {
-        state: FetchState.Error,
-        errorCode: String((data[1] as ErrorResponse).code),
-        errorMessage: (data[1] as ErrorResponse).message,
-      };
-    }
+  protected handleUpdate(updatedData: DeviceInfo[]): void {
+    this.data = updatedData;
   }
 
   public getNodeIcon(kind?: string) {

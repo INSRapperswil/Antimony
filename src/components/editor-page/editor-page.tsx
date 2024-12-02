@@ -64,7 +64,7 @@ const EditorPage: React.FC = observer(() => {
     topologyStore.fetchReport,
     topologyStore.lookup,
     topologyStore.manager,
-    topologyStore.topologies,
+    topologyStore.data,
   ]);
 
   function onSelectTopology(id: string) {

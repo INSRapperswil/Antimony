@@ -5,11 +5,11 @@ import {GroupStore} from '@sb/lib/stores/group-store';
 import {LabStore} from '@sb/lib/stores/lab-store';
 import {NotificationStore} from '@sb/lib/stores/notification-store';
 import {SchemaStore} from '@sb/lib/stores/schema-store';
-import {TopologyStore} from '@sb/lib/stores/topology-store';
 import {combinedFetchState} from '@sb/lib/utils/utils';
 import {FetchState} from '@sb/types/types';
 import {action, observable, observe} from 'mobx';
 import {createContext, useContext} from 'react';
+import {TopologyStore} from '@sb/lib/stores/topology-store';
 
 export class RootStore {
   _apiConnectorStore: APIStore;

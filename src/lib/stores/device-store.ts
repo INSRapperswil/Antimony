@@ -5,7 +5,6 @@ import {
   ErrorResponse,
   FetchReport,
   FetchState,
-  TopologyNode,
 } from '@sb/types/types';
 import {action, observable, observe} from 'mobx';
 
@@ -52,17 +51,17 @@ export class DeviceStore {
     }
   }
 
-  public getNodeIcon(node?: TopologyNode) {
+  public getNodeIcon(kind?: string) {
     let iconName;
-    if (node) {
-      const deviceInfo = this.lookup.get(node.kind);
+    if (kind) {
+      const deviceInfo = this.lookup.get(kind);
       if (deviceInfo) {
         iconName = IconMap.get(deviceInfo?.type);
       } else {
         iconName = 'generic';
       }
     }
-    if (!node || !iconName) iconName = 'generic';
+    if (!kind || !iconName) iconName = 'generic';
 
     return '/icons/' + iconName + '.svg';
   }

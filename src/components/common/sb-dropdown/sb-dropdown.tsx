@@ -1,9 +1,9 @@
-import React from 'react';
+import React, {ReactElement} from 'react';
 import classNames from 'classnames';
 import {SelectItem} from 'primereact/selectitem';
 import {Dropdown, DropdownChangeEvent} from 'primereact/dropdown';
 
-import {If} from '@sb/types/control';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
 
 import './sb-dropdown.sass';
 
@@ -16,7 +16,7 @@ interface SBDropdownProps {
   showClear?: boolean;
 
   value: string;
-  icon?: string;
+  icon?: string | ReactElement;
   options?: SelectItem[];
   optionLabel?: string;
   placeholder?: string;
@@ -38,7 +38,12 @@ const SBDropdown = (props: SBDropdownProps) => {
     return (
       <div className="flex align-items-center gap-2">
         <If condition={props.icon}>
-          <i className={`pi ${props.icon}`}></i>
+          <Choose>
+            <When condition={typeof props.icon === 'string'}>
+              <i className={`pi ${props.icon}`}></i>
+            </When>
+            <Otherwise>{props.icon}</Otherwise>
+          </Choose>
         </If>
         <span>{option.label ?? option.value}</span>
       </div>

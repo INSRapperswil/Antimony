@@ -18,7 +18,6 @@ import {IdType, Network} from 'vis-network';
 import {DataSet} from 'vis-data/peer';
 import Graph from 'react-graph-vis';
 import {Node, Edge, Position} from 'vis';
-import {Data} from 'vis-network/declarations/network/Network';
 import {NetworkOptions} from './network.conf';
 import {ContextMenu} from 'primereact/contextmenu';
 import useResizeObserver from '@react-hook/resize-observer';
@@ -26,8 +25,10 @@ import useResizeObserver from '@react-hook/resize-observer';
 import {GraphNodeClickEvent, Topology} from '@sb/types/types';
 import {useDeviceStore, useTopologyStore} from '@sb/lib/stores/root-store';
 
+import 'vis-network/styles/vis-network.css';
 import './node-editor.sass';
 import {drawGrid} from '@sb/lib/utils/utils';
+import {Data} from 'vis-network/declarations/network/Network';
 
 interface NodeEditorProps {
   openTopology: Topology | null;
@@ -39,8 +40,10 @@ interface NodeEditorProps {
 const NodeEditor: React.FC<NodeEditorProps> = observer(
   (props: NodeEditorProps) => {
     const [network, setNetwork] = useState<Network | null>(null);
-    const [selectedNode, setSelectedNode] = useState<IdType | null>(null);
     const [contextMenuModel, setContextMenuModel] = useState<MenuItem[] | null>(
+      null
+    );
+    const [radialMenuTarget, setRadialMenuTarget] = useState<IdType | null>(
       null
     );
 
@@ -79,42 +82,38 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
         nodes.add({
           id: nodeName,
           label: nodeName,
-          image: deviceStore.getNodeIcon(node),
+          image: deviceStore.getNodeIcon(node?.kind),
           x: props.openTopology.positions.get(nodeName)?.x,
           y: props.openTopology.positions.get(nodeName)?.y,
           fixed: {
             x: true,
             y: true,
           },
+          title: topologyStore.manager.getNodeTooltip(nodeName),
         });
       }
-
-      const links = props.openTopology.definition.toJS().topology.links;
-      if (!links) return {nodes, edges: new DataSet()};
 
       /*
        * We can safely assume that the endpoint strings are in the correct
        * format here since this is enforced by the schema and the node editor
        * only receives valid definitions get pushed to the node editor.
        */
-      const edges: DataSet<Edge> = new DataSet([
-        ...links.entries().map(([index, link]) => ({
-          id: index,
-          from: link.endpoints[0].split(':')[0],
-          to: link.endpoints[1].split(':')[0],
-        })),
-      ]);
+      const edges: DataSet<Edge> = new DataSet(
+        props.openTopology.connections.map(connection => ({
+          id: connection.id,
+          from: connection.hostNode,
+          to: connection.targetNode,
+          title: topologyStore.manager.getEdgeTooltip(connection),
+        }))
+      );
 
       return {nodes: nodes, edges: edges};
-    }, [props.openTopology, deviceStore]);
+    }, [deviceStore, props.openTopology, topologyStore.manager]);
 
     const onKeyDown = useCallback(
       (event: KeyboardEvent) => {
-        console.log('ONKEYDOWN', event.key);
         if (event.key === 'Escape') {
-          console.log('DISABLE');
-          nodeConnectTarget.current = null;
-          nodeConnectDestination.current = null;
+          exitConnectionMode();
           network?.redraw();
         }
       },
@@ -133,16 +132,11 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
         }
 
         const target = nodeConnectTargetPosition.current;
-        const canvasPosition = (
-          containerRef.current as HTMLElement
-        ).getBoundingClientRect();
-        const relativeDestination = network.DOMtoCanvas(
-          nodeConnectDestination.current
-        );
-        const destination = {
-          x: relativeDestination.x - canvasPosition.x,
-          y: relativeDestination.y - canvasPosition.y,
-        };
+        const canvasRect = ctx.canvas.getBoundingClientRect();
+        const destination = network.DOMtoCanvas({
+          x: nodeConnectDestination.current.x - canvasRect.x,
+          y: nodeConnectDestination.current.y - canvasRect.y,
+        });
 
         ctx.lineWidth = 2;
         ctx.strokeStyle = 'rgb(66 181 172)';
@@ -154,6 +148,39 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
         ctx.arc(destination.x, destination.y, 4, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
+      },
+      [network]
+    );
+
+    /**
+     * Wraps a network modifying function into a smooth move transition.
+     *
+     * @param callback The function that is called which modifies the network
+     */
+    const withSmoothTrasition = useCallback(
+      (callback: () => void) => {
+        if (!network) {
+          callback();
+          return;
+        }
+
+        const positionBefore = network.getViewPosition();
+        const scaleBefore = network.getScale();
+
+        callback();
+
+        const positionAfter = network.getViewPosition();
+        const scaleAfter = network.getScale();
+
+        network.moveTo({position: positionBefore, scale: scaleBefore});
+        network.moveTo({
+          position: positionAfter,
+          scale: scaleAfter,
+          animation: {
+            duration: 200,
+            easingFunction: 'easeOutQuad',
+          },
+        });
       },
       [network]
     );
@@ -179,8 +206,7 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
     const onNodeEdit = useCallback(() => {
       if (!network || menuTargetRef.current === null) return;
 
-      setSelectedNode(null);
-      radialMenuRef.current?.hide();
+      closeRadialMenu();
       props.onEditNode(menuTargetRef.current as string);
     }, [network, props]);
 
@@ -203,25 +229,19 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       [graphData.nodes]
     );
 
-    function onMouseMove(event: MouseEvent<HTMLDivElement>) {
-      if (!nodeConnectTarget.current || !network) return;
-
-      console.log('<BVE>');
-
-      nodeConnectDestination.current = {x: event.clientX, y: event.clientY};
-      network?.redraw();
-    }
-
     useEffect(() => {
       if (!network) return;
 
       const position = network.getViewPosition();
       const scale = network.getScale();
-      setSelectedNode(null);
-      radialMenuRef.current?.hide();
+      closeRadialMenu();
+      // withSmoothTrasition(() => network.setData(graphData));
       network.setData(graphData);
+      // network.fit();
+      // withSmoothTrasition(() => network.moveTo({position, scale}));
       network.moveTo({position, scale});
-    }, [network, graphData]);
+      // network.moveTo({position, scale});
+    }, [network, graphData, withSmoothTrasition]);
 
     useEffect(() => {
       window.addEventListener('keydown', onKeyDown);
@@ -230,13 +250,6 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
         window.removeEventListener('keydown', onKeyDown);
       };
     }, [onKeyDown]);
-
-    useEffect(() => {
-      if (!network) return;
-      network.on('beforeDrawing', onBeforeDrawing);
-
-      return () => network.off('beforeDrawing', onBeforeDrawing);
-    }, [network, onBeforeDrawing]);
 
     useEffect(() => {
       if (!network || !simulationConfig.liveSimulation) return;
@@ -253,36 +266,49 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       setNodesFixed(!simulationConfig.liveSimulation);
     }, [network, setNodesFixed, simulationConfig.liveSimulation]);
 
-    function onNetworkClick(selectData: GraphNodeClickEvent) {
+    function onMouseMove(event: MouseEvent<HTMLDivElement>) {
+      if (!nodeConnectTarget.current || !network) return;
+
+      nodeConnectDestination.current = {x: event.clientX, y: event.clientY};
+      network?.redraw();
+    }
+
+    function onClick(selectData: GraphNodeClickEvent) {
       if (!network) return;
 
       const targetNode = network?.getNodeAt(selectData.pointer.DOM);
-      if (targetNode === selectedNode) {
-        radialMenuRef.current?.hide();
-        setSelectedNode(null);
-        network.unselectAll();
-        return;
-      }
 
-      if (targetNode !== undefined) {
-        /*
-         * If a node is already selected, hide the menu first and then show it
-         * with a delay.
-         */
-        if (selectedNode !== null) {
-          radialMenuRef.current?.hide();
+      if (targetNode === undefined || targetNode === radialMenuTarget) {
+        closeRadialMenu();
+        network.unselectAll();
+      } else if (targetNode !== undefined) {
+        if (
+          nodeConnectTarget.current !== null &&
+          nodeConnectDestination.current !== null
+        ) {
+          topologyStore.manager.connectNodes(
+            nodeConnectTarget.current as string,
+            targetNode as string
+          );
+          exitConnectionMode();
+          return;
+        }
+
+        if (radialMenuTarget !== null) {
+          closeRadialMenu();
           setTimeout(() => {
             openRadialMenu(targetNode);
           }, 200);
         } else {
           openRadialMenu(targetNode);
         }
-        setSelectedNode(targetNode);
-      } else {
-        radialMenuRef.current?.hide();
-        setSelectedNode(null);
-        network.unselectAll();
+        setRadialMenuTarget(targetNode);
       }
+    }
+
+    function closeRadialMenu() {
+      setRadialMenuTarget(null);
+      radialMenuRef.current?.hide();
     }
 
     function openRadialMenu(targetNode: IdType) {
@@ -298,19 +324,18 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       radialMenuRef.current?.show();
     }
 
-    function onNetworkDoubleClick(selectData: GraphNodeClickEvent) {
+    function onDoubleClick(selectData: GraphNodeClickEvent) {
       if (!contextMenuRef.current) return;
 
       const targetNode = network?.getNodeAt(selectData.pointer.DOM);
       if (targetNode !== undefined) {
         network?.selectNodes([targetNode]);
-        setSelectedNode(targetNode);
-        radialMenuRef.current?.hide();
+        closeRadialMenu();
         onNodeEdit();
       }
     }
 
-    function onNetworkContext(selectData: GraphNodeClickEvent) {
+    function onContext(selectData: GraphNodeClickEvent) {
       if (!contextMenuRef.current) return;
 
       const targetNode = network?.getNodeAt(selectData.pointer.DOM);
@@ -326,11 +351,15 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       contextMenuRef.current.show(selectData.event);
     }
 
-    function onNetworkDragging() {
-      radialMenuRef.current?.hide();
+    function onDragging(event: GraphNodeClickEvent) {
+      closeRadialMenu();
+
+      if (event.nodes.length > 0) {
+        exitConnectionMode();
+      }
     }
 
-    function onNodeDragStart(event: GraphNodeClickEvent) {
+    function onDragStart(event: GraphNodeClickEvent) {
       if (!event || !network || !graphData.nodes || event.nodes.length === 0)
         return;
 
@@ -340,7 +369,7 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       });
     }
 
-    function onNodeMoved(event: GraphNodeClickEvent) {
+    function onDragEnd(event: GraphNodeClickEvent) {
       if (
         !network ||
         !topologyStore.manager.topology ||
@@ -358,6 +387,8 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
           },
         });
       }
+
+      // onSaveGraph();
     }
 
     function onStabilizeGraph() {
@@ -376,7 +407,7 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
         nodes.update({id: node.id, fixed: {x: false, y: false}})
       );
 
-      simulationConfig.setStabilizing(true);
+      simulationConfig.setIsStabilizing(true);
 
       setTimeout(() => {
         nodes.forEach(node =>
@@ -388,7 +419,7 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
             },
           })
         );
-        simulationConfig.setStabilizing(false);
+        simulationConfig.setIsStabilizing(false);
         network.setOptions({
           interaction: {
             dragNodes: true,
@@ -418,34 +449,10 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       topologyStore.manager.writePositions();
     }
 
-    /**
-     * Wraps a network modifying function into a smooth move transition.
-     *
-     * @param callback The function that is called which modifies the network
-     */
-    function withSmoothTrasition(callback: () => void) {
-      if (!network) {
-        callback();
-        return;
-      }
-
-      const positionBefore = network.getViewPosition();
-      const scaleBefore = network.getScale();
-
-      callback();
-
-      const positionAfter = network.getViewPosition();
-      const scaleAfter = network.getScale();
-
-      network.moveTo({position: positionBefore, scale: scaleBefore});
-      network.moveTo({
-        position: positionAfter,
-        scale: scaleAfter,
-        animation: {
-          duration: 200,
-          easingFunction: 'easeOutQuad',
-        },
-      });
+    function exitConnectionMode() {
+      nodeConnectTarget.current = null;
+      nodeConnectDestination.current = null;
+      nodeConnectTargetPosition.current = null;
     }
 
     const nodeContextMenuModel = [
@@ -494,12 +501,13 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
           graph={{nodes: [], edges: []}}
           options={NetworkOptions}
           events={{
-            click: onNetworkClick,
-            oncontext: onNetworkContext,
-            doubleClick: onNetworkDoubleClick,
-            dragging: onNetworkDragging,
-            dragStart: onNodeDragStart,
-            dragEnd: onNodeMoved,
+            beforeDrawing: onBeforeDrawing,
+            click: onClick,
+            doubleClick: onDoubleClick,
+            oncontext: onContext,
+            dragStart: onDragStart,
+            dragging: onDragging,
+            dragEnd: onDragEnd,
           }}
           getNetwork={setNetwork}
         />

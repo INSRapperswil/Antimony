@@ -21,7 +21,6 @@ import {Choose, If, Otherwise, When} from '@sb/types/control';
 
 import {Topology, uuid4} from '@sb/types/types';
 
-import {validate} from 'jsonschema';
 import {Badge} from 'primereact/badge';
 import {Button} from 'primereact/button';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
@@ -101,18 +100,20 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
   ]);
 
   function onContentChange(content: string) {
-    try {
-      const [definition, positions] = TopologyManager.parseTopology(content);
+    if (!schemaStore.clabSchema) return;
 
-      if (
-        definition.errors.length === 0 &&
-        validate(definition.toJS(), schemaStore.clabSchema).errors.length === 0
-      ) {
+    try {
+      const [definition, topologyMeta] = TopologyManager.parseTopology(
+        content,
+        schemaStore.clabSchema
+      );
+
+      if (definition !== null && topologyMeta !== null) {
         setValidationState(ValidationState.Done);
         topologyStore.manager.apply(
           definition,
           TopologyEditSource.TextEditor,
-          positions
+          topologyMeta
         );
       } else {
         // Set this to working until the monaco worker has finished and generated the error

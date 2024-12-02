@@ -86,7 +86,7 @@ const TopologyDeployDialog = (props: TopologyDeployDialogProps) => {
             <SBDropdown
               id="deploy-topology"
               label="Topology"
-              icon="pi-box"
+              icon={<span className="material-symbols-outlined">lan</span>}
               hasFilter={true}
               useSelectTemplate={true}
               useItemTemplate={true}

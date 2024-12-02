@@ -75,3 +75,11 @@ export function drawGrid(ctx: CanvasRenderingContext2D) {
     ctx.stroke();
   }
 }
+
+export function pushOrCreateList<T, R>(map: Map<T, R[]>, key: T, value: R) {
+  if (map.has(key)) {
+    map.get(key)!.push(value);
+  } else {
+    map.set(key, [value]);
+  }
+}

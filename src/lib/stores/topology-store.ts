@@ -27,9 +27,14 @@ export class TopologyStore {
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
-    this.manager = new TopologyManager(this.rootStore._apiConnectorStore, this);
+    this.manager = new TopologyManager(
+      this.rootStore._apiConnectorStore,
+      this,
+      this.rootStore._deviceStore
+    );
 
     observe(rootStore._apiConnectorStore, () => this.fetch());
+    observe(rootStore._schemaStore.fetchReport, () => this.fetch());
 
     void this.fetch();
   }
@@ -99,9 +104,12 @@ export class TopologyStore {
   private setData(
     data: [boolean, TopologyOut[] | ErrorResponse, Headers | null]
   ) {
+    if (!this.rootStore._schemaStore?.clabSchema) return;
+
     if (data[0]) {
       this.topologies = TopologyManager.parseTopologies(
-        data[1] as TopologyOut[]
+        data[1] as TopologyOut[],
+        this.rootStore._schemaStore.clabSchema
       );
       this.lookup = new Map(
         this.topologies.map(topology => [topology.id, topology])

@@ -1,18 +1,26 @@
 import {APIStore} from '@sb/lib/stores/api-store';
 import {TopologyStore} from '@sb/lib/stores/topology-store';
 import _ from 'lodash';
-import {parseDocument, Scalar, YAMLMap} from 'yaml';
+import {parseDocument, Scalar, YAMLMap, YAMLSeq} from 'yaml';
 import cloneDeep from 'lodash.clonedeep';
 
 import {Binding} from '@sb/lib/utils/binding';
 import {
+  ClabSchema,
+  DeviceInfo,
   ErrorResponse,
+  InterfaceConfig,
+  NodeConnection,
   Position,
   Topology,
   TopologyDefinition,
+  TopologyMeta,
   TopologyOut,
   YAMLDocument,
 } from '@sb/types/types';
+import {validate} from 'jsonschema';
+import {DeviceStore} from '@sb/lib/stores/device-store';
+import {pushOrCreateList} from '@sb/lib/utils/utils';
 
 export type TopologyEditReport = {
   updatedTopology: Topology;
@@ -35,6 +43,7 @@ export enum TopologyEditSource {
 
 export class TopologyManager {
   private apiStore: APIStore;
+  private deviceStore: DeviceStore;
   private topologyStore: TopologyStore;
   private editingTopology: Topology | null = null;
   private originalTopology: Topology | null = null;
@@ -43,8 +52,13 @@ export class TopologyManager {
   public readonly onClose: Binding<void> = new Binding();
   public readonly onEdit: Binding<TopologyEditReport> = new Binding();
 
-  constructor(apiStore: APIStore, topologyStore: TopologyStore) {
+  constructor(
+    apiStore: APIStore,
+    topologyStore: TopologyStore,
+    deviceStore: DeviceStore
+  ) {
     this.apiStore = apiStore;
+    this.deviceStore = deviceStore;
     this.topologyStore = topologyStore;
     this.onEdit.register(
       updateReport => (this.editingTopology = updateReport.updatedTopology)
@@ -116,20 +130,22 @@ export class TopologyManager {
    *
    * @param updatedTopology The updated topology.
    * @param source The source of the update.
-   * @param updatedPositions (Optional) The updated positions map.
+   * @param updatedMeta (Optional) The updated metadata of the topology.
    */
   public apply(
     updatedTopology: YAMLDocument<TopologyDefinition>,
     source: TopologyEditSource,
-    updatedPositions: Map<string, Position> | undefined = undefined
+    updatedMeta?: TopologyMeta
   ) {
     if (!this.editingTopology) return;
 
     this.onEdit.update({
       updatedTopology: {
         ...this.editingTopology,
-        positions: updatedPositions ?? this.editingTopology.positions,
         definition: updatedTopology,
+        positions: updatedMeta?.positions ?? this.editingTopology.positions,
+        connections:
+          updatedMeta?.connections ?? this.editingTopology.connections,
       },
       isEdited: !_.isEqual(
         updatedTopology.toString(),
@@ -184,11 +200,26 @@ export class TopologyManager {
    * @param nodeName2 The name of ths second node to connect.
    */
   public connectNodes(nodeName1: string, nodeName2: string) {
-    if (!this.editingTopology) return;
+    if (!this.editingTopology || !this.deviceStore.devices) return;
 
-    console.log('Connecting nodes: n1:', nodeName1, 'n2:', nodeName2);
+    const updatedTopology = this.editingTopology.definition.clone();
+    const hostInterface = this.getNextInterface(
+      nodeName1,
+      this.deviceStore.lookup
+    );
+    const targetInterface = this.getNextInterface(
+      nodeName2,
+      this.deviceStore.lookup
+    );
+    const links = updatedTopology.getIn(['topology', 'links']) as YAMLSeq;
+    links.add({
+      endpoints: [
+        `${nodeName1}:${hostInterface}`,
+        `${nodeName2}:${targetInterface}`,
+      ],
+    });
 
-    this.apply(this.editingTopology.definition, TopologyEditSource.NodeEditor);
+    this.apply(updatedTopology, TopologyEditSource.NodeEditor);
   }
 
   /**
@@ -257,12 +288,47 @@ export class TopologyManager {
     return this.editingTopology;
   }
 
+  public getNodeTooltip(nodeName: string) {
+    if (!this.editingTopology) return;
+
+    // const node = (
+    //   this.editingTopology.definition.getIn([
+    //     'topology',
+    //     'nodes',
+    //     nodeName,
+    //   ]) as YAMLMap
+    // ).toJS(this.editingTopology.definition);
+    return nodeName;
+  }
+
+  public getEdgeTooltip(connection: NodeConnection) {
+    return `${connection.hostNode}:${connection.hostInterface} <···> ${connection.targetNode}:${connection.targetInterface}`;
+  }
+
+  /**
+   * Returns all connections of a node.
+   */
+  private getNodeConnections(nodeName: string) {
+    if (!this.editingTopology) return [];
+    this.editingTopology?.connections.filter(
+      connection =>
+        connection.hostNode === nodeName || connection.targetNode === nodeName
+    );
+  }
+
   public static parseTopology(
-    definitionString: string
-  ): [YAMLDocument<TopologyDefinition>, Map<string, Position>] {
+    definitionString: string,
+    schema: ClabSchema
+  ): [YAMLDocument<TopologyDefinition> | null, TopologyMeta | null] {
     const definition = parseDocument(definitionString, {
       keepSourceTokens: true,
     });
+    if (
+      definition.errors.length > 0 &&
+      validate(definition.toJS(), schema).errors.length > 0
+    ) {
+      return [null, null];
+    }
     const positions = new Map<string, Position>();
     const nodes = definition.getIn(['topology', 'nodes']) as YAMLMap;
     if (!nodes) {
@@ -287,30 +353,66 @@ export class TopologyManager {
       }
     }
 
-    return [definition, positions];
+    const links = (definition.getIn(['topology', 'links']) as YAMLSeq).toJS(
+      definition
+    );
+
+    let index = 0;
+    const connections: NodeConnection[] = [];
+    const connectionMap = new Map<string, NodeConnection[]>();
+
+    for (const link of links) {
+      const [hostNode, hostInterface] = link.endpoints[0].split(':');
+      const [targetNode, targetInterface] = link.endpoints[1].split(':');
+
+      connections.push({
+        id: index,
+        hostNode,
+        hostInterface,
+        targetNode,
+        targetInterface,
+      });
+
+      pushOrCreateList(connectionMap, hostNode, {
+        id: index,
+        hostNode: hostNode,
+        hostInterface: hostInterface,
+        targetNode: targetNode,
+        targetInterface: targetInterface,
+      });
+
+      pushOrCreateList(connectionMap, targetNode, {
+        id: index,
+        hostNode: targetNode,
+        hostInterface: targetInterface,
+        targetNode: hostNode,
+        targetInterface: hostInterface,
+      });
+
+      index++;
+    }
+
+    return [definition, {positions, connections, connectionMap}];
   }
 
-  public static parseTopologies(input: TopologyOut[]) {
+  public static parseTopologies(input: TopologyOut[], schema: ClabSchema) {
     const topologies: Topology[] = [];
     for (const topology of input) {
-      try {
-        const [definition, positions] = TopologyManager.parseTopology(
-          topology.definition
-        );
+      const [definition, topologyMeta] = TopologyManager.parseTopology(
+        topology.definition,
+        schema
+      );
 
-        topologies.push({
-          ...topology,
-          definition: definition,
-          positions: positions,
-        });
-      } catch (e) {
-        console.error(
-          '[NET] Failed to parse incoming topology: ',
-          topology,
-          ':',
-          e
-        );
+      if (!definition || !topologyMeta) {
+        console.error('[NET] Failed to parse incoming topology: ', topology);
+        continue;
       }
+
+      topologies.push({
+        ...topology,
+        definition: definition,
+        ...topologyMeta,
+      });
     }
 
     return topologies.toSorted((a, b) =>
@@ -344,6 +446,47 @@ export class TopologyManager {
   }
 
   /**
+   * Generates a valid interface ID for a given node.
+   */
+  private getNextInterface(
+    nodeName: string,
+    deviceLookup: Map<string, DeviceInfo>
+  ): string {
+    const deviceInfo = deviceLookup.get(nodeName) ?? DefaultDeviceConfig;
+    const assignedNumbers = new Set(
+      this.getAssignedInterfaces(nodeName, deviceInfo.interfacePattern)
+    );
+    let checkIndex = deviceInfo.interfaceStart;
+    let validIndexFound = false;
+    while (!validIndexFound) {
+      validIndexFound = !assignedNumbers.has(checkIndex);
+      checkIndex++;
+    }
+
+    return `${deviceInfo.interfacePattern.replaceAll('$', String(checkIndex))}`;
+  }
+
+  /**
+   * Returns all assigned interface numbers for a given node.
+   */
+  private getAssignedInterfaces(
+    nodeName: string,
+    interfacePattern: string
+  ): number[] {
+    if (!this.editingTopology) return [];
+
+    const pattern = new RegExp(interfacePattern.replaceAll('$', '(\\d+)'));
+
+    return (this.editingTopology.connectionMap.get(nodeName) ?? [])
+      .map(connection => {
+        const match = connection.hostInterface.match(pattern);
+        if (!match || match.length < 2) return -1;
+        return Number(match[1]);
+      })
+      .filter(index => index >= 0);
+  }
+
+  /**
    * Creates a position string from a position object.
    *
    * Format: pos=[x, y]
@@ -352,3 +495,8 @@ export class TopologyManager {
     return ' pos=[' + position.x + ',' + position.y + ']';
   }
 }
+
+const DefaultDeviceConfig: InterfaceConfig = {
+  interfacePattern: 'eth$',
+  interfaceStart: 1,
+};

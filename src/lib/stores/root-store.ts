@@ -24,11 +24,11 @@ export class RootStore {
 
   constructor() {
     this._apiConnectorStore = new APIStore(this);
+    this._schemaStore = new SchemaStore(this);
+    this._deviceStore = new DeviceStore(this);
     this._topologyStore = new TopologyStore(this);
     this._labStore = new LabStore(this);
-    this._deviceStore = new DeviceStore(this);
     this._groupStore = new GroupStore(this);
-    this._schemaStore = new SchemaStore(this);
     this._notificationsStore = new NotificationStore(this);
 
     observe(this._topologyStore, () => this.getCombinedFetchState());

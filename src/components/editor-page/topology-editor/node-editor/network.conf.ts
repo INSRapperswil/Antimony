@@ -3,6 +3,9 @@ export const NetworkOptions = {
     hierarchical: false,
     randomSeed: 69,
   },
+  interaction: {
+    hover: true,
+  },
   nodes: {
     shape: 'image',
     color: '#42b5ac',

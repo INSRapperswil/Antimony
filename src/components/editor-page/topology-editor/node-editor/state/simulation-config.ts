@@ -47,7 +47,7 @@ export class SimulationConfig {
     this.setCentralGravity = this.setCentralGravity.bind(this);
     this.setSpringLength = this.setSpringLength.bind(this);
     this.setSpringConstant = this.setSpringConstant.bind(this);
-    this.setStabilizing = this.setStabilizing.bind(this);
+    this.setIsStabilizing = this.setIsStabilizing.bind(this);
     this.togglePanel = this.togglePanel.bind(this);
   }
 
@@ -88,7 +88,7 @@ export class SimulationConfig {
   }
 
   @action
-  public setStabilizing(isStabilizing: boolean) {
+  public setIsStabilizing(isStabilizing: boolean) {
     this.isStabilizing = isStabilizing;
   }
 

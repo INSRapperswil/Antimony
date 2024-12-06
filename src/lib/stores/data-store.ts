@@ -23,7 +23,7 @@ export abstract class DataStore<T, I, O> {
     return false;
   }
 
-  protected constructor(rootStore: RootStore) {
+  constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
 
     observe(rootStore._apiConnectorStore, () => this.fetch());

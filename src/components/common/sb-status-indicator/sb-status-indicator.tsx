@@ -26,7 +26,7 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
   const errorOverlayVisible = apiStore.hasNetworkError && !apiStore.isLoggedIn;
 
   useEffect(() => {
-    const isDone = rootStore.combinedFetchState === FetchState.Done;
+    const isDone = rootStore.fetchState === FetchState.Done;
     if (apiStore.isLoggedIn && !isDone && !loaderVisible) {
       setLoaderVisible(true);
     } else if (apiStore.isLoggedIn && isDone && loaderVisible) {
@@ -40,7 +40,7 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
     apiStore.isLoggedIn,
     loaderVisible,
     props,
-    rootStore.combinedFetchState,
+    rootStore.fetchState,
   ]);
 
   return (

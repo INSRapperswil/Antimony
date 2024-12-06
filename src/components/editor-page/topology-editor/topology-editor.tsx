@@ -103,18 +103,14 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     if (!schemaStore.clabSchema) return;
 
     try {
-      const [definition, topologyMeta] = TopologyManager.parseTopology(
+      const definition = TopologyManager.parseTopology(
         content,
         schemaStore.clabSchema
       );
 
-      if (definition !== null && topologyMeta !== null) {
+      if (definition !== null) {
         setValidationState(ValidationState.Done);
-        topologyStore.manager.apply(
-          definition,
-          TopologyEditSource.TextEditor,
-          topologyMeta
-        );
+        topologyStore.manager.apply(definition, TopologyEditSource.TextEditor);
       } else {
         // Set this to working until the monaco worker has finished and generated the error
         setValidationState(ValidationState.Working);

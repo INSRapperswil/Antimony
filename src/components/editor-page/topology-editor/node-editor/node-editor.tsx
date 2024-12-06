@@ -59,9 +59,14 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
     // Reference to the currently targeted node for the radial and context menu
     const menuTargetRef = useRef<IdType | null>(null);
 
-    const nodeConnectTarget = useRef<IdType | null>(null);
-    const nodeConnectTargetPosition = useRef<Position | null>(null);
-    const nodeConnectDestination = useRef<Position | null>(null);
+    const [nodeConnectTarget, setNodeConnectTarget] = useState<IdType | null>(
+      null
+    );
+    const [nodeConnectTargetPosition, setNodeConnectTargetPosition] =
+      useState<Position | null>(null);
+
+    const [nodeConnectDestination, setNodeConnectDestination] =
+      useState<Position | null>(null);
 
     useResizeObserver(containerRef, () => {
       if (network) {
@@ -100,7 +105,7 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
        */
       const edges: DataSet<Edge> = new DataSet(
         props.openTopology.connections.map(connection => ({
-          id: connection.id,
+          id: connection.index,
           from: connection.hostNode,
           to: connection.targetNode,
           title: topologyStore.manager.getEdgeTooltip(connection),
@@ -110,32 +115,28 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       return {nodes: nodes, edges: edges};
     }, [deviceStore, props.openTopology, topologyStore.manager]);
 
-    const onKeyDown = useCallback(
-      (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-          exitConnectionMode();
-          network?.redraw();
-        }
-      },
-      [network]
-    );
+    const onKeyDown = useCallback((event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        exitConnectionMode();
+      }
+    }, []);
 
     const drawConnectionLine = useCallback(
       (ctx: CanvasRenderingContext2D) => {
         if (
           !network ||
-          !nodeConnectTargetPosition.current ||
-          !nodeConnectDestination.current ||
+          !nodeConnectTargetPosition ||
+          !nodeConnectDestination ||
           !containerRef.current
         ) {
           return;
         }
 
-        const target = nodeConnectTargetPosition.current;
+        const target = nodeConnectTargetPosition;
         const canvasRect = ctx.canvas.getBoundingClientRect();
         const destination = network.DOMtoCanvas({
-          x: nodeConnectDestination.current.x - canvasRect.x,
-          y: nodeConnectDestination.current.y - canvasRect.y,
+          x: nodeConnectDestination.x - canvasRect.x,
+          y: nodeConnectDestination.y - canvasRect.y,
         });
 
         ctx.lineWidth = 2;
@@ -149,7 +150,7 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
         ctx.fill();
         ctx.stroke();
       },
-      [network]
+      [network, nodeConnectDestination, nodeConnectTargetPosition]
     );
 
     /**
@@ -198,9 +199,10 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
     const onNodeConnect = useCallback(() => {
       if (!network || menuTargetRef.current === null) return;
 
-      nodeConnectTarget.current = menuTargetRef.current;
-      nodeConnectTargetPosition.current =
-        network?.getPosition(menuTargetRef.current) ?? null;
+      setNodeConnectTarget(menuTargetRef.current);
+      setNodeConnectTargetPosition(
+        network?.getPosition(menuTargetRef.current) ?? null
+      );
     }, [network]);
 
     const onNodeEdit = useCallback(() => {
@@ -235,12 +237,8 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       const position = network.getViewPosition();
       const scale = network.getScale();
       closeRadialMenu();
-      // withSmoothTrasition(() => network.setData(graphData));
       network.setData(graphData);
-      // network.fit();
-      // withSmoothTrasition(() => network.moveTo({position, scale}));
       network.moveTo({position, scale});
-      // network.moveTo({position, scale});
     }, [network, graphData, withSmoothTrasition]);
 
     useEffect(() => {
@@ -266,10 +264,14 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
       setNodesFixed(!simulationConfig.liveSimulation);
     }, [network, setNodesFixed, simulationConfig.liveSimulation]);
 
-    function onMouseMove(event: MouseEvent<HTMLDivElement>) {
-      if (!nodeConnectTarget.current || !network) return;
+    useEffect(() => {
+      network?.redraw();
+    }, [network, nodeConnectTarget, nodeConnectDestination]);
 
-      nodeConnectDestination.current = {x: event.clientX, y: event.clientY};
+    function onMouseMove(event: MouseEvent<HTMLDivElement>) {
+      if (!nodeConnectTarget || !network) return;
+
+      setNodeConnectDestination({x: event.clientX, y: event.clientY});
       network?.redraw();
     }
 
@@ -282,12 +284,9 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
         closeRadialMenu();
         network.unselectAll();
       } else if (targetNode !== undefined) {
-        if (
-          nodeConnectTarget.current !== null &&
-          nodeConnectDestination.current !== null
-        ) {
+        if (nodeConnectTarget !== null && nodeConnectDestination !== null) {
           topologyStore.manager.connectNodes(
-            nodeConnectTarget.current as string,
+            nodeConnectTarget as string,
             targetNode as string
           );
           exitConnectionMode();
@@ -338,6 +337,15 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
     function onContext(selectData: GraphNodeClickEvent) {
       if (!contextMenuRef.current) return;
 
+      console.log('ON CONTEXY');
+
+      // If connection mode is currently active, exit and don't show menu
+      if (nodeConnectDestination !== null) {
+        exitConnectionMode();
+        selectData.event.preventDefault();
+        return;
+      }
+
       const targetNode = network?.getNodeAt(selectData.pointer.DOM);
 
       if (targetNode !== undefined) {
@@ -387,8 +395,6 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
           },
         });
       }
-
-      // onSaveGraph();
     }
 
     function onStabilizeGraph() {
@@ -450,9 +456,9 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
     }
 
     function exitConnectionMode() {
-      nodeConnectTarget.current = null;
-      nodeConnectDestination.current = null;
-      nodeConnectTargetPosition.current = null;
+      setNodeConnectTarget(null);
+      setNodeConnectDestination(null);
+      setNodeConnectTargetPosition(null);
     }
 
     const nodeContextMenuModel = [

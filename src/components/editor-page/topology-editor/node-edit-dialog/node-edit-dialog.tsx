@@ -1,6 +1,7 @@
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
 import SBDropdown from '@sb/components/common/sb-dropdown/sb-dropdown';
 import SBInput from '@sb/components/common/sb-input/sb-input';
+import NodeConnectionTable from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-connection-table/node-connection-table';
 import NodePropertyTable from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-property-table/node-property-table';
 
 import './node-edit-dialog.sass';
@@ -70,7 +71,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   const onTopologyUpdate = useCallback(() => {
     if (!nodeEditor || !nodeEditor.getNode()) return;
 
-    setNodeKind(nodeEditor.getNode().kind);
+    setNodeKind(nodeEditor.getNode()?.kind ?? '');
   }, [nodeEditor]);
 
   useEffect(() => {
@@ -113,7 +114,9 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
     <SBDialog
       isOpen={props.isOpen}
       headerIcon={
-        nodeEditor ? deviceStore.getNodeIcon(nodeEditor.getNode()) : undefined
+        nodeEditor
+          ? deviceStore.getNodeIcon(nodeEditor.getNode()?.kind)
+          : undefined
       }
       headerTitle="Edit Node"
       className="sb-node-edit-dialog"
@@ -146,6 +149,9 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
           />
         </div>
         <Accordion multiple activeIndex={0}>
+          <AccordionTab header="Connections">
+            <NodeConnectionTable nodeEditor={nodeEditor!} />
+          </AccordionTab>
           <AccordionTab header="Node Properties">
             <NodePropertyTable
               nodeEditor={nodeEditor!}

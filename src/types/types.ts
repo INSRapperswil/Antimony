@@ -111,19 +111,29 @@ export type NodeMeta = {
 export interface TopologyDefinition {
   name: string;
   topology: {
-    nodes: {[nodeName: string]: {kind?: string}};
+    nodes: {[nodeName: string]: TopologyNode};
     links: {
       endpoints: string;
     };
   };
 }
 
+export interface TopologyNode {
+  kind?: string;
+}
+
 export interface NodeConnection {
-  id: number;
+  index: number;
+
   hostNode: string;
   hostInterface: string;
+  hostInterfaceIndex: number;
+  hostInterfaceConfig: InterfaceConfig;
+
   targetNode: string;
   targetInterface: string;
+  targetInterfaceIndex: number;
+  targetInterfaceConfig: InterfaceConfig;
 }
 
 export interface ClabSchema {

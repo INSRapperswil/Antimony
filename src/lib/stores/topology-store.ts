@@ -30,7 +30,7 @@ export class TopologyStore extends DataStore<
   protected handleUpdate(updatedData: TopologyOut[]): void {
     if (!this.rootStore._schemaStore?.clabSchema) return;
 
-    this.data = TopologyManager.parseTopologies(
+    this.data = this.manager.parseTopologies(
       updatedData,
       this.rootStore._schemaStore.clabSchema
     );

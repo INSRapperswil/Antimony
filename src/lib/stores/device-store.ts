@@ -1,4 +1,4 @@
-import {DeviceInfo} from '@sb/types/types';
+import {DeviceInfo, InterfaceConfig} from '@sb/types/types';
 import {DataStore} from '@sb/lib/stores/data-store';
 
 export class DeviceStore extends DataStore<DeviceInfo, DeviceInfo, DeviceInfo> {
@@ -8,6 +8,7 @@ export class DeviceStore extends DataStore<DeviceInfo, DeviceInfo, DeviceInfo> {
 
   protected handleUpdate(updatedData: DeviceInfo[]): void {
     this.data = updatedData;
+    this.lookup = new Map(this.data.map(device => [device.kind, device]));
   }
 
   public getNodeIcon(kind?: string) {
@@ -24,6 +25,16 @@ export class DeviceStore extends DataStore<DeviceInfo, DeviceInfo, DeviceInfo> {
 
     return '/icons/' + iconName + '.svg';
   }
+
+  /**
+   * Returns the interface config of a given node.
+   *
+   * If the node's kind does not have a specific config, the default config
+   * is returned instead.
+   */
+  public getInterfaceConfig(nodeKind: string) {
+    return this.lookup.get(nodeKind) ?? DefaultDeviceConfig;
+  }
 }
 
 const IconMap = new Map([
@@ -31,5 +42,13 @@ const IconMap = new Map([
   ['Generic', 'generic'],
   ['Router', 'router'],
   ['Switch', 'switch'],
+  ['Linux', 'linux'],
+  ['Cisco', 'cisco'],
   ['Container', 'computer'],
+  ['Docker', 'docker'],
 ]);
+
+const DefaultDeviceConfig: InterfaceConfig = {
+  interfacePattern: 'eth$',
+  interfaceStart: 1,
+};

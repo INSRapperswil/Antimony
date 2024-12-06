@@ -40,7 +40,6 @@ export function drawGrid(ctx: CanvasRenderingContext2D) {
   const gridColor = 'rgb(38,55,55)';
   const largeGridColor = 'rgb(40,68,71)';
 
-  // ctx.globalCompositeOperation = 'destination-over';
   ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
   ctx.beginPath();
 

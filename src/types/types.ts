@@ -1,3 +1,5 @@
+import React from 'react';
+import {IdType} from 'vis-network';
 import {Document, ToJSOptions} from 'yaml';
 
 /*
@@ -38,7 +40,7 @@ export type Lab = LabIn & {
   state: LabState;
 };
 
-export type TopologyResponse = {
+export type PostResponse = {
   id: uuid4;
 };
 
@@ -52,10 +54,15 @@ export type TopologyOut = TopologyIn & {
   creatorId: uuid4;
 };
 
-export type Topology = {
+export type TopologyMeta = {
+  positions: Map<string, Position>;
+  connections: NodeConnection[];
+  connectionMap: Map<string, NodeConnection[]>;
+};
+
+export type Topology = TopologyMeta & {
   id: uuid4;
   definition: YAMLDocument<TopologyDefinition>;
-  positions: Map<string, Position>;
   groupId: uuid4;
   creatorId: uuid4;
 };
@@ -81,13 +88,16 @@ export type UserCredentials = {
   password: string;
 };
 
-export type DeviceInfo = {
+export type DeviceInfo = InterfaceConfig & {
   kind: string;
   name: string;
-  interfacePattern: string;
-  interfaceStart: number;
   images: string[];
   type: string;
+};
+
+export type InterfaceConfig = {
+  interfacePattern: string;
+  interfaceStart: number;
 };
 
 export type NodeMeta = {
@@ -102,17 +112,28 @@ export interface TopologyDefinition {
   name: string;
   topology: {
     nodes: {[nodeName: string]: TopologyNode};
-    links: TopologyLink[];
+    links: {
+      endpoints: string;
+    };
   };
 }
 
 export interface TopologyNode {
-  kind: string;
-  image?: string;
+  kind?: string;
 }
 
-export interface TopologyLink {
-  endpoints: string[];
+export interface NodeConnection {
+  index: number;
+
+  hostNode: string;
+  hostInterface: string;
+  hostInterfaceIndex: number;
+  hostInterfaceConfig: InterfaceConfig;
+
+  targetNode: string;
+  targetInterface: string;
+  targetInterfaceIndex: number;
+  targetInterfaceConfig: InterfaceConfig;
 }
 
 export interface ClabSchema {
@@ -217,6 +238,29 @@ export enum FetchState {
   Pending,
   Done,
   Error,
+}
+
+export interface GraphEventPointer {
+  DOM: Position;
+  canvas: Position;
+}
+
+export interface GraphBaseEvent {
+  event: React.SyntheticEvent;
+  pointer: GraphEventPointer;
+}
+
+export interface GraphNodeClickEvent extends GraphBaseEvent {
+  nodes: IdType[];
+  edges: IdType[];
+}
+
+export interface GraphNodeHoverEvent extends GraphBaseEvent {
+  nodeId: IdType;
+}
+
+export interface GraphEdgeHoverEvent extends GraphBaseEvent {
+  edgeId: IdType;
 }
 
 export const DefaultFetchReport = {

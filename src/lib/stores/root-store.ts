@@ -5,43 +5,35 @@ import {GroupStore} from '@sb/lib/stores/group-store';
 import {LabStore} from '@sb/lib/stores/lab-store';
 import {NotificationStore} from '@sb/lib/stores/notification-store';
 import {SchemaStore} from '@sb/lib/stores/schema-store';
-import {TopologyStore} from '@sb/lib/stores/topology-store';
 import {combinedFetchState} from '@sb/lib/utils/utils';
-import {FetchState} from '@sb/types/types';
-import {action, observable, observe} from 'mobx';
+import {computed} from 'mobx';
 import {createContext, useContext} from 'react';
+import {TopologyStore} from '@sb/lib/stores/topology-store';
 
 export class RootStore {
   _apiConnectorStore: APIStore;
   _topologyStore: TopologyStore;
   _labStore: LabStore;
+  _calendarLabStore: LabStore;
   _deviceStore: DeviceStore;
   _groupStore: GroupStore;
   _schemaStore: SchemaStore;
   _notificationsStore: NotificationStore;
 
-  @observable accessor combinedFetchState: FetchState = FetchState.Pending;
-
   constructor() {
     this._apiConnectorStore = new APIStore(this);
+    this._schemaStore = new SchemaStore(this);
+    this._deviceStore = new DeviceStore(this);
     this._topologyStore = new TopologyStore(this);
     this._labStore = new LabStore(this);
-    this._deviceStore = new DeviceStore(this);
+    this._calendarLabStore = new LabStore(this);
     this._groupStore = new GroupStore(this);
-    this._schemaStore = new SchemaStore(this);
     this._notificationsStore = new NotificationStore(this);
-
-    observe(this._topologyStore, () => this.getCombinedFetchState());
-    observe(this._labStore, () => this.getCombinedFetchState());
-    observe(this._deviceStore, () => this.getCombinedFetchState());
-    observe(this._groupStore, () => this.getCombinedFetchState());
-    observe(this._schemaStore, () => this.getCombinedFetchState());
-    observe(this._notificationsStore, () => this.getCombinedFetchState());
   }
 
-  @action
-  private getCombinedFetchState() {
-    this.combinedFetchState = combinedFetchState(
+  @computed
+  public get fetchState() {
+    return combinedFetchState(
       this._topologyStore.fetchReport.state,
       this._labStore.fetchReport.state,
       this._deviceStore.fetchReport.state,
@@ -69,6 +61,10 @@ export const useTopologyStore = () => {
 
 export const useLabStore = () => {
   return useContext(RootStoreContext)._labStore;
+};
+
+export const useCalendarLabStore = () => {
+  return useContext(RootStoreContext)._calendarLabStore;
 };
 
 export const useDeviceStore = () => {

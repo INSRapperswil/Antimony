@@ -1,4 +1,8 @@
-import {FetchState, Position} from '@sb/types/types';
+import {DeviceStore} from '@sb/lib/stores/device-store';
+import {TopologyManager} from '@sb/lib/topology-manager';
+import {FetchState, Topology} from '@sb/types/types';
+import {Edge, Node} from 'vis';
+import {DataSet} from 'vis-data/peer';
 
 export function matchesSearch(value: string, search: string) {
   return value.toLowerCase().includes(search.toLowerCase());
@@ -40,7 +44,6 @@ export function drawGrid(ctx: CanvasRenderingContext2D) {
   const gridColor = 'rgb(38,55,55)';
   const largeGridColor = 'rgb(40,68,71)';
 
-  // ctx.globalCompositeOperation = 'destination-over';
   ctx.strokeStyle = 'rgba(34, 51, 56, 1)';
   ctx.beginPath();
 
@@ -76,25 +79,51 @@ export function drawGrid(ctx: CanvasRenderingContext2D) {
   }
 }
 
-/**
- * Parses a position string to a position object. Returns null if the parsing
- * failed.
- *
- * Format: pos=[x, y]
- */
-export function parsePosition(
-  value: string | null | undefined
-): Position | null {
-  if (!value) return null;
+export function pushOrCreateList<T, R>(map: Map<T, R[]>, key: T, value: R) {
+  if (map.has(key)) {
+    map.get(key)!.push(value);
+  } else {
+    map.set(key, [value]);
+  }
+}
 
-  const matches = value.replaceAll(' ', '').match(/pos=\[(\d+),(\d+)]/);
-  if (matches && matches.length === 3) {
-    const x = Number(matches[1]);
-    const y = Number(matches[2]);
-    if (!isNaN(x) && !isNaN(y)) {
-      return {x, y};
-    }
+export function generateGraph(
+  topology: Topology,
+  deviceStore: DeviceStore,
+  topologyManager: TopologyManager
+) {
+  const nodes: DataSet<Node> = new DataSet();
+
+  for (const [nodeName, node] of Object.entries(
+    topology.definition.toJS().topology.nodes
+  )) {
+    nodes.add({
+      id: nodeName,
+      label: nodeName,
+      image: deviceStore.getNodeIcon(node?.kind),
+      x: topology.positions.get(nodeName)?.x,
+      y: topology.positions.get(nodeName)?.y,
+      fixed: {
+        x: true,
+        y: true,
+      },
+      title: topologyManager.getNodeTooltip(nodeName),
+    });
   }
 
-  return null;
+  /*
+   * We can safely assume that the endpoint strings are in the correct
+   * format here since this is enforced by the schema and the node editor
+   * only receives valid definitions get pushed to the node editor.
+   */
+  const edges: DataSet<Edge> = new DataSet(
+    topology.connections.map(connection => ({
+      id: connection.index,
+      from: connection.hostNode,
+      to: connection.targetNode,
+      title: topologyManager.getEdgeTooltip(connection),
+    }))
+  );
+
+  return {nodes: nodes, edges: edges};
 }

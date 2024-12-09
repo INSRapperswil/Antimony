@@ -18,7 +18,6 @@ import React, {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState,
 } from 'react';
 import {monaco} from 'react-monaco-editor';
 import MonacoEditor from 'react-monaco-editor/lib/editor';
@@ -52,8 +51,6 @@ export interface MonacoWrapperRef {
 
 const MonacoWrapper = observer(
   forwardRef<MonacoWrapperRef, MonacoWrapperProps>((props, ref) => {
-    // const [openTopology, setOpenTopology] = useState<Topology | null>(null);
-
     const textModelRef = useRef<editor.ITextModel | null>(null);
     const monacoEditorRef = useRef<Monaco | null>(null);
 
@@ -67,20 +64,39 @@ const MonacoWrapper = observer(
     }, []);
 
     const onTopologyEdit = useCallback((editReport: TopologyEditReport) => {
-      if (editReport.source !== TopologyEditSource.TextEditor) {
-        const updatedContent = editReport.updatedTopology.definition.toString();
-        if (!textModelRef.current) {
-          setContent(updatedContent);
-          return;
-        }
+      if (
+        !textModelRef.current ||
+        editReport.source === TopologyEditSource.TextEditor
+      ) {
+        return;
+      }
 
-        const existingContent = textModelRef.current.getValue();
-        const updatedContentStripped = updatedContent.replaceAll(' ', '');
-        const existingContentStripped = existingContent.replaceAll(' ', '');
+      const updatedContent = editReport.updatedTopology.definition.toString();
+      const existingContent = textModelRef.current.getValue();
 
-        if (!isEqual(updatedContentStripped, existingContentStripped)) {
-          setContent(updatedContent);
-        }
+      const updatedContentStripped = updatedContent.replaceAll(' ', '');
+      const existingContentStripped = existingContent.replaceAll(' ', '');
+
+      if (!isEqual(updatedContentStripped, existingContentStripped)) {
+        /*
+         * For some reason the react-editor-library adds multiple unto stops
+         * to the history stack whenever the content is updated. This messes
+         * up consecutive undos and redos. Therefore, we update the content
+         * manually and don't use the library's built-in functionality.
+         *
+         * https://github.com/react-monaco-editor/react-monaco-editor/blob/e8c823fa5e0156687e6129502369f7e1521d061b/src/editor.tsx#L107
+         */
+        textModelRef.current.pushStackElement();
+        textModelRef.current.pushEditOperations(
+          [],
+          [
+            {
+              range: textModelRef.current.getFullModelRange(),
+              text: updatedContent,
+            },
+          ],
+          undefined as never
+        );
       }
     }, []);
 
@@ -98,13 +114,7 @@ const MonacoWrapper = observer(
         topologyStore.manager.onEdit.unregister(onTopologyEdit);
         topologyStore.manager.onOpen.unregister(onTopologyOpen);
       };
-    }, [
-      onTopologyOpen,
-      onTopologyEdit,
-      topologyStore.manager.onEdit,
-      topologyStore.manager.onOpen,
-      topologyStore.manager.onClose,
-    ]);
+    }, [onTopologyOpen, onTopologyEdit, topologyStore.manager]);
 
     useImperativeHandle(ref, () => ({
       undo: onTriggerUndo,
@@ -130,26 +140,6 @@ const MonacoWrapper = observer(
       },
       [props]
     );
-
-    const [content, setContent] = useState('');
-
-    // useEffect(() => {
-    //   if (!props.openTopology) return;
-    //
-    //   const updatedContent = props.openTopology?.toString();
-    //   if (!textModelRef.current) {
-    //     setContent(updatedContent);
-    //     return;
-    //   }
-    //
-    //   const existingContent = textModelRef.current.getValue();
-    //   const updatedContentStripped = updatedContent.replaceAll(' ', '');
-    //   const existingContentStripped = existingContent.replaceAll(' ', '');
-    //
-    //   if (!isEqual(updatedContentStripped, existingContentStripped)) {
-    //     setContent(updatedContent);
-    //   }
-    // }, [props.openTopology]);
 
     useEffect(() => {
       window.addEventListener('keydown', onGlobalKeyPress);
@@ -233,17 +223,9 @@ const MonacoWrapper = observer(
               className="sb-monaco-wrapper-error-tooltip"
               target=".sb-monaco-wrapper-error"
             />
-            {/*<Button*/}
-            {/*  text*/}
-            {/*  icon="pi pi-check"*/}
-            {/*  size="large"*/}
-            {/*  tooltip="Clear"*/}
-            {/*  tooltipOptions={{position: 'bottom', showDelay: 500}}*/}
-            {/*/>*/}
           </div>
           <MonacoEditor
             language="yaml"
-            value={content}
             theme="antimonyTheme"
             options={MonacoOptions}
             onChange={onContentChange}

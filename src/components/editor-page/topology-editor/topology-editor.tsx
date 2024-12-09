@@ -4,20 +4,27 @@ import MonacoWrapper, {
 import NodeEditDialog from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-edit-dialog';
 import NodeEditor from '@sb/components/editor-page/topology-editor/node-editor/node-editor';
 import {
+  SimulationConfig,
+  SimulationConfigContext,
+} from '@sb/components/editor-page/topology-editor/node-editor/state/simulation-config';
+import {
   useNotifications,
   useSchemaStore,
   useTopologyStore,
 } from '@sb/lib/stores/root-store';
-import {TopologyEditReport, TopologyEditSource} from '@sb/lib/topology-manager';
-import {Choose, Otherwise, When} from '@sb/types/control';
+import {
+  TopologyEditReport,
+  TopologyEditSource,
+  TopologyManager,
+} from '@sb/lib/topology-manager';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
 
 import {Topology, uuid4} from '@sb/types/types';
 
-import {validate} from 'jsonschema';
+import {Badge} from 'primereact/badge';
 import {Button} from 'primereact/button';
 import {Splitter, SplitterPanel} from 'primereact/splitter';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {parseDocument} from 'yaml';
 
 import './topology-editor.sass';
 
@@ -64,6 +71,11 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
   }, []);
 
   const onTopologyEdit = useCallback((editReport: TopologyEditReport) => {
+    if (editReport.isEdited) {
+      document.title = 'Antimony*';
+    } else {
+      document.title = 'Antimony';
+    }
     setPendingEdits(editReport.isEdited);
     setOpenTopology(editReport.updatedTopology);
   }, []);
@@ -88,15 +100,17 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
   ]);
 
   function onContentChange(content: string) {
-    try {
-      const obj = parseDocument(content);
+    if (!schemaStore.clabSchema) return;
 
-      if (
-        obj.errors.length === 0 &&
-        validate(obj.toJS(), schemaStore.clabSchema).errors.length === 0
-      ) {
+    try {
+      const definition = TopologyManager.parseTopology(
+        content,
+        schemaStore.clabSchema
+      );
+
+      if (definition !== null) {
         setValidationState(ValidationState.Done);
-        topologyStore.manager.apply(obj, TopologyEditSource.TextEditor);
+        topologyStore.manager.apply(definition, TopologyEditSource.TextEditor);
       } else {
         // Set this to working until the monaco worker has finished and generated the error
         setValidationState(ValidationState.Working);
@@ -183,6 +197,16 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   tooltip="Save"
                   onClick={onSaveTopology}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
+                  pt={{
+                    icon: {
+                      className: 'p-overlay-badge',
+                      children: (
+                        <If condition={hasPendingEdits}>
+                          <Badge severity="danger" />
+                        </If>
+                      ),
+                    },
+                  }}
                 />
                 <Button
                   outlined
@@ -230,7 +254,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                 <SplitterPanel
                   className="flex align-items-center justify-content-center"
                   minSize={10}
-                  size={40}
+                  size={30}
                 >
                   <MonacoWrapper
                     ref={monacoWrapperRef}
@@ -246,11 +270,15 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   className="flex align-items-center justify-content-center"
                   minSize={10}
                 >
-                  <NodeEditor
-                    onAddNode={onAddNode}
-                    onEditNode={onNodeEdit}
-                    openTopology={openTopology!.definition}
-                  />
+                  <SimulationConfigContext.Provider
+                    value={new SimulationConfig()}
+                  >
+                    <NodeEditor
+                      onAddNode={onAddNode}
+                      onEditNode={onNodeEdit}
+                      openTopology={openTopology!}
+                    />
+                  </SimulationConfigContext.Provider>
                 </SplitterPanel>
               </Splitter>
             </div>

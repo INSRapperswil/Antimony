@@ -64,7 +64,7 @@ const EditorPage: React.FC = observer(() => {
     topologyStore.fetchReport,
     topologyStore.lookup,
     topologyStore.manager,
-    topologyStore.topologies,
+    topologyStore.data,
   ]);
 
   function onSelectTopology(id: string) {
@@ -99,7 +99,6 @@ const EditorPage: React.FC = observer(() => {
     <>
       <div
         className={classNames(
-          'bg-primary',
           'font-bold',
           'height-100',
           'sb-card',
@@ -122,7 +121,7 @@ const EditorPage: React.FC = observer(() => {
           'sb-admin-page-right-maximized': isMaximized,
         })}
       >
-        <div className="bg-primary font-bold height-100 sb-card overflow-y-auto overflow-x-hidden">
+        <div className="font-bold height-100 sb-card overflow-y-auto overflow-x-hidden">
           <TopologyEditor
             isMaximized={isMaximized}
             setMaximized={setMaximized}

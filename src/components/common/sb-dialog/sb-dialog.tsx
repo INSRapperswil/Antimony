@@ -4,7 +4,7 @@ import {Image} from 'primereact/image';
 import {Dialog} from 'primereact/dialog';
 import {Button} from 'primereact/button';
 
-import {If} from '@sb/types/control';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
 
 import './sb-dialog.sass';
 
@@ -12,12 +12,13 @@ interface SBDialogProps {
   isOpen: boolean;
   onClose: () => void;
 
-  headerTitle: string;
+  headerTitle: string | React.ReactNode;
   headerIcon?: string;
 
   children: React.ReactNode;
   className: string;
 
+  hideButtons?: boolean;
   onCancel?: () => void;
   onSubmit?: () => void;
 
@@ -40,7 +41,12 @@ const SBDialog: React.FC<SBDialogProps> = (props: SBDialogProps) => {
           <If condition={props.headerIcon}>
             <Image src={props.headerIcon} width="45px" />
           </If>
-          <span>{props.headerTitle}</span>
+          <Choose>
+            <When condition={typeof props.headerTitle === 'string'}>
+              <span>{props.headerTitle}</span>
+            </When>
+            <Otherwise>{props.headerTitle}</Otherwise>
+          </Choose>
         </div>
         <div className="sb-dialog-header-close">
           <Button
@@ -53,22 +59,23 @@ const SBDialog: React.FC<SBDialogProps> = (props: SBDialogProps) => {
       </div>
 
       <div className="sb-dialog-content">{props.children}</div>
-      <div className="sb-dialog-footer w-full">
-        <Button
-          icon="pi pi-times"
-          label={props.cancelLabel ?? 'Cancel'}
-          outlined
-          onClick={() => props.onCancel?.call(null)}
-          className="w-8rem"
-        />
-        <Button
-          icon="pi pi-check"
-          label={props.submitLabel ?? 'Submit'}
-          outlined
-          onClick={() => props.onSubmit?.call(null)}
-          className="w-8rem"
-        />
-      </div>
+      <If condition={!props.hideButtons}>
+        <div className="sb-dialog-footer w-full">
+          <Button
+            icon="pi pi-times"
+            label={props.cancelLabel ?? 'Cancel'}
+            outlined
+            onClick={() => props.onCancel?.call(null)}
+            className="w-8rem"
+          />
+          <Button
+            icon="pi pi-check"
+            label={props.submitLabel ?? 'Submit'}
+            onClick={() => props.onSubmit?.call(null)}
+            className="w-8rem"
+          />
+        </div>
+      </If>
     </Dialog>
   );
 };

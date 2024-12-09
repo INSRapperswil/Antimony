@@ -1,19 +1,24 @@
 import {APIStore} from '@sb/lib/stores/api-store';
-import {TopologyStore} from '@sb/lib/stores/topology-store';
-import {parsePosition} from '@sb/lib/utils/utils';
 import _ from 'lodash';
-import {parseDocument, Scalar, YAMLMap} from 'yaml';
+import {parseDocument, Scalar, YAMLMap, YAMLSeq} from 'yaml';
 import cloneDeep from 'lodash.clonedeep';
 
 import {Binding} from '@sb/lib/utils/binding';
 import {
+  ClabSchema,
   ErrorResponse,
+  NodeConnection,
   Position,
   Topology,
   TopologyDefinition,
   TopologyOut,
+  uuid4,
   YAMLDocument,
 } from '@sb/types/types';
+import {validate} from 'jsonschema';
+import {DeviceStore} from '@sb/lib/stores/device-store';
+import {pushOrCreateList} from '@sb/lib/utils/utils';
+import {TopologyStore} from '@sb/lib/stores/topology-store';
 
 export type TopologyEditReport = {
   updatedTopology: Topology;
@@ -36,6 +41,7 @@ export enum TopologyEditSource {
 
 export class TopologyManager {
   private apiStore: APIStore;
+  private deviceStore: DeviceStore;
   private topologyStore: TopologyStore;
   private editingTopology: Topology | null = null;
   private originalTopology: Topology | null = null;
@@ -44,8 +50,13 @@ export class TopologyManager {
   public readonly onClose: Binding<void> = new Binding();
   public readonly onEdit: Binding<TopologyEditReport> = new Binding();
 
-  constructor(apiStore: APIStore, topologyStore: TopologyStore) {
+  constructor(
+    apiStore: APIStore,
+    topologyStore: TopologyStore,
+    deviceStore: DeviceStore
+  ) {
     this.apiStore = apiStore;
+    this.deviceStore = deviceStore;
     this.topologyStore = topologyStore;
     this.onEdit.register(
       updateReport => (this.editingTopology = updateReport.updatedTopology)
@@ -54,6 +65,7 @@ export class TopologyManager {
     // Bind these functions to the class so they can be called from the view directly
     this.clear = this.clear.bind(this);
     this.save = this.save.bind(this);
+    this.writePositions = this.writePositions.bind(this);
   }
 
   public get editingTopologyId(): string | null {
@@ -67,7 +79,10 @@ export class TopologyManager {
   public async save(): Promise<ErrorResponse | null> {
     if (!this.editingTopology) return null;
 
-    const error = await this.topologyStore.update(this.editingTopology);
+    const error = await this.topologyStore.update(this.editingTopology.id, {
+      groupId: this.editingTopology.groupId,
+      definition: this.editingTopology.definition.toString(),
+    });
     if (error) return error;
 
     await this.topologyStore.fetch();
@@ -123,10 +138,13 @@ export class TopologyManager {
   ) {
     if (!this.editingTopology) return;
 
+    const topologyMeta = this.buildTopologyMetadata(updatedTopology);
+
     this.onEdit.update({
       updatedTopology: {
         ...this.editingTopology,
         definition: updatedTopology,
+        ...topologyMeta,
       },
       isEdited: !_.isEqual(
         updatedTopology.toString(),
@@ -146,7 +164,6 @@ export class TopologyManager {
       name: this.editingTopology.definition.toJS().name,
       topology: {
         nodes: {},
-        links: [],
       },
     };
 
@@ -182,11 +199,20 @@ export class TopologyManager {
    * @param nodeName2 The name of ths second node to connect.
    */
   public connectNodes(nodeName1: string, nodeName2: string) {
-    if (!this.editingTopology) return;
+    if (!this.editingTopology || !this.deviceStore.data) return;
 
-    console.log('Connecting nodes: n1:', nodeName1, 'n2:', nodeName2);
+    const updatedTopology = this.editingTopology.definition.clone();
+    const hostInterface = this.getNextInterface(nodeName1);
+    const targetInterface = this.getNextInterface(nodeName2);
+    const links = updatedTopology.getIn(['topology', 'links']) as YAMLSeq;
+    links.add({
+      endpoints: [
+        `${nodeName1}:${hostInterface}`,
+        `${nodeName2}:${targetInterface}`,
+      ],
+    });
 
-    this.apply(this.editingTopology.definition, TopologyEditSource.NodeEditor);
+    this.apply(updatedTopology, TopologyEditSource.NodeEditor);
   }
 
   /**
@@ -208,73 +234,340 @@ export class TopologyManager {
   public hasEdits() {
     if (!this.editingTopology || !this.originalTopology) return false;
     return !_.isEqual(
-      this.editingTopology.definition.toJS(),
-      this.originalTopology.definition.toJS()
+      this.editingTopology.definition.toString(),
+      this.originalTopology.definition.toString()
     );
+  }
+
+  /**
+   * Writes the positions from the position map to the topology definition.
+   */
+  public writePositions() {
+    if (!this.editingTopology) return;
+
+    const yamlNodes = this.editingTopology.definition.getIn([
+      'topology',
+      'nodes',
+    ]) as YAMLMap;
+
+    const nodeKeys = Object.keys(
+      yamlNodes.toJS(this.editingTopology.definition)
+    );
+    if (nodeKeys.length === 0) return;
+
+    /*
+     * We need to write the first comment differently as it belongs to the node
+     * list and not to the actual node.
+     */
+    if (this.editingTopology.positions.has(nodeKeys[0])) {
+      yamlNodes.commentBefore = TopologyManager.writePosition(
+        this.editingTopology.positions.get(nodeKeys[0])!
+      );
+    }
+
+    for (let i = 1; i < yamlNodes.items.length; i++) {
+      if (!this.editingTopology.positions.has(nodeKeys[i])) continue;
+
+      const key = yamlNodes.items[i].key as Scalar;
+      key.commentBefore = TopologyManager.writePosition(
+        this.editingTopology.positions.get(nodeKeys[i])!
+      );
+    }
+
+    this.apply(this.editingTopology.definition, TopologyEditSource.System);
   }
 
   public get topology() {
     return this.editingTopology;
   }
 
-  public static parseTopologies(input: TopologyOut[]) {
-    const topologies: Topology[] = [];
-    for (const topology of input) {
-      try {
-        const definition = parseDocument((topology as TopologyOut).definition, {
-          keepSourceTokens: true,
-        });
-        const positions = new Map<string, Position>();
-        const nodes = definition.getIn(['topology', 'nodes']) as YAMLMap;
-        if (nodes && nodes.items.length > 0) {
-          /*
-           * The comment of the first element is actually the comment of the
-           * array itself for some reason.
-           */
-          if (nodes.commentBefore) {
-            const parsed = parsePosition(nodes.commentBefore);
-            if (parsed) {
-              positions.set(
-                (nodes.items[0].key as Scalar).value as string,
-                parsed
-              );
-            }
-          }
-          for (let i = 1; i < nodes.items.length; i++) {
-            // console.log('Node: ', nodes.items[i]);
-            const key = nodes.items[i].key as Scalar;
-            const parsed = parsePosition(key.commentBefore);
-            if (parsed) {
-              positions.set(key.value as string, parsed);
-            }
-          }
+  public getNodeTooltip(nodeName: string) {
+    if (!this.editingTopology) return;
+
+    // const node = (
+    //   this.editingTopology.definition.getIn([
+    //     'topology',
+    //     'nodes',
+    //     nodeName,
+    //   ]) as YAMLMap
+    // ).toJS(this.editingTopology.definition);
+    return nodeName;
+  }
+
+  public getEdgeTooltip(connection: NodeConnection) {
+    return `${connection.hostNode}:${connection.hostInterface} <···> ${connection.targetNode}:${connection.targetInterface}`;
+  }
+
+  /**
+   * Returns all connections of a node.
+   */
+  private getNodeConnections(nodeName: string) {
+    if (!this.editingTopology) return [];
+    this.editingTopology?.connections.filter(
+      connection =>
+        connection.hostNode === nodeName || connection.targetNode === nodeName
+    );
+  }
+
+  public static parseTopology(
+    definitionString: string,
+    schema: ClabSchema
+  ): YAMLDocument<TopologyDefinition> | null {
+    const definition = parseDocument(definitionString, {
+      keepSourceTokens: true,
+    });
+    if (
+      definition.errors.length > 0 &&
+      validate(definition.toJS(), schema).errors.length > 0
+    ) {
+      return null;
+    }
+
+    return definition;
+  }
+
+  public buildTopologyMetadata(topology: YAMLDocument<TopologyDefinition>) {
+    const positions = new Map<string, Position>();
+    const nodes = topology.getIn(['topology', 'nodes']) as YAMLMap;
+    if (!nodes) {
+      topology.setIn(['topology', 'nodes'], {});
+    } else if (nodes.items.length > 0) {
+      /*
+       * We need to parse the first comment differently as it belongs to the
+       * node list and not to the actual node.
+       */
+      if (nodes.commentBefore) {
+        const parsed = TopologyManager.readPosition(nodes.commentBefore);
+        if (parsed) {
+          positions.set((nodes.items[0].key as Scalar).value as string, parsed);
         }
-        topologies.push({
-          ...topology,
-          definition: definition,
-          positions: positions,
-        });
-      } catch (e) {
-        console.error(
-          '[NET] Failed to parse incoming topology: ',
-          topology,
-          ':',
-          e
-        );
+      }
+      for (let i = 1; i < nodes.items.length; i++) {
+        const key = nodes.items[i].key as Scalar;
+        const parsed = TopologyManager.readPosition(key.commentBefore);
+        if (parsed) {
+          positions.set(key.value as string, parsed);
+        }
       }
     }
 
-    console.log('TOPOLOGIES:', topologies);
+    if (!topology.hasIn(['topology', 'links'])) {
+      return {
+        positions,
+        connections: [],
+        connectionMap: new Map<string, NodeConnection[]>(),
+      };
+    }
+
+    const links = (topology.getIn(['topology', 'links']) as YAMLSeq).toJS(
+      topology
+    );
+
+    let index = 0;
+    const connections: NodeConnection[] = [];
+    const connectionMap = new Map<string, NodeConnection[]>();
+
+    for (const link of links) {
+      const [hostNode, hostInterface] = link.endpoints[0].split(':');
+      const [targetNode, targetInterface] = link.endpoints[1].split(':');
+
+      const hostNodeKind = this.editingTopology?.definition.getIn([
+        'topology',
+        'nodes',
+        hostNode,
+        'kind',
+      ]) as string;
+
+      const targetNodeKind = this.editingTopology?.definition.getIn([
+        'topology',
+        'nodes',
+        targetNode,
+        'kind',
+      ]) as string;
+
+      const hostInterfaceConfig =
+        this.deviceStore.getInterfaceConfig(hostNodeKind);
+      const targetInterfaceConfig =
+        this.deviceStore.getInterfaceConfig(targetNodeKind);
+
+      const hostInterfaceIndex = this.parseInterface(
+        hostInterface,
+        hostInterfaceConfig.interfacePattern
+      );
+      const targetInterfaceIndex = this.parseInterface(
+        targetInterface,
+        targetInterfaceConfig.interfacePattern
+      );
+
+      connections.push({
+        index,
+        hostNode,
+        hostInterface,
+        hostInterfaceIndex,
+        hostInterfaceConfig,
+        targetNode,
+        targetInterface,
+        targetInterfaceIndex,
+        targetInterfaceConfig,
+      });
+
+      pushOrCreateList(connectionMap, hostNode, {
+        index: index,
+        hostNode: hostNode,
+        hostInterface: hostInterface,
+        hostInterfaceIndex: hostInterfaceIndex,
+        hostInterfaceConfig: hostInterfaceConfig,
+        targetNode: targetNode,
+        targetInterface: targetInterface,
+        targetInterfaceIndex: targetInterfaceIndex,
+        targetInterfaceConfig: targetInterfaceConfig,
+      });
+
+      pushOrCreateList(connectionMap, targetNode, {
+        index: index,
+        hostNode: targetNode,
+        hostInterface: targetInterface,
+        hostInterfaceIndex: targetInterfaceIndex,
+        hostInterfaceConfig: targetInterfaceConfig,
+        targetNode: hostNode,
+        targetInterface: hostInterface,
+        targetInterfaceIndex: hostInterfaceIndex,
+        targetInterfaceConfig: hostInterfaceConfig,
+      });
+
+      index++;
+    }
+
+    return {positions, connections, connectionMap};
+  }
+
+  public parseTopologies(input: TopologyOut[], schema: ClabSchema) {
+    const topologies: Topology[] = [];
+    for (const topology of input) {
+      const definition = TopologyManager.parseTopology(
+        topology.definition,
+        schema
+      );
+
+      if (!definition) {
+        console.error('[NET] Failed to parse incoming topology: ', topology);
+        continue;
+      }
+
+      topologies.push({
+        ...topology,
+        definition: definition,
+        ...this.buildTopologyMetadata(definition),
+      });
+    }
 
     return topologies.toSorted((a, b) =>
-      (a.definition.get('name') as string).localeCompare(
+      (a.definition.get('name') as string)?.localeCompare(
         b.definition.get('name') as string
       )
     );
   }
+
+  /**
+   * Generates a valid interface ID for a given node.
+   */
+  private getNextInterface(nodeName: string): string {
+    if (!this.editingTopology) return '';
+
+    const deviceInfo = this.deviceStore.getInterfaceConfig(nodeName);
+    const assignedNumbers = new Set(
+      this.getAssignedInterfaces(
+        nodeName,
+        deviceInfo.interfacePattern,
+        this.editingTopology.connectionMap
+      )
+    );
+    let checkIndex = deviceInfo.interfaceStart;
+    let validIndexFound = false;
+    while (!validIndexFound) {
+      validIndexFound = !assignedNumbers.has(checkIndex);
+      checkIndex++;
+    }
+
+    return `${deviceInfo.interfacePattern.replaceAll('$', String(checkIndex))}`;
+  }
+
+  /**
+   * Returns all assigned interface numbers for a given node.
+   */
+  private getAssignedInterfaces(
+    nodeName: string,
+    interfacePattern: string,
+    connectionMap: Map<string, NodeConnection[]>
+  ): number[] {
+    return (connectionMap.get(nodeName) ?? [])
+      .map(connection =>
+        this.parseInterface(connection.hostInterface, interfacePattern)
+      )
+      .filter(index => index >= 0);
+  }
+
+  private parseInterface(value: string, interfacePattern: string): number {
+    const pattern = new RegExp(interfacePattern.replaceAll('$', '(\\d+)'));
+    const match = value.match(pattern);
+
+    console.log('VALUE:', value, 'MATCH:', match, 'PATTERN:', pattern);
+
+    if (!match || match.length < 2) return 99;
+    return Number(match[1]);
+  }
+
+  /**
+   * Generates a unique new name for a topology in a given group.
+   */
+  public static generateUniqueName(groupId: uuid4, topologies: Topology[]) {
+    const groupTopologies = topologies
+      .filter(topology => topology.groupId === groupId)
+      .map(topology => topology.definition.getIn(['name']) as string);
+
+    let equalNames = 0;
+    let nameIndex = 0;
+    do {
+      nameIndex++;
+      equalNames = groupTopologies.filter(
+        topology => topology === TopologyDefaultName + String(nameIndex)
+      ).length;
+    } while (equalNames > 0);
+
+    return TopologyDefaultName + String(nameIndex);
+  }
+
+  /**
+   * Parses a position string to a position object. Returns null if the parsing
+   * failed.
+   *
+   * Format: pos=[x, y]
+   */
+  private static readPosition(
+    value: string | null | undefined
+  ): Position | null {
+    if (!value) return null;
+
+    const matches = value.replaceAll(' ', '').match(/pos=\[(-?\d+),(-?\d+)]/);
+    if (matches && matches.length === 3) {
+      const x = Number(matches[1]);
+      const y = Number(matches[2]);
+      if (!isNaN(x) && !isNaN(y)) {
+        return {x, y};
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Creates a position string from a position object.
+   *
+   * Format: pos=[x, y]
+   */
+  private static writePosition(position: Position) {
+    return ' pos=[' + position.x + ',' + position.y + ']';
+  }
 }
 
-export const DefaultTopology = `name: topology
-topology:
-  nodes:
-    node1:`;
+const TopologyDefaultName = 'topology';

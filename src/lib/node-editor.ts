@@ -6,15 +6,17 @@ import {
   ClabSchema,
   PatternPropertyDefinition,
   TopologyDefinition,
-  TopologyNode,
   PropertyType,
   PropertySchema,
   FieldType,
   YAMLDocument,
+  TopologyNode,
+  NodeConnection,
 } from '@sb/types/types';
 import {Binding} from '@sb/lib/utils/binding';
 import {arrayOf, filterSchemaEnum} from '@sb/lib/utils/utils';
 import {NotificationStore} from '@sb/lib/stores/notification-store';
+import {YAMLSeq} from 'yaml';
 
 /*
  * Object used by the view to communicate with the Node Editor.
@@ -219,6 +221,13 @@ export class NodeEditor {
    */
   public getNode(): TopologyNode {
     return this.editingTopology.toJS().topology.nodes[this.editingNode];
+  }
+
+  /**
+   * Returns the name of the current node.
+   */
+  public getNodeName(): string {
+    return this.editingNode;
   }
 
   /**
@@ -551,6 +560,40 @@ export class NodeEditor {
     }
 
     return {type};
+  }
+
+  public modifyConnection(updatedConnection: NodeConnection) {
+    if (!this.editingTopology) return;
+
+    console.log('MODIFY WITH:', updatedConnection);
+
+    const updatedTopology = this.editingTopology.clone();
+
+    const links = updatedTopology.getIn(['topology', 'links']) as YAMLSeq;
+
+    const updatedHostInterface =
+      updatedConnection.hostInterfaceConfig.interfacePattern.replaceAll(
+        '$',
+        String(updatedConnection.hostInterfaceIndex)
+      );
+
+    const updatedTargetInterface =
+      updatedConnection.targetInterfaceConfig.interfacePattern.replaceAll(
+        '$',
+        String(updatedConnection.targetInterfaceIndex)
+      );
+
+    links.set(updatedConnection.index, {
+      endpoints: [
+        `${updatedConnection.hostNode}:${updatedHostInterface}`,
+        `${updatedConnection.targetNode}:${updatedTargetInterface}`,
+      ],
+    });
+
+    this.validateAndSetTopology(
+      updatedTopology,
+      'Failed to update connection.'
+    );
   }
 
   /**

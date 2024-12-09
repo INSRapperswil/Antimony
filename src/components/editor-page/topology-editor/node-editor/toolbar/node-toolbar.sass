@@ -13,7 +13,9 @@
   .p-button
     color: var(--primary-color-border)
     width: 36px
-    padding: 8px !important
+
+    &:not(.sb-iconoir-button)
+      padding: 8px !important
 
     &:focus
       outline: none
@@ -24,6 +26,10 @@
 
       &:active
         backdrop-filter: brightness(1.4)
+
+    &.toggled
+      border-color: var(--primary-color-border)
+      backdrop-filter: brightness(1.4)
 
   .p-divider
     padding: 0

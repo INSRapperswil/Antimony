@@ -28,7 +28,7 @@ const SBDock: React.FC = observer(() => {
   }
 
   return (
-    <div className="flex mb-3 align-items-stretch justify-content-between sb-card sb-dock">
+    <div className="flex align-items-stretch justify-content-between sb-card sb-dock">
       <div className="flex align-items-center gap-2">
         <div className="sb-logo-tab sb-corner-tab flex justify-content-center align-items-center">
           <div>Logo Here</div>

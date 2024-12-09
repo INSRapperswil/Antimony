@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import bearerToken from 'express-bearer-token';
 import {Server} from 'socket.io';
 import {lorem} from 'txtgen';
+import {randomUUID} from 'node:crypto';
 
 const app = express();
 const server = http.createServer(app);
@@ -241,7 +242,25 @@ app.get('/labs', (req, res) => {
   res.setHeader('X-Total-Count', totalLabsCount);
 
   res.send({
-    payload: filteredLabs.toSorted((a, b) => a.name.localeCompare(b.name)),
+    payload: filteredLabs
+      .map(lab => {
+        const topology = store.topologies.find(
+          topology => topology.id === lab.topologyId
+        ).definition;
+        const nodes = YAML.parse(topology).topology.nodes;
+
+        return {
+          ...lab,
+          nodeMeta: Object.keys(nodes).map(nodeName => ({
+            name: nodeName,
+            host: 'example.com',
+            port: randomNumber(1000, 65000),
+            user: 'ins',
+            webSsh: 'console.antimony.network.garden/ssh/' + lab.id,
+          })),
+        };
+      })
+      .toSorted((a, b) => a.name.localeCompare(b.name)),
   });
 
   // void addRandomNotification(user.id);
@@ -302,7 +321,7 @@ app.patch('/labs/:id', (req, res) => {
   const now = new Date(Date.now());
   targetLab.startDate = req.body.startDate;
   if (req.body.endDate !== '') {
-    targetLab.enddate = req.body.endDate;
+    targetLab.endDate = req.body.endDate;
   }
 
   res.send({});
@@ -419,15 +438,15 @@ function filterLabs(
 
   const totalLabsCount = filteredLabs.length;
 
-  if (startDate && !isNaN(Date.parse(startDate))) {
-    startDate = Date.parse(startDate);
+  if (startDate && !isNaN(Date.parse(JSON.parse(startDate)))) {
+    startDate = Date.parse(JSON.parse(startDate));
     filteredLabs = filteredLabs.filter(
       lab => Date.parse(lab.startDate) > startDate
     );
   }
 
-  if (endDate && !isNaN(Date.parse(endDate))) {
-    endDate = Date.parse(endDate);
+  if (endDate && !isNaN(Date.parse(JSON.parse(endDate)))) {
+    endDate = Date.parse(JSON.parse(endDate));
     filteredLabs = filteredLabs.filter(
       lab => Date.parse(lab.startDate) < endDate
     );

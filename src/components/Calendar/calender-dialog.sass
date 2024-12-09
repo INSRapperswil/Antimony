@@ -1,3 +1,119 @@
 .calender-dialog
   min-height: 70%
   min-width: 80%
+
+  .rbc-calendar
+    background-color: #1e1e2d
+    color: #e0e0e0
+    border: none
+    padding: 5px
+    border-color: var(--primary-color-border) !important
+
+.rbc-day-slot .rbc-time-slot
+  border-color: var(--primary-color-border)
+
+.rbc-toolbar
+  background-color: #252537
+  padding: 10px
+  border-bottom: 1px solid #3e3e4e
+  text-align: center
+
+  .rbc-btn-group
+    display: flex
+    justify-content: center
+
+    button
+      background-color: #2e2e3e
+      color: #e0e0e0
+      padding: 5px 10px
+      margin: 0 5px
+      border: none
+      border-radius: 5px
+      font-size: 14px
+      cursor: pointer
+      transition: background-color 0.2s
+
+      &:hover
+        background-color: #3e3e4e
+
+      &:disabled
+        background-color: #1e1e2d
+        color: #555
+
+.rbc-header
+  background-color: #252537
+  color: #e0e0e0
+  padding: 10px
+  border-right: 1px solid #3e3e4e
+  border-bottom: 2px solid var(--primary-color-border)
+
+.rbc-header + .rbc-header
+  border-left: none
+
+.rbc-date-cell
+  color: #e0e0e0
+
+.rbc-month-view
+  .rbc-row
+    border-bottom: 1px solid #3e3e4e
+
+  .rbc-date-cell
+    background-color: #1e1e2d
+    transition: background-color 0.2s
+
+    &:hover
+      background-color: #3e3e4e
+
+.rbc-today
+  background-color: #2e2e3e
+
+.rbc-event
+  background-color: #00bcd4
+  border: none
+  border-radius: 5px
+  color: #fff
+  font-size: 14px
+  padding: 2px 4px
+  transition: background-color 0.2s
+
+  &:hover
+    background-color: #0097a7
+
+.rbc-event-label
+  color: #fff
+
+.rbc-time-view
+  border-color: var(--primary-color-border)
+  .rbc-time-header
+    border-bottom: 1px solid #3e3e4e
+
+  .rbc-timeslot-group
+    border-bottom: 1px solid #3e3e4e
+
+.rbc-time-header.rbc-overflowing
+  border: none
+
+.rbc-off-range-bg
+  background-color: #1A2B34
+
+.rbc-time-content
+  border: 1px solid var(--primary-color-border)
+
+.rbc-time-content > * + * > *
+  border-left: 1px solid var(--primary-color-border)
+
+.rbc-day-bg + .rbc-day-bg
+  border-left: 1px solid var(--primary-color-border)
+
+.rbc-time-header-content
+  border-color: var(--primary-color-border)
+
+.rbc-month-view
+  border-color: var(--primary-color-border)
+
+.rbc-month-view .rbc-row
+  border-color: var(--primary-color-border)
+
+.rbc-month-row + .rbc-month-row
+  border-color: var(--primary-color-border)
+

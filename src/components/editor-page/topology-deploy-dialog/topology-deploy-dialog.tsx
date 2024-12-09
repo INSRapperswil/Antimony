@@ -40,11 +40,11 @@ const TopologyDeployDialog = (props: TopologyDeployDialogProps) => {
   const [endDate, setEndDate] = useState<Nullable<Date>>(DefaultEndDate);
 
   const topologyOptions: SelectItem[] = useMemo(() => {
-    return topologyStore.topologies.map(topology => ({
+    return topologyStore.data.map(topology => ({
       label: topology.definition.get('name') as string,
       value: topology.id,
     }));
-  }, [topologyStore.topologies]);
+  }, [topologyStore.data]);
 
   function onChangeTopology(topologyId: uuid4) {
     setDeployingTopology(topologyStore.lookup.get(topologyId)!);
@@ -86,7 +86,7 @@ const TopologyDeployDialog = (props: TopologyDeployDialogProps) => {
             <SBDropdown
               id="deploy-topology"
               label="Topology"
-              icon="pi-box"
+              icon={<span className="material-symbols-outlined">lan</span>}
               hasFilter={true}
               useSelectTemplate={true}
               useItemTemplate={true}

@@ -10,7 +10,7 @@ import {useLabStore, useNotifications} from '@sb/lib/stores/root-store';
 
 interface ReservationDialogProps {
   lab: Lab;
-  closeDialog: () => void;
+  onClose: () => void;
 }
 
 const ReservationDialog: React.FC<ReservationDialogProps> = (
@@ -20,7 +20,7 @@ const ReservationDialog: React.FC<ReservationDialogProps> = (
   const notificationStore = useNotifications();
   const initialStartDate = new Date(props.lab.startDate!);
   const initialEndDate = new Date(props.lab.endDate!);
-  const [deployingLab, setDeployingLab] = useState<Lab>(props.lab);
+  const [deployingLab] = useState<Lab>(props.lab);
   const [startDate, setStartDate] = useState<Nullable<Date>>(initialStartDate);
   const [endDate, setEndDate] = useState<Nullable<Date>>(initialEndDate);
 
@@ -33,12 +33,12 @@ const ReservationDialog: React.FC<ReservationDialogProps> = (
       endDate: endDate.toISOString(),
     };
 
-    labStore.update(updatedLab).then(error => {
+    labStore.update(updatedLab.id, updatedLab).then(error => {
       if (error) {
         notificationStore.error(error.message, 'Failed to deploy topology');
       } else {
         notificationStore.success('Deployment has been scheduled.');
-        props.closeDialog();
+        props.onClose();
       }
     });
   }
@@ -46,13 +46,13 @@ const ReservationDialog: React.FC<ReservationDialogProps> = (
   return (
     <SBDialog
       isOpen={props.lab !== null}
-      onClose={props.closeDialog}
+      onClose={props.onClose}
       headerTitle="Rescheduling Dialog"
       className="dialog-lab-reservation"
       onSubmit={() => {
         onDeploy();
       }}
-      onCancel={() => props.closeDialog()}
+      onCancel={() => props.onClose()}
     >
       <div className="update-reservation-container">
         <div className="form-field">

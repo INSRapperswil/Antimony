@@ -1,7 +1,21 @@
-.vis-network:active
-  cursor: grabbing
+.vis-network
+  outline: none
+
+  canvas
+    outline: none
+
+  &:active
+    cursor: grabbing
+
+.vis-tooltip
+  font-family: Iosevka, monospace !important
+  background-color: var(--overlay-color) !important
+  border-color: var(--primary-color-border) !important
+  color: var(--primary-color-text) !important
 
 .sb-node-editor
+  width: 100%
+  height: 100%
   position: relative
   backdrop-filter: brightness(1.05)
 

@@ -4,17 +4,19 @@ import {Lab, LabIn, LabState, NodeMeta} from '@sb/types/types';
 import {action, computed, observable, observe} from 'mobx';
 
 export class LabStore extends DataStore<Lab, LabIn, Lab> {
-  @observable accessor totalEntries: number | null = null;
-  @observable accessor limit: number = 5;
   @observable accessor offset: number = 0;
-  @observable accessor startDate: String | null = null;
-  @observable accessor endDate: String | null = null;
+  @observable accessor totalEntries: number | null = 0;
+
+  @observable accessor limit: number = 1000;
   @observable accessor stateFilter: LabState[] = [
     LabState.Deploying,
     LabState.Running,
   ];
   @observable accessor groupFilter: string[] = [];
   @observable accessor searchQuery: string = '';
+
+  @observable accessor startDate: string | null = null;
+  @observable accessor endDate: string | null = null;
 
   @observable accessor metaLookup: Map<string, Map<string, NodeMeta>> =
     new Map();
@@ -31,6 +33,8 @@ export class LabStore extends DataStore<Lab, LabIn, Lab> {
 
   @computed
   protected get getParams() {
+    console.log('STORE START DATE:', this.startDate);
+    console.log('STORE END DATE:', this.endDate);
     return (
       `?limit=${this.limit}` +
       `&offset=${this.offset}` +
@@ -82,12 +86,8 @@ export class LabStore extends DataStore<Lab, LabIn, Lab> {
   }
 
   @action
-  public setStartDate(startDate: String) {
+  public setDates(startDate: string, endDate: string) {
     this.startDate = startDate;
-  }
-
-  @action
-  public setEndDate(endDate: String) {
     this.endDate = endDate;
   }
 

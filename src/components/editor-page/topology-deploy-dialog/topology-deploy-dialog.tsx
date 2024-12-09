@@ -6,7 +6,7 @@ import {
   useTopologyStore,
 } from '@sb/lib/stores/root-store';
 import {If} from '@sb/types/control';
-import {LabIn, Topology, uuid4} from '@sb/types/types';
+import {ErrorResponse, LabIn, Topology, uuid4} from '@sb/types/types';
 import {Calendar} from 'primereact/calendar';
 import {SelectItem} from 'primereact/selectitem';
 import {Nullable} from 'primereact/ts-helpers';
@@ -61,8 +61,11 @@ const TopologyDeployDialog = (props: TopologyDeployDialogProps) => {
     };
 
     labStore.add(lab).then(error => {
-      if (error) {
-        notificationStore.error(error.message, 'Failed to deploy topology');
+      if (error[0]) {
+        notificationStore.error(
+          (error[1] as ErrorResponse).message,
+          'Failed to deploy topology'
+        );
       } else {
         notificationStore.success('Deployment has been scheduled.');
         props.onClose();

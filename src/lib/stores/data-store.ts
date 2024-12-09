@@ -35,6 +35,7 @@ export abstract class DataStore<T, I, O> {
   }
 
   public async fetch() {
+    console.log('FETCHING WITH');
     if (!this.rootStore._apiConnectorStore.isLoggedIn) {
       this.fetchReport = {state: FetchState.Pending};
       return;

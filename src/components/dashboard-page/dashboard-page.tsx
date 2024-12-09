@@ -41,6 +41,7 @@ const statusIcons: Record<LabState, string> = {
 
 const DashboardPage: React.FC = observer(() => {
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
+  const [isLabDialogOpen, setLabDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [reschedulingDialogLab, setReschedulingDialogLab] =
     useState<Lab | null>(null);
@@ -79,6 +80,7 @@ const DashboardPage: React.FC = observer(() => {
       labStore.lookup.has(searchParams.get('l')!)
     ) {
       setSelectedLab(labStore.lookup.get(searchParams.get('l')!)!);
+      setLabDialogOpen(true);
     }
   }, [labStore.lookup, searchParams, setSearchParams]);
 
@@ -141,11 +143,12 @@ const DashboardPage: React.FC = observer(() => {
 
   function closeDialog() {
     setSearchParams('');
-    setSelectedLab(null);
+    setLabDialogOpen(false);
   }
 
   function openLabDialog(lab: Lab) {
     setSelectedLab(lab);
+    setLabDialogOpen(true);
     setSearchParams({l: lab.id});
   }
 
@@ -295,15 +298,11 @@ const DashboardPage: React.FC = observer(() => {
                 onClose={closeReschedulingDialog}
               />
             </If>
-            <If condition={selectedLab !== null}>
-              <LabDialog
-                lab={selectedLab!}
-                groupName={
-                  groupStore.lookup.get(selectedLab!.groupId)?.name ?? 'unknown'
-                }
-                closeDialog={closeDialog}
-              />
-            </If>
+            <LabDialog
+              isOpen={isLabDialogOpen}
+              lab={selectedLab}
+              closeDialog={closeDialog}
+            />
           </When>
           <Otherwise>
             <span>No labs found.</span>

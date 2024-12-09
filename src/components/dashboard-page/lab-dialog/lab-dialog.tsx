@@ -1,6 +1,7 @@
 import LabDialogPanel from '@sb/components/dashboard-page/lab-dialog/lab-dialog-panel/lab-dialog-panel';
 import {
   useDeviceStore,
+  useGroupStore,
   useLabStore,
   useTopologyStore,
 } from '@sb/lib/stores/root-store';
@@ -21,10 +22,12 @@ import {ContextMenu} from 'primereact/contextmenu';
 import {drawGrid, generateGraph} from '@sb/lib/utils/utils';
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
 import {Data} from 'vis-network/declarations/network/Network';
+import {If} from '@sb/types/control';
 
 interface LabDialogProps {
-  lab: Lab;
-  groupName: String;
+  isOpen: boolean;
+
+  lab: Lab | null;
   closeDialog: () => void;
 }
 
@@ -37,17 +40,23 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const [isMenuVisible, setMenuVisible] = useState(false);
 
   const labStore = useLabStore();
+  const groupStore = useGroupStore();
   const deviceStore = useDeviceStore();
   const topologyStore = useTopologyStore();
 
   useResizeObserver(containerRef, () => {
-    console.log('RESIZE OBSERVER TRIGGER');
     if (network) network.redraw();
   });
 
+  const groupName = useMemo(() => {
+    if (!props.lab) return 'unknown';
+    return groupStore.lookup.get(props.lab.groupId)?.name ?? 'unknown';
+  }, [props.lab]);
+
   const openTopology = useMemo(() => {
+    if (!props.lab) return;
     return topologyStore.lookup.get(props.lab.topologyId);
-  }, [props.lab.topologyId, topologyStore.lookup]);
+  }, [props.lab, topologyStore.lookup]);
 
   const graphData: Data = useMemo(() => {
     if (!openTopology) {
@@ -84,6 +93,8 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   }
 
   function onCopyActiveNode() {
+    if (!props.lab) return;
+
     const nodeMeta = labStore.metaLookup
       .get(props.lab.id)!
       .get(selectedNode as string);
@@ -103,6 +114,8 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   }
 
   function onOpenActiveNode() {
+    if (!props.lab) return;
+
     const nodeMeta = labStore.metaLookup
       .get(props.lab.id)!
       .get(selectedNode as string);
@@ -141,59 +154,61 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   return (
     <>
       <SBDialog
-        isOpen={props.lab !== null}
+        isOpen={props.isOpen}
         onClose={props.closeDialog}
         headerTitle={
-          <>
-            <span>{props.groupName + ' / '}</span>
-            <span className="sb-lab-dialog-title-name">{props.lab.name}</span>
-          </>
+          <If condition={props.lab}>
+            <span>{groupName + ' / '}</span>
+            <span className="sb-lab-dialog-title-name">{props.lab!.name}</span>
+          </If>
         }
         hideButtons={true}
         className="sb-lab-dialog"
       >
-        <div className="topology-graph-container" ref={containerRef}>
-          <LabDialogPanel
-            lab={props.lab}
-            hostsHidden={hostsHidden}
-            setHostsHidden={setHostsHidden}
-          />
-          <Graph
-            graph={{nodes: [], edges: []}}
-            options={{
-              ...NetworkOptions,
-              interaction: {
-                dragNodes: false,
-                dragView: false,
-                zoomView: false,
-              },
-            }}
-            events={{
-              oncontext: onContext,
-              click: onClick,
-            }}
-            getNetwork={setNetwork}
-          />
-        </div>
-        <div
-          className={classNames('sb-lab-dialog-footer sb-animated-overlay', {
-            visible: isMenuVisible && selectedNode !== null,
-          })}
-        >
-          <span className="sb-lab-dialog-footer-name">{selectedNode}</span>
-          <Button
-            label="Copy Host"
-            icon="pi pi-copy"
-            outlined
-            onClick={onCopyActiveNode}
-          />
-          <Button
-            label="Web SSH"
-            icon="pi pi-external-link"
-            outlined
-            onClick={onOpenActiveNode}
-          />
-        </div>
+        <If condition={props.lab}>
+          <div className="topology-graph-container" ref={containerRef}>
+            <LabDialogPanel
+              lab={props.lab!}
+              hostsHidden={hostsHidden}
+              setHostsHidden={setHostsHidden}
+            />
+            <Graph
+              graph={{nodes: [], edges: []}}
+              options={{
+                ...NetworkOptions,
+                interaction: {
+                  dragNodes: false,
+                  dragView: false,
+                  zoomView: false,
+                },
+              }}
+              events={{
+                oncontext: onContext,
+                click: onClick,
+              }}
+              getNetwork={setNetwork}
+            />
+          </div>
+          <div
+            className={classNames('sb-lab-dialog-footer sb-animated-overlay', {
+              visible: isMenuVisible && selectedNode !== null,
+            })}
+          >
+            <span className="sb-lab-dialog-footer-name">{selectedNode}</span>
+            <Button
+              label="Copy Host"
+              icon="pi pi-copy"
+              outlined
+              onClick={onCopyActiveNode}
+            />
+            <Button
+              label="Web SSH"
+              icon="pi pi-external-link"
+              outlined
+              onClick={onOpenActiveNode}
+            />
+          </div>
+        </If>
       </SBDialog>
       <ContextMenu model={networkContextMenuItems} ref={nodeContextMenuRef} />
     </>

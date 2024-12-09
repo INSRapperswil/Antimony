@@ -1,34 +1,45 @@
 .calender-dialog
-  min-height: 70%
-  min-width: 80%
+  max-height: 70%
+  height: 70%
+  width: 80%
+
+  .sb-dialog-content
+    padding: 0 !important
+    overflow: hidden
+
+  .calendar-container
+    // Compensation for the -1px border
+    height: calc(100% + 1px)
+
+  .rbc-time-view
+    margin: 0 -1px -1px -1px
 
   .rbc-calendar
     background-color: #1e1e2d
     color: #e0e0e0
-    border: none
-    padding: 5px
+    margin: 0 -1px -1px -1px
     border-color: var(--primary-color-border) !important
 
 .rbc-day-slot .rbc-time-slot
   border-color: var(--primary-color-border)
 
 .rbc-toolbar
-  background-color: #252537
+  background-color: var(--overlay-color)
   padding: 10px
-  border-bottom: 1px solid #3e3e4e
   text-align: center
+  margin-bottom: 0
 
   .rbc-btn-group
     display: flex
     justify-content: center
 
     button
-      background-color: #2e2e3e
-      color: #e0e0e0
-      padding: 5px 10px
+      background-color: transparent
+      border: 1px solid var(--primary-color-border)
+      color: var(--primary-color-text)
+      padding: 8px 12px
       margin: 0 5px
-      border: none
-      border-radius: 5px
+      border-radius: 4px !important
       font-size: 14px
       cursor: pointer
       transition: background-color 0.2s
@@ -42,8 +53,8 @@
 
 .rbc-header
   background-color: #252537
-  color: #e0e0e0
-  padding: 10px
+  color: var(--primary-color-text)
+  padding: 4px
   border-right: 1px solid #3e3e4e
   border-bottom: 2px solid var(--primary-color-border)
 

@@ -77,7 +77,6 @@ const DashboardPage: React.FC = () => {
     window.addEventListener('resize', updateHeight);
     document.addEventListener('fullscreenchange', updateHeight); // Listen for fullscreen changes
 
-    // Initial calculation
     updateHeight();
 
     return () => {
@@ -105,7 +104,7 @@ const DashboardPage: React.FC = () => {
       setLabs(labStore.labs);
     });
     return () => dispose();
-  }, [labStore.labs]);
+  }, []);
 
   useEffect(() => {
     const dispose = autorun(() => {

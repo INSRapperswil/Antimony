@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React, {useRef, useState} from 'react';
 
 import {Badge} from 'primereact/badge';
 import {Button} from 'primereact/button';
@@ -11,6 +11,7 @@ import {useAPIStore, useNotifications} from '@sb/lib/stores/root-store';
 import NotificationPanel from './notification-panel/notification-panel';
 
 import './sb-dock.sass';
+import CalendarDialog from '@sb/components/Calendar/calender-dialog';
 
 const SBDock: React.FC = observer(() => {
   const navigate = useNavigate();
@@ -19,6 +20,12 @@ const SBDock: React.FC = observer(() => {
   const notificationStore = useNotifications();
 
   const overlayRef = useRef<OverlayPanel>(null);
+
+  const [showCalendar, setShowCalendar] = useState<boolean>(false);
+
+  function CloseCalendar() {
+    setShowCalendar(false);
+  }
 
   return (
     <div className="flex mb-3 align-items-stretch justify-content-between sb-card sb-dock">
@@ -56,7 +63,11 @@ const SBDock: React.FC = observer(() => {
           size="large"
           tooltip="Lab Schedule"
           tooltipOptions={{position: 'bottom'}}
+          onClick={() => setShowCalendar(true)}
         />
+        <If condition={showCalendar}>
+          <CalendarDialog isOpen={showCalendar} onClose={CloseCalendar} />
+        </If>
         <Button
           outlined
           icon="pi pi-sign-out"

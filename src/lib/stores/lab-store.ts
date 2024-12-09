@@ -14,6 +14,7 @@ export class LabStore {
   private rootStore: RootStore;
 
   @observable accessor labs: Lab[] = [];
+  @observable accessor calendarLabs: Lab[] = [];
   @observable accessor lookup: Map<string, Lab> = new Map();
   @observable accessor fetchReport: FetchReport = DefaultFetchReport;
   @observable accessor header: string | null = null;
@@ -79,6 +80,28 @@ export class LabStore {
         errorCode: '500',
         errorMessage: 'Failed to fetch labs.',
       };
+    }
+  }
+
+  @action
+  public async fetchAllDirect(): Promise<Lab[] | null> {
+    if (!this.rootStore._apiConnectorStore.isLoggedIn) {
+      return null;
+    }
+
+    try {
+      const response = await this.rootStore._apiConnectorStore.get<Lab[]>(
+        '/labs?stateFilter=[0,1,2,3,4]'
+      );
+      if (response[0]) {
+        return response[1] as Lab[]; // Return the fetched labs
+      } else {
+        console.error('Failed to fetch all labs:', response[1]);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching all labs:', error);
+      return null;
     }
   }
 

@@ -511,7 +511,7 @@ export class TopologyManager {
     const pattern = new RegExp(interfacePattern.replaceAll('$', '(\\d+)'));
     const match = value.match(pattern);
 
-    console.log('VALUE:', value, 'MATCH:', match, 'PATTERN:', pattern);
+    // console.log('VALUE:', value, 'MATCH:', match, 'PATTERN:', pattern);
 
     if (!match || match.length < 2) return 99;
     return Number(match[1]);

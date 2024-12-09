@@ -1,7 +1,7 @@
 import {DataStore} from '@sb/lib/stores/data-store';
 import {RootStore} from '@sb/lib/stores/root-store';
 import {Lab, LabIn, LabState, NodeMeta} from '@sb/types/types';
-import {action, computed, observable, observe, toJS} from 'mobx';
+import {action, computed, observable, observe} from 'mobx';
 
 export class LabStore extends DataStore<Lab, LabIn, Lab> {
   @observable accessor totalEntries: number | null = null;
@@ -44,7 +44,6 @@ export class LabStore extends DataStore<Lab, LabIn, Lab> {
     this.lookup = new Map(this.data.map(lab => [lab.id, lab]));
     this.totalEntries = Number(headers!.get('X-Total-Count'));
 
-    console.log('LABS:', toJS(this.data));
     this.metaLookup = new Map(
       this.data.map(lab => [
         lab.id,

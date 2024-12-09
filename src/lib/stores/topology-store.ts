@@ -1,4 +1,4 @@
-import {observe} from 'mobx';
+import {action, observe} from 'mobx';
 
 import {RootStore} from '@sb/lib/stores/root-store';
 import {TopologyManager} from '@sb/lib/topology-manager';
@@ -20,13 +20,14 @@ export class TopologyStore extends DataStore<
       this.rootStore._deviceStore
     );
 
-    observe(rootStore._schemaStore.fetchReport, () => this.fetch());
+    observe(rootStore._schemaStore, () => this.fetch());
   }
 
   protected get resourcePath(): string {
     return '/topologies';
   }
 
+  @action
   protected handleUpdate(updatedData: TopologyOut[]): void {
     if (!this.rootStore._schemaStore?.clabSchema) return;
 

@@ -1,119 +1,95 @@
+import {DataStore} from '@sb/lib/stores/data-store';
 import {RootStore} from '@sb/lib/stores/root-store';
-import {
-  DefaultFetchReport,
-  ErrorResponse,
-  FetchReport,
-  FetchState,
-  Lab,
-  LabIn,
-  LabState,
-} from '@sb/types/types';
-import {action, observable, observe} from 'mobx';
+import {Lab, LabIn, LabState, NodeMeta} from '@sb/types/types';
+import {action, computed, observable, observe, toJS} from 'mobx';
 
-export class LabStore {
-  private rootStore: RootStore;
-
-  @observable accessor labs: Lab[] = [];
-  @observable accessor lookup: Map<string, Lab> = new Map();
-  @observable accessor fetchReport: FetchReport = DefaultFetchReport;
-  @observable accessor header: string | null = null;
-
+export class LabStore extends DataStore<Lab, LabIn, Lab> {
+  @observable accessor totalEntries: number | null = null;
   @observable accessor limit: number = 5;
   @observable accessor offset: number = 0;
-  @observable accessor filters: LabState[] = [1, 2];
+  @observable accessor stateFilter: LabState[] = [
+    LabState.Deploying,
+    LabState.Running,
+  ];
   @observable accessor groupFilter: string[] = [];
-  @observable accessor query: string = '';
+  @observable accessor searchQuery: string = '';
+
+  @observable accessor metaLookup: Map<string, Map<string, NodeMeta>> =
+    new Map();
+
   constructor(rootStore: RootStore) {
-    this.rootStore = rootStore;
+    super(rootStore);
 
-    observe(rootStore._apiConnectorStore, () => this.fetch());
-
-    this.fetch();
+    observe(this, 'getParams' as keyof this, () => this.fetch());
   }
 
-  public async add(lab: LabIn): Promise<ErrorResponse | null> {
-    const response = await this.rootStore._apiConnectorStore.post<LabIn, void>(
-      '/labs',
-      lab
+  protected get resourcePath(): string {
+    return '/labs';
+  }
+
+  @computed
+  protected get getParams() {
+    return (
+      `?limit=${this.limit}` +
+      `&offset=${this.offset}` +
+      `&stateFilter=${JSON.stringify(this.stateFilter)}` +
+      `&searchQuery=${JSON.stringify(this.searchQuery)}` +
+      `&groupFilter=${JSON.stringify(this.groupFilter)}`
     );
-    if (!response[0]) {
-      return response[1] as ErrorResponse;
-    }
-
-    this.fetch();
-
-    return null;
   }
 
   @action
-  public setParameters(
-    limit: number,
-    offset: number,
-    query: string,
-    filters: LabState[],
-    selectedGroups: string[]
-  ) {
+  protected handleUpdate(updatedData: Lab[], headers: Headers | null): void {
+    this.data = updatedData;
+    this.totalEntries = Number(headers!.get('X-Total-Count'));
+
+    console.log('LABS:', toJS(this.data));
+    this.metaLookup = new Map(
+      this.data.map(lab => [
+        lab.id,
+        new Map(lab.nodeMeta.map(meta => [meta.name, meta])),
+      ])
+    );
+  }
+
+  @action
+  public setLimit(limit: number) {
     this.limit = limit;
+  }
+
+  @action
+  public setOffset(offset: number) {
     this.offset = offset;
-    this.query = query;
-    this.filters = filters;
-    this.groupFilter = selectedGroups;
-    this.fetch();
   }
 
   @action
-  public fetch() {
-    if (!this.rootStore._apiConnectorStore.isLoggedIn) {
-      this.fetchReport = {state: FetchState.Pending};
-    }
-
-    try {
-      this.rootStore._apiConnectorStore
-        .get<
-          Lab[]
-        >(`/labs?limit=${this.limit}&offset=${this.offset}&stateFilter=${JSON.stringify(this.filters)}&searchQuery=${JSON.stringify(this.query)}&groupFilter=${JSON.stringify(this.groupFilter)}`)
-        .then(data => this.updateStore(data));
-    } catch (error) {
-      this.fetchReport = {
-        state: FetchState.Error,
-        errorCode: '500',
-        errorMessage: 'Failed to fetch labs.',
-      };
-    }
+  public setStateFilter(stateFilter: LabState[]) {
+    this.stateFilter = stateFilter;
   }
 
   @action
-  private updateStore(data: [boolean, Lab[] | ErrorResponse, Headers | null]) {
-    if (data[2]) {
-      this.header = data[2].get('X-Total-Count');
-    }
-    if (data[0]) {
-      this.labs = data[1] as Lab[];
-      this.fetchReport = {state: FetchState.Done};
+  public setGroupFilter(groupFilter: string[]) {
+    this.groupFilter = groupFilter;
+  }
+
+  @action
+  public setSearchQuery(searchQuery: string) {
+    this.searchQuery = searchQuery;
+  }
+
+  public toggleStateFilter(state: LabState) {
+    if (this.stateFilter.includes(state)) {
+      this.setStateFilter(this.stateFilter.filter(s => s !== state));
     } else {
-      this.fetchReport = {
-        state: FetchState.Error,
-        errorCode: String((data[1] as ErrorResponse).code),
-        errorMessage: (data[1] as ErrorResponse).message,
-      };
+      this.setStateFilter([...this.stateFilter, state]);
     }
   }
-  @action
-  public async update(lab: Lab): Promise<ErrorResponse | null> {
-    const response = await this.rootStore._apiConnectorStore.patch<LabIn, void>(
-      `/labs/${lab.id}`,
-      {
-        name: lab.name,
-        startDate: lab.startDate,
-        endDate: lab.endDate,
-        topologyId: lab.topologyId,
-      }
-    );
-    if (!response[0]) {
-      return response[1] as ErrorResponse;
-    }
 
-    void this.fetch();
-    return null;
+  public toggleGroupFilter(group: string) {
+    if (this.groupFilter.includes(group)) {
+      this.setGroupFilter(this.groupFilter.filter(g => g !== group));
+    } else {
+      this.setGroupFilter([...this.groupFilter, group]);
+    }
   }
 }

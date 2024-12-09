@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import bearerToken from 'express-bearer-token';
 import {Server} from 'socket.io';
 import {lorem} from 'txtgen';
+import {randomUUID} from "node:crypto";
 
 const app = express();
 const server = http.createServer(app);
@@ -241,7 +242,21 @@ app.get('/labs', (req, res) => {
   res.setHeader('X-Total-Count', totalLabsCount);
 
   res.send({
-    payload: filteredLabs.toSorted((a, b) => a.name.localeCompare(b.name)),
+    payload: filteredLabs.map(lab => {
+      const topology = store.topologies.find(topology => topology.id === lab.topologyId).definition;
+      const nodes = YAML.parse(topology).topology.nodes;
+
+      return {
+        ...lab,
+        nodeMeta: Object.keys(nodes).map(nodeName => ({
+          name: nodeName,
+          host: "example.com",
+          port: randomNumber(1000, 65000),
+          user: "ins",
+          webSsh: "console.antimony.network.garden/ssh/" + lab.id
+        }))
+      };
+    }).toSorted((a, b) => a.name.localeCompare(b.name)),
   });
 
   // void addRandomNotification(user.id);

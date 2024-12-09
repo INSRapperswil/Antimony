@@ -18,7 +18,10 @@ export abstract class DataStore<T, I, O> {
   @observable accessor fetchReport: FetchReport = DefaultFetchReport;
 
   protected abstract get resourcePath(): string;
-  protected abstract handleUpdate(updatedData: O[]): void;
+  protected abstract handleUpdate(
+    updatedData: O[],
+    headers: Headers | null
+  ): void;
   protected get isExternal(): boolean {
     return false;
   }
@@ -39,7 +42,7 @@ export abstract class DataStore<T, I, O> {
 
     this.handleData(
       await this.rootStore._apiConnectorStore.get<O[]>(
-        this.resourcePath,
+        this.resourcePath + this.getParams,
         this.isExternal
       )
     );
@@ -47,7 +50,7 @@ export abstract class DataStore<T, I, O> {
 
   public async delete(id: string): Promise<ErrorResponse | null> {
     const response = await this.rootStore._apiConnectorStore.delete<void>(
-      `${this.resourcePath}/${id}`
+      `${this.resourcePath}/${id}` + this.deleteParams
     );
     if (!response[0]) {
       return response[1] as ErrorResponse;
@@ -61,7 +64,7 @@ export abstract class DataStore<T, I, O> {
     const response = await this.rootStore._apiConnectorStore.post<
       I,
       PostResponse
-    >(this.resourcePath, body);
+    >(this.resourcePath + this.postParams, body);
 
     if (!response[0]) {
       return [false, response[1]];
@@ -74,7 +77,7 @@ export abstract class DataStore<T, I, O> {
 
   public async update(id: uuid4, body: I): Promise<ErrorResponse | null> {
     const response = await this.rootStore._apiConnectorStore.patch<I, void>(
-      `${this.resourcePath}/${id}`,
+      `${this.resourcePath}/${id}` + this.patchParams,
       body
     );
 
@@ -89,7 +92,7 @@ export abstract class DataStore<T, I, O> {
   @action
   private handleData(data: [boolean, O[] | ErrorResponse, Headers | null]) {
     if (data[0]) {
-      this.handleUpdate(data[1] as O[]);
+      this.handleUpdate(data[1] as O[], data[2]);
       this.fetchReport = {state: FetchState.Done};
     } else {
       this.fetchReport = {
@@ -98,5 +101,21 @@ export abstract class DataStore<T, I, O> {
         errorMessage: (data[1] as ErrorResponse).message,
       };
     }
+  }
+
+  protected get getParams() {
+    return '';
+  }
+
+  protected get postParams() {
+    return '';
+  }
+
+  protected get patchParams() {
+    return '';
+  }
+
+  protected get deleteParams() {
+    return '';
   }
 }

@@ -61,7 +61,7 @@ export class APIStore {
     path: string,
     isExternal = false,
     skipAuthentication = false
-  ) {
+  ): Promise<[boolean, T | ErrorResponse, Headers | null]> {
     return this.fetch<void, T>(
       path,
       'GET',
@@ -75,7 +75,7 @@ export class APIStore {
     path: string,
     isExternal = false,
     skipAuthentication = false
-  ) {
+  ): Promise<[boolean, T | ErrorResponse, Headers | null]> {
     return this.fetch<void, T>(
       path,
       'DELETE',
@@ -90,7 +90,7 @@ export class APIStore {
     body: R,
     isExternal = false,
     skipAuthentication = false
-  ) {
+  ): Promise<[boolean, T | ErrorResponse, Headers | null]> {
     return this.fetch<R, T>(path, 'POST', body, isExternal, skipAuthentication);
   }
 
@@ -99,7 +99,7 @@ export class APIStore {
     body: R,
     isExternal = false,
     skipAuthentication = false
-  ) {
+  ): Promise<[boolean, T | ErrorResponse, Headers | null]> {
     return this.fetch<R, T>(
       path,
       'PATCH',

@@ -1,4 +1,8 @@
-import {FetchState} from '@sb/types/types';
+import {DeviceStore} from '@sb/lib/stores/device-store';
+import {TopologyManager} from '@sb/lib/topology-manager';
+import {FetchState, Topology} from '@sb/types/types';
+import {Edge, Node} from 'vis';
+import {DataSet} from 'vis-data/peer';
 
 export function matchesSearch(value: string, search: string) {
   return value.toLowerCase().includes(search.toLowerCase());
@@ -81,4 +85,45 @@ export function pushOrCreateList<T, R>(map: Map<T, R[]>, key: T, value: R) {
   } else {
     map.set(key, [value]);
   }
+}
+
+export function generateGraph(
+  topology: Topology,
+  deviceStore: DeviceStore,
+  topologyManager: TopologyManager
+) {
+  const nodes: DataSet<Node> = new DataSet();
+
+  for (const [nodeName, node] of Object.entries(
+    topology.definition.toJS().topology.nodes
+  )) {
+    nodes.add({
+      id: nodeName,
+      label: nodeName,
+      image: deviceStore.getNodeIcon(node?.kind),
+      x: topology.positions.get(nodeName)?.x,
+      y: topology.positions.get(nodeName)?.y,
+      fixed: {
+        x: true,
+        y: true,
+      },
+      title: topologyManager.getNodeTooltip(nodeName),
+    });
+  }
+
+  /*
+   * We can safely assume that the endpoint strings are in the correct
+   * format here since this is enforced by the schema and the node editor
+   * only receives valid definitions get pushed to the node editor.
+   */
+  const edges: DataSet<Edge> = new DataSet(
+    topology.connections.map(connection => ({
+      id: connection.index,
+      from: connection.hostNode,
+      to: connection.targetNode,
+      title: topologyManager.getEdgeTooltip(connection),
+    }))
+  );
+
+  return {nodes: nodes, edges: edges};
 }

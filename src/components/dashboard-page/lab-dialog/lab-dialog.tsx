@@ -1,27 +1,25 @@
-import {useDeviceStore, useTopologyStore} from '@sb/lib/stores/root-store';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import LabDialogPanel from '@sb/components/dashboard-page/lab-dialog/lab-dialog-panel/lab-dialog-panel';
+import {
+  useDeviceStore,
+  useLabStore,
+  useTopologyStore,
+} from '@sb/lib/stores/root-store';
+import classNames from 'classnames';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
-import {Edge, Node} from 'vis';
-import {Network} from 'vis-network';
+import {DataSet} from 'vis-data/peer';
+import {IdType, Network} from 'vis-network';
 import Graph from 'react-graph-vis';
 import {Button} from 'primereact/button';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import {
-  Lab,
-  GraphNodeClickEvent,
-  NodeMeta,
-  TopologyDefinition,
-  YAMLDocument,
-} from '@sb/types/types';
+import {Lab, GraphNodeClickEvent} from '@sb/types/types';
 import {NetworkOptions} from '@sb/components/editor-page/topology-editor/node-editor/network.conf';
 
 import './lab-dialog.sass';
 import {ContextMenu} from 'primereact/contextmenu';
-import {Checkbox} from 'primereact/checkbox';
-import {drawGrid} from '@sb/lib/utils/utils';
+import {drawGrid, generateGraph} from '@sb/lib/utils/utils';
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
-import {If} from '@sb/types/control';
 import {Data} from 'vis-network/declarations/network/Network';
 
 interface LabDialogProps {
@@ -32,117 +30,66 @@ interface LabDialogProps {
 
 const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   const [network, setNetwork] = useState<Network | null>(null);
-  const [topologyDefinition, setTopologyDefinition] =
-    useState<YAMLDocument<TopologyDefinition> | null>(null);
-  const containerRef = useRef(null);
-  const [hostsHidden, setHostsHidden] = useState<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hostsHidden, setHostsHidden] = useState(false);
   const nodeContextMenuRef = useRef<ContextMenu | null>(null);
-  const [selectedNode, setSelectedNode] = useState<number | null>(null);
-  const [menuVisibility, setMenuVisibility] = useState<boolean>(false);
+  const [selectedNode, setSelectedNode] = useState<IdType | null>(null);
+  const [isMenuVisible, setMenuVisible] = useState(false);
 
+  const labStore = useLabStore();
   const deviceStore = useDeviceStore();
   const topologyStore = useTopologyStore();
 
   useResizeObserver(containerRef, () => {
-    if (network) {
-      network.redraw();
-    }
+    console.log('RESIZE OBSERVER TRIGGER');
+    if (network) network.redraw();
   });
 
-  const getTopology = useCallback(
-    (id: string): void => {
-      for (const topology of topologyStore.data) {
-        if (topology.id === id) {
-          setTopologyDefinition(topology.definition);
-        }
-      }
-    },
-    [topologyStore.data]
-  );
+  const openTopology = useMemo(() => {
+    return topologyStore.lookup.get(props.lab.topologyId);
+  }, [props.lab.topologyId, topologyStore.lookup]);
 
-  const graph: Data = useMemo(() => {
-    if (!topologyDefinition) return {nodes: [], edges: []};
-
-    const nodeMap = new Map<string, number>();
-    const nodes: Node[] = [];
-
-    for (const [index, [nodeName, node]] of Object.entries(
-      topologyDefinition.toJS().topology.nodes
-    ).entries()) {
-      if (!node) continue;
-
-      nodeMap.set(nodeName, index);
-
-      // Update label based on `hostsVisible`
-      nodes.push({
-        id: index,
-        label: !hostsHidden
-          ? `${nodeName}\n${
-              props.lab.nodeMeta[index]?.webSsh +
-                ':' +
-                props.lab.nodeMeta[index]?.port || ''
-            }`
-          : nodeName,
-        image: deviceStore.getNodeIcon(node),
-      });
+  const graphData: Data = useMemo(() => {
+    if (!openTopology) {
+      return {nodes: new DataSet(), edges: new DataSet()};
     }
 
-    const edges: Edge[] = [
-      ...topologyDefinition
-        .toJS()
-        .topology.links.entries()
-        .map(([index, link]) => ({
-          id: index,
-          from: nodeMap.get(link.endpoints[0].split(':')[0]),
-          to: nodeMap.get(link.endpoints[1].split(':')[0]),
-        })),
-    ];
+    return generateGraph(openTopology, deviceStore, topologyStore.manager);
+  }, [deviceStore, openTopology, topologyStore.manager]);
 
-    return {nodes: nodes, edges: edges};
-  }, [topologyDefinition, deviceStore, hostsHidden, props.lab.nodeMeta]);
-
-  // Function to update network data
-  const updateGraphData = useCallback(() => {
-    if (network) {
-      network.setData(graph);
-    }
-  }, [network, graph]);
-
-  // Update graph whenever `network` or `hostsVisible` changes
-  useEffect(() => {
-    if (network) {
-      updateGraphData();
-    }
-  }, [network, updateGraphData]);
-
-  function onNetworkContext(selectData: GraphNodeClickEvent) {
+  function onContext(event: GraphNodeClickEvent) {
     if (!nodeContextMenuRef.current) return;
 
-    const targetNode = network?.getNodeAt(selectData.pointer.DOM);
+    const targetNode = network?.getNodeAt(event.pointer.DOM);
     if (targetNode !== undefined) {
       network?.selectNodes([targetNode]);
       setSelectedNode(targetNode as number);
-      nodeContextMenuRef.current.show(selectData.event);
+      nodeContextMenuRef.current.show(event.event);
     }
+
+    event.event.preventDefault();
   }
 
-  function onNetworkClick(selectData: GraphNodeClickEvent) {
+  function onClick(selectData: GraphNodeClickEvent) {
     if (!network) return;
 
     const targetNode = network?.getNodeAt(selectData.pointer.DOM);
 
     if (targetNode !== undefined) {
       setSelectedNode(targetNode as number);
-      setMenuVisibility(true);
+      setMenuVisible(true);
     } else {
-      setMenuVisibility(false);
-      setSelectedNode(null);
+      setMenuVisible(false);
     }
   }
 
-  function copyNodeHost(meta: NodeMeta) {
-    if (meta) {
-      const textToCopy = meta.webSsh + ':' + meta.port;
+  function onCopyActiveNode() {
+    const nodeMeta = labStore.metaLookup
+      .get(props.lab.id)!
+      .get(selectedNode as string);
+
+    if (nodeMeta) {
+      const textToCopy = nodeMeta.webSsh + ':' + nodeMeta.port;
 
       navigator.clipboard
         .writeText(textToCopy)
@@ -155,10 +102,12 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     }
   }
 
-  function openNodeHost(meta: NodeMeta) {
-    if (meta) {
-      window.open(meta.webSsh);
-    }
+  function onOpenActiveNode() {
+    const nodeMeta = labStore.metaLookup
+      .get(props.lab.id)!
+      .get(selectedNode as string);
+
+    if (nodeMeta) window.open(nodeMeta.webSsh);
   }
 
   const networkContextMenuItems = useMemo(() => {
@@ -184,55 +133,31 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
   }, [network]);
 
   useEffect(() => {
-    getTopology(props.lab.topologyId);
-  }, [props.lab.topologyId, getTopology]);
+    if (network) {
+      network.setData(graphData);
+    }
+  }, [network, graphData]);
 
   return (
-    <SBDialog
-      isOpen={props.lab !== null}
-      onClose={props.closeDialog}
-      headerTitle={props.groupName + ', ' + props.lab.name}
-      className="lab-Dialog overflow-y-hidden overflow-x-hidden"
-    >
-      <div className="height-100">
-        <div className="topology-header">
-          <Button
-            className="menu-button"
-            onClick={() => window.open(props.lab.edgesharkLink, '_blank')}
-          >
-            🦈 Start EdgeShark
-          </Button>
-          <If condition={menuVisibility && selectedNode !== null}>
-            <div className="node-menu">
-              <Button
-                className="menu-button"
-                label="Copy Host"
-                icon="pi pi-copy"
-                onClick={() => {
-                  copyNodeHost(props.lab.nodeMeta[selectedNode!]);
-                }}
-              />
-              <Button
-                className="menu-button"
-                label="Web SSH"
-                icon="pi pi-external-link"
-                onClick={() => {
-                  // Logic for opening Web SSH
-                  openNodeHost(props.lab.nodeMeta[selectedNode!]);
-                }}
-              />
-            </div>
-          </If>
-          <div className="dialog-actions">
-            <Checkbox
-              inputId="hostsVisibleCheckbox"
-              checked={hostsHidden}
-              onChange={e => setHostsHidden(e.checked!)}
-            />
-            <label htmlFor="hostsVisibleCheckbox">Hide hosts</label>
-          </div>
-        </div>
-        <div className="height-100 topology-graph-container">
+    <>
+      <SBDialog
+        isOpen={props.lab !== null}
+        onClose={props.closeDialog}
+        headerTitle={
+          <>
+            <span>{props.groupName + ' / '}</span>
+            <span className="sb-lab-dialog-title-name">{props.lab.name}</span>
+          </>
+        }
+        hideButtons={true}
+        className="sb-lab-dialog"
+      >
+        <div className="topology-graph-container" ref={containerRef}>
+          <LabDialogPanel
+            lab={props.lab}
+            hostsHidden={hostsHidden}
+            setHostsHidden={setHostsHidden}
+          />
           <Graph
             graph={{nodes: [], edges: []}}
             options={{
@@ -244,15 +169,34 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
               },
             }}
             events={{
-              oncontext: onNetworkContext,
-              click: onNetworkClick,
+              oncontext: onContext,
+              click: onClick,
             }}
             getNetwork={setNetwork}
           />
         </div>
-        <ContextMenu model={networkContextMenuItems} ref={nodeContextMenuRef} />
-      </div>
-    </SBDialog>
+        <div
+          className={classNames('sb-lab-dialog-footer sb-animated-overlay', {
+            visible: isMenuVisible && selectedNode !== null,
+          })}
+        >
+          <span className="sb-lab-dialog-footer-name">{selectedNode}</span>
+          <Button
+            label="Copy Host"
+            icon="pi pi-copy"
+            outlined
+            onClick={onCopyActiveNode}
+          />
+          <Button
+            label="Web SSH"
+            icon="pi pi-external-link"
+            outlined
+            onClick={onOpenActiveNode}
+          />
+        </div>
+      </SBDialog>
+      <ContextMenu model={networkContextMenuItems} ref={nodeContextMenuRef} />
+    </>
   );
 };
 

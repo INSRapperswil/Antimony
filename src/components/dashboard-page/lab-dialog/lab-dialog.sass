@@ -19,20 +19,38 @@
   align-items: center
   gap: 8px
 
-.lab-Dialog
+.sb-lab-dialog
   width: 60%
   height: 70%
   display: flex
   flex-direction: column
   min-width: 675px
 
-.menu-button
-  background-color: transparent !important
-  border: 1px solid var(--primary-color-border) !important
-  color: var(--primary-color-border) !important
-  margin-right: 10px
+  .sb-dialog-content
+    padding: 0 !important
+    overflow: hidden !important
+    position: relative
 
-.node-menu
+.sb-lab-dialog-title-name
+  opacity: 0.4
+
+.sb-lab-dialog-footer
+  position: absolute
+  bottom: 0
+  right: 0
+  left: 0
+  margin: 0 -1px -1px -1px
+  background-color: var(--primary-color)
+  border: 1px solid var(--primary-color-border)
+  border-radius: 6px
+  padding: 8px
   display: flex
-  flex-grow: 1
-  justify-content: end
+  flex-direction: row
+  align-items: center
+  gap: 8px
+
+  .p-button
+    padding: 8px
+
+  .sb-lab-dialog-footer-name
+    font-size: 24px

@@ -17,7 +17,7 @@ import React, {
 import {IdType, Network} from 'vis-network';
 import {DataSet} from 'vis-data/peer';
 import Graph from 'react-graph-vis';
-import {Node, Edge, Position} from 'vis';
+import {Node, Position} from 'vis';
 import {NetworkOptions} from './network.conf';
 import {ContextMenu} from 'primereact/contextmenu';
 import useResizeObserver from '@react-hook/resize-observer';
@@ -27,7 +27,7 @@ import {useDeviceStore, useTopologyStore} from '@sb/lib/stores/root-store';
 
 import 'vis-network/styles/vis-network.css';
 import './node-editor.sass';
-import {drawGrid} from '@sb/lib/utils/utils';
+import {drawGrid, generateGraph} from '@sb/lib/utils/utils';
 import {Data} from 'vis-network/declarations/network/Network';
 
 interface NodeEditorProps {
@@ -79,40 +79,11 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
         return {nodes: new DataSet(), edges: new DataSet()};
       }
 
-      const nodes: DataSet<Node> = new DataSet();
-
-      for (const [nodeName, node] of Object.entries(
-        props.openTopology.definition.toJS().topology.nodes
-      )) {
-        nodes.add({
-          id: nodeName,
-          label: nodeName,
-          image: deviceStore.getNodeIcon(node?.kind),
-          x: props.openTopology.positions.get(nodeName)?.x,
-          y: props.openTopology.positions.get(nodeName)?.y,
-          fixed: {
-            x: true,
-            y: true,
-          },
-          title: topologyStore.manager.getNodeTooltip(nodeName),
-        });
-      }
-
-      /*
-       * We can safely assume that the endpoint strings are in the correct
-       * format here since this is enforced by the schema and the node editor
-       * only receives valid definitions get pushed to the node editor.
-       */
-      const edges: DataSet<Edge> = new DataSet(
-        props.openTopology.connections.map(connection => ({
-          id: connection.index,
-          from: connection.hostNode,
-          to: connection.targetNode,
-          title: topologyStore.manager.getEdgeTooltip(connection),
-        }))
+      return generateGraph(
+        props.openTopology,
+        deviceStore,
+        topologyStore.manager
       );
-
-      return {nodes: nodes, edges: edges};
     }, [deviceStore, props.openTopology, topologyStore.manager]);
 
     const onKeyDown = useCallback((event: KeyboardEvent) => {

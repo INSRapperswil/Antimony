@@ -3,8 +3,9 @@ import React, {useRef, useState} from 'react';
 import {Badge} from 'primereact/badge';
 import {Button} from 'primereact/button';
 import {observer} from 'mobx-react-lite';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate} from 'react-router';
 import {OverlayPanel} from 'primereact/overlaypanel';
+import {Image} from 'primereact/image';
 
 import {If} from '@sb/types/control';
 import {useAPIStore, useNotifications} from '@sb/lib/stores/root-store';
@@ -30,8 +31,8 @@ const SBDock: React.FC = observer(() => {
   return (
     <div className="flex align-items-stretch justify-content-between sb-card sb-dock">
       <div className="flex align-items-center gap-2">
-        <div className="sb-logo-tab sb-corner-tab flex justify-content-center align-items-center">
-          <div>Logo Here</div>
+        <div className="sb-logo-tab sb-corner-tab">
+          <Image src="/assets/icons/favicon-dark.png" width="60px" />
         </div>
         <Button label="Dashboard" outlined onClick={() => navigate('/')} />
         <Button

@@ -53,7 +53,7 @@ const FilterDialog: React.FC<FilterDialogProps> = observer(
     return (
       <OverlayPanel ref={props.popOverRef} id="filter-overlay-panel">
         <div className="filters-container">
-          <p className="filters-title">Select Filters</p>
+          <div className="filters-title">States</div>
           <div className="filters-chips-container">
             {Object.values(LabState)
               .filter(value => typeof value === 'number') // Ensure only valid LabState values are used
@@ -76,7 +76,7 @@ const FilterDialog: React.FC<FilterDialogProps> = observer(
                 />
               ))}
           </div>
-          <p className="filters-title">Select groups</p>
+          <div className="filters-title">Groups</div>
           <div className="filters-chips-container">
             {groupStore.data.map(group => (
               <Chip

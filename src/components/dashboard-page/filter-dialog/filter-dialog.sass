@@ -1,20 +1,25 @@
+.p-overlaypanel-content
+  padding: 0
+  border-color: var(--primary-color-border)
+
 .filters-container
   padding: 1.5em
-  background-color: #1B2B34 // Match the dialog background with the rest of the website
+  background-color: var(--overlay-color)
   border-radius: 8px
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2)
+  display: flex
+  flex-direction: column
+  gap: 8px
 
 .filters-title
-  color: #C3E4E9
-  font-size: 1.2em
+  color: var(--primary-color-text)
+  font-size: 20px
   font-weight: 600
-  margin-bottom: 1em
 
 .filters-chips-container
-  margin-bottom: 1.5em
   display: flex
+  margin-bottom: 8px
   flex-wrap: wrap
-  gap: 0.5em
+  gap: 8px
 
 .filter-chip
   cursor: pointer

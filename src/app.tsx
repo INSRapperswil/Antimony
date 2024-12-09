@@ -24,7 +24,7 @@ import {PrimeReactProvider} from 'primereact/api';
 import {Toast} from 'primereact/toast';
 import React, {useEffect, useRef, useState} from 'react';
 
-import {Route, Routes} from 'react-router-dom';
+import {Route, Routes} from 'react-router';
 import 'primereact/resources/themes/lara-dark-blue/theme.css';
 
 const App: React.FC = observer(() => {

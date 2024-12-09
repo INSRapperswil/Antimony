@@ -29,7 +29,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import {useSearchParams} from 'react-router-dom';
+import {useSearchParams} from 'react-router';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
@@ -49,7 +49,7 @@ const DashboardPage: React.FC = observer(() => {
   const popOver = useRef<OverlayPanel>(null);
   const typingTimeoutRef = useRef<number | undefined>(undefined);
 
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const labStore = useLabStore();
   const groupStore = useGroupStore();
@@ -71,6 +71,16 @@ const DashboardPage: React.FC = observer(() => {
   useEffect(() => {
     calculatePageSize();
   }, [calculatePageSize, labStore.totalEntries]);
+
+  useEffect(() => {
+    if (
+      selectedLab === null &&
+      searchParams.has('l') &&
+      labStore.lookup.has(searchParams.get('l')!)
+    ) {
+      setSelectedLab(labStore.lookup.get(searchParams.get('l')!)!);
+    }
+  }, [labStore.lookup, searchParams, setSearchParams]);
 
   const handleSearchChange = (value: string) => {
     if (typingTimeoutRef.current) {
@@ -130,27 +140,18 @@ const DashboardPage: React.FC = observer(() => {
   function onStopConfirm() {}
 
   function closeDialog() {
+    setSearchParams('');
     setSelectedLab(null);
+  }
+
+  function openLabDialog(lab: Lab) {
+    setSelectedLab(lab);
+    setSearchParams({l: lab.id});
   }
 
   function closeReschedulingDialog() {
     setReschedulingDialogLab(null);
   }
-
-  const onLabOpen = useCallback(
-    (lab: Lab) => {
-      setSearchParams({t: lab.id});
-    },
-    [setSearchParams]
-  );
-
-  useEffect(() => {
-    if (selectedLab !== null) {
-      onLabOpen(selectedLab);
-    } else {
-      setSearchParams('');
-    }
-  }, [selectedLab, onLabOpen, setSearchParams]);
 
   if (labStore.fetchReport.state !== FetchState.Done) {
     return <></>;
@@ -159,13 +160,13 @@ const DashboardPage: React.FC = observer(() => {
   return (
     <div className="height-100 width-100 sb-card overflow-y-hidden overflow-x-hidden sb-labs-container">
       <div className="search-bar sb-card">
-        <IconField className="search-bar-input" iconPosition="left">
-          <InputIcon className="pi pi-search"></InputIcon>
+        <IconField className="search-bar-input" iconPosition="right">
           <InputText
             className="width-100"
-            placeholder="Search here..."
+            placeholder="Search"
             onChange={e => handleSearchChange(e.target.value)}
           />
+          <InputIcon className="pi pi-search" />
         </IconField>
         <span
           className="search-bar-icon"
@@ -214,11 +215,11 @@ const DashboardPage: React.FC = observer(() => {
                 <div
                   key={lab.id}
                   className="lab-item-card"
-                  onClick={() => setSelectedLab(lab)}
+                  onClick={() => openLabDialog(lab)}
                 >
                   <div
                     className="lab-group sb-corner-tab"
-                    onClick={() => setSelectedLab(lab)}
+                    onClick={() => openLabDialog(lab)}
                   >
                     <span>
                       {groupStore.lookup.get(lab.groupId)?.name ?? 'unknown'}

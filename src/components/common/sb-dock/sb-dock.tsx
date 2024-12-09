@@ -3,7 +3,7 @@ import React, {useRef} from 'react';
 import {Badge} from 'primereact/badge';
 import {Button} from 'primereact/button';
 import {observer} from 'mobx-react-lite';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate} from 'react-router';
 import {OverlayPanel} from 'primereact/overlaypanel';
 import {Image} from 'primereact/image';
 

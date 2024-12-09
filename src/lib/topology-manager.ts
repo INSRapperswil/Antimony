@@ -1,7 +1,6 @@
 import {APIStore} from '@sb/lib/stores/api-store';
-import _ from 'lodash';
+import {isEqual, cloneDeep} from 'lodash-es';
 import {parseDocument, Scalar, YAMLMap, YAMLSeq} from 'yaml';
-import cloneDeep from 'lodash.clonedeep';
 
 import {Binding} from '@sb/lib/utils/binding';
 import {
@@ -87,7 +86,7 @@ export class TopologyManager {
 
     await this.topologyStore.fetch();
 
-    this.originalTopology = cloneDeep(this.editingTopology);
+    this.originalTopology = TopologyManager.cloneTopology(this.editingTopology);
     this.onEdit.update({
       updatedTopology: this.editingTopology,
       isEdited: false,
@@ -111,7 +110,7 @@ export class TopologyManager {
    */
   public open(topology: Topology) {
     this.originalTopology = topology;
-    this.editingTopology = cloneDeep(topology);
+    this.editingTopology = TopologyManager.cloneTopology(topology);
 
     this.onOpen.update(this.editingTopology);
   }
@@ -146,7 +145,7 @@ export class TopologyManager {
         definition: updatedTopology,
         ...topologyMeta,
       },
-      isEdited: !_.isEqual(
+      isEdited: !isEqual(
         updatedTopology.toString(),
         this.originalTopology?.definition.toString()
       ),
@@ -201,6 +200,8 @@ export class TopologyManager {
   public connectNodes(nodeName1: string, nodeName2: string) {
     if (!this.editingTopology || !this.deviceStore.data) return;
 
+    console.log('CONNECT NODES');
+
     const updatedTopology = this.editingTopology.definition.clone();
     const hostInterface = this.getNextInterface(nodeName1);
     const targetInterface = this.getNextInterface(nodeName2);
@@ -233,7 +234,7 @@ export class TopologyManager {
    */
   public hasEdits() {
     if (!this.editingTopology || !this.originalTopology) return false;
-    return !_.isEqual(
+    return !isEqual(
       this.editingTopology.definition.toString(),
       this.originalTopology.definition.toString()
     );
@@ -567,6 +568,18 @@ export class TopologyManager {
    */
   private static writePosition(position: Position) {
     return ' pos=[' + position.x + ',' + position.y + ']';
+  }
+
+  private static cloneTopology(topology: Topology): Topology {
+    return {
+      id: topology.id,
+      groupId: topology.groupId,
+      creatorId: topology.creatorId,
+      positions: cloneDeep(topology.positions),
+      connections: cloneDeep(topology.connections),
+      connectionMap: cloneDeep(topology.connectionMap),
+      definition: topology.definition.clone(),
+    };
   }
 }
 

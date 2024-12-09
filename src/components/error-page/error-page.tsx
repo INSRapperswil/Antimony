@@ -5,7 +5,7 @@ import {ProgressSpinner} from 'primereact/progressspinner';
 import React, {useEffect} from 'react';
 
 import './error-page.sass';
-import {useRouteError} from 'react-router-dom';
+import {useRouteError} from 'react-router';
 
 interface ErrorPageProps {
   code?: string;

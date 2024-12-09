@@ -29,7 +29,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import {useSearchParams} from 'react-router-dom';
+import {useSearchParams} from 'react-router';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
@@ -80,10 +80,8 @@ const DashboardPage: React.FC = observer(() => {
       labStore.lookup.has(searchParams.get('l')!)
     ) {
       setSelectedLab(labStore.lookup.get(searchParams.get('l')!)!);
-    } else if (selectedLab !== null) {
-      setSearchParams({l: selectedLab.id});
     }
-  }, [labStore.lookup, searchParams, selectedLab, setSearchParams]);
+  }, [labStore.lookup, searchParams, setSearchParams]);
 
   const handleSearchChange = (value: string) => {
     if (typingTimeoutRef.current) {
@@ -147,17 +145,14 @@ const DashboardPage: React.FC = observer(() => {
     setSelectedLab(null);
   }
 
+  function openLabDialog(lab: Lab) {
+    setSelectedLab(lab);
+    setSearchParams({l: lab.id});
+  }
+
   function closeReschedulingDialog() {
     setReschedulingDialogLab(null);
   }
-
-  // useEffect(() => {
-  //   if (selectedLab !== null) {
-  //     setSearchParams({l: selectedLab.id});
-  //   } else {
-  //     setSearchParams('');
-  //   }
-  // }, [selectedLab, setSearchParams]);
 
   if (labStore.fetchReport.state !== FetchState.Done) {
     return <></>;
@@ -221,11 +216,11 @@ const DashboardPage: React.FC = observer(() => {
                 <div
                   key={lab.id}
                   className="lab-item-card"
-                  onClick={() => setSelectedLab(lab)}
+                  onClick={() => openLabDialog(lab)}
                 >
                   <div
                     className="lab-group sb-corner-tab"
-                    onClick={() => setSelectedLab(lab)}
+                    onClick={() => openLabDialog(lab)}
                   >
                     <span>
                       {groupStore.lookup.get(lab.groupId)?.name ?? 'unknown'}

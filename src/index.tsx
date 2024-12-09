@@ -5,7 +5,8 @@ import * as ReactDOM from 'react-dom/client';
 import App from '@sb/app';
 
 import '@sb/theme/sb-base.sass';
-import {createBrowserRouter, RouterProvider} from 'react-router-dom';
+import {createBrowserRouter, RouterProvider} from 'react-router';
+import {StrictMode} from 'react';
 
 /*
  * We want to register the workbox service worker before loading the web-app.
@@ -26,7 +27,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+  <StrictMode>
     <RouterProvider
       router={createBrowserRouter([
         {
@@ -36,5 +37,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         },
       ])}
     />
-  </React.StrictMode>
+  </StrictMode>
 );

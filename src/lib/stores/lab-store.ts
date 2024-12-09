@@ -41,6 +41,7 @@ export class LabStore extends DataStore<Lab, LabIn, Lab> {
   @action
   protected handleUpdate(updatedData: Lab[], headers: Headers | null): void {
     this.data = updatedData;
+    this.lookup = new Map(this.data.map(lab => [lab.id, lab]));
     this.totalEntries = Number(headers!.get('X-Total-Count'));
 
     console.log('LABS:', toJS(this.data));

@@ -49,7 +49,7 @@ const DashboardPage: React.FC = observer(() => {
   const popOver = useRef<OverlayPanel>(null);
   const typingTimeoutRef = useRef<number | undefined>(undefined);
 
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const labStore = useLabStore();
   const groupStore = useGroupStore();
@@ -72,6 +72,18 @@ const DashboardPage: React.FC = observer(() => {
   useEffect(() => {
     calculatePageSize();
   }, [calculatePageSize, labStore.totalEntries]);
+
+  useEffect(() => {
+    if (
+      selectedLab === null &&
+      searchParams.has('l') &&
+      labStore.lookup.has(searchParams.get('l')!)
+    ) {
+      setSelectedLab(labStore.lookup.get(searchParams.get('l')!)!);
+    } else if (selectedLab !== null) {
+      setSearchParams({l: selectedLab.id});
+    }
+  }, [labStore.lookup, searchParams, selectedLab, setSearchParams]);
 
   const handleSearchChange = (value: string) => {
     if (typingTimeoutRef.current) {
@@ -131,6 +143,7 @@ const DashboardPage: React.FC = observer(() => {
   function onStopConfirm() {}
 
   function closeDialog() {
+    setSearchParams('');
     setSelectedLab(null);
   }
 
@@ -138,20 +151,13 @@ const DashboardPage: React.FC = observer(() => {
     setReschedulingDialogLab(null);
   }
 
-  const onLabOpen = useCallback(
-    (lab: Lab) => {
-      setSearchParams({t: lab.id});
-    },
-    [setSearchParams]
-  );
-
-  useEffect(() => {
-    if (selectedLab !== null) {
-      onLabOpen(selectedLab);
-    } else {
-      setSearchParams('');
-    }
-  }, [selectedLab, onLabOpen, setSearchParams]);
+  // useEffect(() => {
+  //   if (selectedLab !== null) {
+  //     setSearchParams({l: selectedLab.id});
+  //   } else {
+  //     setSearchParams('');
+  //   }
+  // }, [selectedLab, setSearchParams]);
 
   if (labStore.fetchReport.state !== FetchState.Done) {
     return <></>;
@@ -160,13 +166,13 @@ const DashboardPage: React.FC = observer(() => {
   return (
     <div className="height-100 width-100 sb-card overflow-y-hidden overflow-x-hidden sb-labs-container">
       <div className="search-bar sb-card">
-        <IconField className="search-bar-input" iconPosition="left">
-          <InputIcon className="pi pi-search"></InputIcon>
+        <IconField className="search-bar-input" iconPosition="right">
           <InputText
             className="width-100"
-            placeholder="Search here..."
+            placeholder="Search"
             onChange={e => handleSearchChange(e.target.value)}
           />
+          <InputIcon className="pi pi-search" />
         </IconField>
         <span
           className="search-bar-icon"

@@ -1,6 +1,7 @@
 import React, {useEffect, useMemo, useState} from 'react';
 
 import moment from 'moment';
+import {observer} from 'mobx-react-lite';
 import {Calendar, momentLocalizer, View, Views} from 'react-big-calendar';
 
 import {Lab, LabState, uuid4} from '@sb/types/types';
@@ -8,27 +9,9 @@ import {useCalendarLabStore} from '@sb/lib/stores/root-store';
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
 import ReservationDialog from '@sb/components/dashboard-page/reservation-dialog/reservation-dialog';
 
-import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './calender-dialog.sass';
-import {observer} from 'mobx-react-lite';
 
 const localizer = momentLocalizer(moment);
-
-interface CalendarEvent {
-  title: string;
-  id: uuid4;
-  state: LabState;
-  start: Date;
-  end: Date;
-}
-
-const labStateColors: {[key: number]: string} = {
-  0: 'var(--info-color)',
-  1: 'var(--warning-color)',
-  2: 'var(--success-color)',
-  3: 'var(--danger-color)',
-  4: 'var(--neutral-color)',
-};
 
 interface CalendarProps {
   isOpen: boolean;
@@ -45,10 +28,23 @@ const CalendarDialog: React.FC<CalendarProps> = observer(
 
     const calendarLabStore = useCalendarLabStore();
 
+    const events = useMemo(
+      () =>
+        calendarLabStore.data.map(lab => ({
+          title: lab.name,
+          id: lab.id,
+          state: lab.state,
+          start: new Date(lab.startDate),
+          end: new Date(lab.endDate),
+        })),
+      [calendarLabStore.data]
+    );
+
     useEffect(() => {
-      const startDate: Date = moment(currentDate).startOf('month').toDate();
-      const endDate: Date = moment(currentDate).endOf('month').toDate();
-      calendarLabStore.setDates(startDate.toISOString(), endDate.toISOString());
+      calendarLabStore.setDates(
+        moment(currentDate).startOf('month').toISOString(),
+        moment(currentDate).endOf('month').toISOString()
+      );
       calendarLabStore.setLimit(1000);
       calendarLabStore.setStateFilter([
         LabState.Deploying,
@@ -59,36 +55,21 @@ const CalendarDialog: React.FC<CalendarProps> = observer(
       ]);
     }, []);
 
-    const events = useMemo(() => {
-      return calendarLabStore.data.map(lab => ({
-        title: lab.name,
-        id: lab.id,
-        state: lab.state,
-        start: new Date(lab.startDate),
-        end: new Date(lab.endDate),
-      }));
-    }, [calendarLabStore.data]);
-
-    const handleRangeChange = (range: Date[] | {start: Date; end: Date}) => {
+    function onRangeChange(range: Date[] | {start: Date; end: Date}) {
       if (Array.isArray(range)) {
         calendarLabStore.setDates(
           range[0].toISOString(),
           range[range.length - 1].toISOString()
         );
       } else {
-        console.log('STARTDATE:', range.start);
-        console.log('ENDDATE:', range.end);
-
-        console.log('ISO STARTDATE:', range.start.toISOString());
-        console.log('ISO ENDDATE:', range.end.toISOString());
         calendarLabStore.setDates(
           range.start.toISOString(),
           range.end.toISOString()
         );
       }
-    };
+    }
 
-    const handleEventSelect = (event: CalendarEvent) => {
+    function onEventSelect(event: CalendarEvent) {
       if (event.state === LabState.Scheduled) {
         const lab: Lab | undefined = calendarLabStore.data.find(
           lab => lab.id === event.id
@@ -98,28 +79,23 @@ const CalendarDialog: React.FC<CalendarProps> = observer(
       } else {
         return;
       }
-    };
+    }
 
     function onClose(): void {
       setIsReservationDialogOpen(false);
     }
 
-    const handleViewChange = (view: View): void => {
-      setCurrentView(view);
-    };
-
-    const eventStyleGetter = (event: CalendarEvent) => {
-      const backgroundColor = labStateColors[event.state];
+    function eventStyleGenerator(event: CalendarEvent) {
       return {
         style: {
-          backgroundColor,
+          backgroundColor: StateEventColors[event.state],
           borderRadius: '5px',
           color: 'white',
           border: 'none',
           display: 'block',
         },
       };
-    };
+    }
 
     return (
       <SBDialog
@@ -131,22 +107,21 @@ const CalendarDialog: React.FC<CalendarProps> = observer(
       >
         <div className="calendar-container">
           <Calendar
+            popup
             localizer={localizer}
-            events={events!}
+            events={events}
             startAccessor="start"
             endAccessor="end"
-            style={{height: '100%'}}
             view={currentView}
             defaultView="month"
-            onView={handleViewChange}
             views={[Views.MONTH, Views.WEEK, Views.AGENDA]}
-            eventPropGetter={eventStyleGetter}
             toolbar={true}
-            popup
             date={currentDate}
+            onView={view => setCurrentView(view)}
             onNavigate={date => setCurrentDate(date)}
-            onRangeChange={handleRangeChange}
-            onSelectEvent={handleEventSelect}
+            eventPropGetter={eventStyleGenerator}
+            onRangeChange={onRangeChange}
+            onSelectEvent={onEventSelect}
           />
         </div>
         {isReservationDialogOpen && (
@@ -156,5 +131,21 @@ const CalendarDialog: React.FC<CalendarProps> = observer(
     );
   }
 );
+
+interface CalendarEvent {
+  title: string;
+  id: uuid4;
+  state: LabState;
+  start: Date;
+  end: Date;
+}
+
+const StateEventColors: {[key: number]: string} = {
+  0: 'var(--info-color)',
+  1: 'var(--warning-color)',
+  2: 'var(--success-color)',
+  3: 'var(--danger-color)',
+  4: 'var(--neutral-color)',
+};
 
 export default CalendarDialog;

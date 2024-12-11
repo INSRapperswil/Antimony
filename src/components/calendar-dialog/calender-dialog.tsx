@@ -18,6 +18,18 @@ interface CalendarProps {
   onClose: () => void;
 }
 
+interface CalendarEvent {
+  title: string;
+  id: string;
+  state: LabState;
+  start: Date;
+  end: Date;
+}
+
+interface CustomEventProps {
+  event: CalendarEvent;
+}
+
 const CalendarDialog: React.FC<CalendarProps> = observer(
   (props: CalendarProps) => {
     const [currentView, setCurrentView] = useState<View>('month');
@@ -27,6 +39,21 @@ const CalendarDialog: React.FC<CalendarProps> = observer(
       useState(false);
 
     const calendarLabStore = useCalendarLabStore();
+
+    function CustomEvent({event}: CustomEventProps) {
+      return (
+        <div style={{display: 'flex', alignItems: 'center'}}>
+          <span style={{flexGrow: 1}}>{event.title}</span>
+          {event.state === LabState.Scheduled && (
+            <i
+              className="pi pi-pen-to-square"
+              style={{marginLeft: '8px', color: 'white', cursor: 'pointer'}}
+              title="Edit Event"
+            />
+          )}
+        </div>
+      );
+    }
 
     const events = useMemo(
       () =>
@@ -122,6 +149,18 @@ const CalendarDialog: React.FC<CalendarProps> = observer(
             eventPropGetter={eventStyleGenerator}
             onRangeChange={onRangeChange}
             onSelectEvent={onEventSelect}
+            onDrillDown={date => {
+              console.log('in onDrillDown');
+              setCurrentView('week');
+              setCurrentDate(date);
+            }}
+            onShowMore={events => {
+              setCurrentDate(events[0].start);
+              setCurrentView('week');
+            }}
+            components={{
+              event: CustomEvent,
+            }}
           />
         </div>
         {isReservationDialogOpen && (

@@ -18,18 +18,6 @@ interface CalendarProps {
   onClose: () => void;
 }
 
-interface CalendarEvent {
-  title: string;
-  id: string;
-  state: LabState;
-  start: Date;
-  end: Date;
-}
-
-interface CustomEventProps {
-  event: CalendarEvent;
-}
-
 const CalendarDialog: React.FC<CalendarProps> = observer(
   (props: CalendarProps) => {
     const [currentView, setCurrentView] = useState<View>('month');
@@ -177,6 +165,10 @@ interface CalendarEvent {
   state: LabState;
   start: Date;
   end: Date;
+}
+
+interface CustomEventProps {
+  event: CalendarEvent;
 }
 
 const StateEventColors: {[key: number]: string} = {

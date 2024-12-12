@@ -58,18 +58,18 @@ const App: React.FC = observer(() => {
           })}
         >
           <If condition={dataBinder.isLoggedIn}>
-            <If condition={process.env.IS_ONLINE}>
+            <If condition={!process.env.IS_OFFLINE}>
               <SBDock />
             </If>
             <div className="flex flex-grow-1 gap-2 min-h-0">
               <Routes>
                 <Choose>
-                  <When condition={process.env.IS_ONLINE}>
-                    <Route path="/" element={<DashboardPage />} />
+                  <When condition={process.env.IS_OFFLINE}>
+                    <Route path="/" element={<EditorPage />} />
                     <Route path="/editor" element={<EditorPage />} />
                   </When>
                   <Otherwise>
-                    <Route path="/" element={<EditorPage />} />
+                    <Route path="/" element={<DashboardPage />} />
                     <Route path="/editor" element={<EditorPage />} />
                   </Otherwise>
                 </Choose>

@@ -5,8 +5,6 @@ import {createProxyMiddleware} from 'http-proxy-middleware';
 const app = express();
 
 const exampleProxy = createProxyMiddleware({
-  // target:
-  //   'https://antimony-backend-development-491689167898.europe-west1.run.app',
   target: process.env.PROXY_URL ?? 'http://localhost:3000',
   changeOrigin: true,
   pathRewrite: {'^/api': ''},

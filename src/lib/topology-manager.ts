@@ -222,6 +222,8 @@ export class TopologyManager {
   public addNode(kind: string) {
     if (!this.editingTopology) return;
 
+    console.log('Adding node of kind: ', kind);
+
     this.apply(this.editingTopology.definition, TopologyEditSource.NodeEditor);
   }
 

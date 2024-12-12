@@ -23,10 +23,10 @@ export class RootStore {
   _notificationsStore: NotificationStore;
 
   constructor() {
-    if (process.env.IS_ONLINE) {
-      this._dataBinder = new RemoteDataBinder();
-    } else {
+    if (process.env.IS_OFFLINE) {
       this._dataBinder = new CookieDataBinder();
+    } else {
+      this._dataBinder = new RemoteDataBinder();
     }
 
     this._schemaStore = new SchemaStore(this);

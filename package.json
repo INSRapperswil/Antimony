@@ -53,11 +53,11 @@
   },
   "scripts": {
     "start": "webpack serve --config webpack.dev.cjs",
-    "start online": "export IS_ONLINE=true && webpack serve --config webpack.dev.cjs",
-    "build:dev": "webpack --progress --config webpack.dev.cjs ",
-    "build:dev online": "export IS_ONLINE=true && webpack --progress --config webpack.dev.cjs",
+    "start offline": "export IS_OFFLINE=true && webpack serve --config webpack.dev.cjs",
+    "build:dev": "&& webpack --progress --config webpack.dev.cjs",
+    "build:dev offline": "export IS_OFFLINE=true && webpack --progress --config webpack.dev.cjs ",
     "build:prod": "webpack --progress --config webpack.prod.cjs",
-    "build:prod online": "export IS_ONLINE=true && webpack --progress --config webpack.prod.cjs",
+    "build:prod offline": "export IS_OFFLINE=true && webpack --progress --config webpack.prod.cjs",
     "lint": "gts lint '**/*.ts'",
     "compile": "tsc",
     "server": "cd server && yarn run start"

@@ -27,7 +27,7 @@ build_frontend:
     - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
     - gcloud config set project antimony-438914
   script:
-    - gcloud builds submit --config build.dev.yaml
+    - gcloud builds submit --config build.prod.yaml
 
 deploy_frontend:
   stage: deploy
@@ -38,9 +38,37 @@ deploy_frontend:
     - gcloud config set project antimony-438914
   script:
     - >-
-      gcloud run deploy antimony-development
-      --set-env-vars "PROXY_URL=https://antimony-backend-development-491689167898.europe-west1.run.app"
-      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-dev:latest
+      gcloud run deploy antimony-prod
+      --set-env-vars "PROXY_URL=https://antimony-backend-prod-491689167898.europe-west1.run.app"
+      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-prod:latest
+      --allow-unauthenticated
+      --region=europe-west1
+      --memory=2Gi
+      --ingress=all
+      --port 8100
+      --cpu=1
+
+build_frontend_offline:
+  stage: build
+  image: google/cloud-sdk:latest
+  before_script:
+    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+    - gcloud config set project antimony-438914
+  script:
+    - gcloud builds submit --config build-offline.prod.yaml
+
+deploy_frontend_offline:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  before_script:
+    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+    - gcloud config set project antimony-438914
+  script:
+    - >-
+      gcloud run deploy antimony-offline-prod
+      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-offline-prod:latest
       --allow-unauthenticated
       --region=europe-west1
       --memory=2Gi
@@ -57,7 +85,7 @@ build_backend:
     - gcloud config set project antimony-438914
   script:
     - cd ./server
-    - gcloud builds submit --config build.dev.yaml
+    - gcloud builds submit --config build.prod.yaml
 
 deploy_backend:
   stage: deploy
@@ -68,8 +96,8 @@ deploy_backend:
     - gcloud config set project antimony-438914
   script:
     - >-
-      gcloud run deploy antimony-backend-development
-      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-backend-dev:latest
+      gcloud run deploy antimony-backend-prod
+      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-backend-prod:latest
       --allow-unauthenticated
       --region=europe-west1
       --memory=2Gi

@@ -29,7 +29,7 @@ export class NotificationStore extends DataStore<
   constructor(rootStore: RootStore) {
     super(rootStore);
 
-    if (process.env.IS_ONLINE) {
+    if (!process.env.IS_OFFLINE) {
       (this.rootStore._dataBinder as RemoteDataBinder).socket.on(
         'notification',
         data => {

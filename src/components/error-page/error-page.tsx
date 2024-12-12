@@ -1,3 +1,4 @@
+import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
 import {useDataBinder} from '@sb/lib/stores/root-store';
 import {Choose, Otherwise, When} from '@sb/types/control';
 import classNames from 'classnames';
@@ -42,7 +43,7 @@ const ErrorPage = (props: ErrorPageProps) => {
             <div className="sb-error-network-entry">
               <span>Antimony API</span>
               <Choose>
-                <When condition={dataBinder.hasAPIError}>
+                <When condition={(dataBinder as RemoteDataBinder).hasAPIError}>
                   <ProgressSpinner strokeWidth="5" />
                 </When>
                 <Otherwise>
@@ -53,7 +54,9 @@ const ErrorPage = (props: ErrorPageProps) => {
             <div className="sb-error-network-entry">
               <span>Antimony Socket</span>
               <Choose>
-                <When condition={dataBinder.hasSocketError}>
+                <When
+                  condition={(dataBinder as RemoteDataBinder).hasSocketError}
+                >
                   <ProgressSpinner strokeWidth="5" />
                 </When>
                 <Otherwise>

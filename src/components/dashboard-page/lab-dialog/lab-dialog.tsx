@@ -63,7 +63,13 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
       return {nodes: new DataSet(), edges: new DataSet()};
     }
 
-    return generateGraph(openTopology, deviceStore, topologyStore.manager);
+    return generateGraph(
+      openTopology,
+      deviceStore,
+      topologyStore.manager,
+      true,
+      props.lab?.nodeMeta
+    );
   }, [deviceStore, openTopology, topologyStore.manager]);
 
   function onContext(event: GraphNodeClickEvent) {

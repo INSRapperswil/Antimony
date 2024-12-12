@@ -1,6 +1,6 @@
 import {DeviceStore} from '@sb/lib/stores/device-store';
 import {TopologyManager} from '@sb/lib/topology-manager';
-import {FetchState, Topology} from '@sb/types/types';
+import {FetchState, NodeMeta, Topology} from '@sb/types/types';
 import {Edge, Node} from 'vis';
 import {DataSet} from 'vis-data/peer';
 
@@ -107,16 +107,23 @@ export function pushOrCreateList<T, R>(map: Map<T, R[]>, key: T, value: R) {
 export function generateGraph(
   topology: Topology,
   deviceStore: DeviceStore,
-  topologyManager: TopologyManager
+  topologyManager: TopologyManager,
+  showHostLabels?: boolean,
+  topologyNodeMeta?: NodeMeta[]
 ) {
   const nodes: DataSet<Node> = new DataSet();
 
-  for (const [nodeName, node] of Object.entries(
+  for (const [index, [nodeName, node]] of Object.entries(
     topology.definition.toJS().topology.nodes
-  )) {
+  ).entries()) {
+    let nodeLabel = nodeName;
+    if (showHostLabels && topologyNodeMeta && topologyNodeMeta.length > index) {
+      const meta = topologyNodeMeta[index];
+      nodeLabel = `${nodeName}\n${meta.webSsh}:${meta.port}`;
+    }
     nodes.add({
       id: nodeName,
-      label: nodeName,
+      label: nodeLabel,
       image: deviceStore.getNodeIcon(node?.kind),
       x: topology.positions.get(nodeName)?.x,
       y: topology.positions.get(nodeName)?.y,

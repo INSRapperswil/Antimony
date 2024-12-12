@@ -256,7 +256,7 @@ app.get('/labs', (req, res) => {
             host: 'example.com',
             port: randomNumber(1000, 65000),
             user: 'ins',
-            webSsh: 'console.antimony.network.garden/ssh/' + lab.id,
+            webSsh: 'console.antimony.network.garden/ssh/' + randomNumber(1, 10),
           })),
         };
       })

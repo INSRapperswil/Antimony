@@ -1,5 +1,5 @@
 import {ParticlesOptions} from '@sb/components/common/sb-login/particles.conf';
-import {useAPIStore, useRootStore} from '@sb/lib/stores/root-store';
+import {useDataBinder} from '@sb/lib/stores/root-store';
 import {If} from '@sb/types/control';
 import {loadLinksPreset} from '@tsparticles/preset-links';
 import Particles, {initParticlesEngine} from '@tsparticles/react';
@@ -20,8 +20,7 @@ const SBLogin = observer(() => {
   // This doesn't render the overlay at all if the user is already logged in
   // const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
 
-  const rootStore = useRootStore();
-  const apiStore = useAPIStore();
+  const dataBinder = useDataBinder();
 
   useEffect(() => {
     void initParticlesEngine(async engine => {
@@ -45,7 +44,7 @@ const SBLogin = observer(() => {
         password: {value: string};
       };
 
-      apiStore
+      dataBinder
         .login(
           {
             username: target.username.value,
@@ -140,10 +139,10 @@ const SBLogin = observer(() => {
     <If condition={particlesReady}>
       <div
         className={classNames('sb-login-container', 'sb-animated-overlay', {
-          visible: !apiStore.isLoggedIn && !apiStore.hasConnectionError,
+          visible: !dataBinder.isLoggedIn && !dataBinder.hasConnectionError,
         })}
       >
-        <If condition={!apiStore.isLoggedIn}>
+        <If condition={!dataBinder.isLoggedIn}>
           <Particles options={ParticlesOptions} />
         </If>
         <LoginForm />

@@ -1,3 +1,4 @@
+import {CookieDataBinder} from '@sb/lib/stores/data-binder/cookie-data-binder';
 import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
 import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
 import {DeviceStore} from '@sb/lib/stores/device-store';
@@ -12,7 +13,7 @@ import {createContext, useContext} from 'react';
 import {TopologyStore} from '@sb/lib/stores/topology-store';
 
 export class RootStore {
-  _apiConnectorStore: DataBinder;
+  _dataBinder: DataBinder;
   _topologyStore: TopologyStore;
   _labStore: LabStore;
   _calendarLabStore: LabStore;
@@ -22,7 +23,12 @@ export class RootStore {
   _notificationsStore: NotificationStore;
 
   constructor() {
-    this._apiConnectorStore = new RemoteDataBinder();
+    if (process.env.IS_ONLINE) {
+      this._dataBinder = new RemoteDataBinder();
+    } else {
+      this._dataBinder = new CookieDataBinder();
+    }
+
     this._schemaStore = new SchemaStore(this);
     this._deviceStore = new DeviceStore(this);
     this._topologyStore = new TopologyStore(this);
@@ -52,8 +58,8 @@ export const useRootStore = () => {
   return useContext(RootStoreContext);
 };
 
-export const useAPIStore = () => {
-  return useContext(RootStoreContext)._apiConnectorStore;
+export const useDataBinder = () => {
+  return useContext(RootStoreContext)._dataBinder;
 };
 
 export const useTopologyStore = () => {

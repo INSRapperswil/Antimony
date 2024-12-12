@@ -1,13 +1,13 @@
 import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
+import {fetchResource} from '@sb/lib/utils/utils';
 import {AuthResponse, ErrorResponse, UserCredentials} from '@sb/types/types';
 import {action, computed, observable, runInAction} from 'mobx';
 import Cookies from 'js-cookie';
 import {io, Socket} from 'socket.io-client';
 
 export class RemoteDataBinder extends DataBinder {
-  private readonly apiUrl = process.env.SB_API_SERVER_URL;
+  private readonly apiUrl = process.env.SB_API_SERVER_URL ?? 'localhost';
   private authToken: string | null = null;
-  private readonly retryTimer = 5000;
 
   @observable accessor isAdmin = false;
   @observable accessor isLoggedIn = false;
@@ -56,8 +56,8 @@ export class RemoteDataBinder extends DataBinder {
     return true;
   }
 
+  @action
   protected async fetch<R, T>(
-    url: string,
     path: string,
     method: string,
     body?: R,
@@ -68,54 +68,30 @@ export class RemoteDataBinder extends DataBinder {
       return [false, {code: '-1', message: 'Unauthorized'}, null];
     }
 
-    let response: Response | null = null;
-
-    try {
-      if (isExternal) {
-        response = await fetch(url + path, {
-          method: method,
-          body: JSON.stringify(body),
-        });
-      } else {
-        response = await fetch(this.apiUrl + path, {
-          method: method,
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.authToken}`,
-          },
-          body: JSON.stringify(body),
-        });
-      }
-    } catch {
-      // continue regardless of error
+    if (isExternal) {
+      return this.fetchExternal<R, T>(path, method, body);
     }
+
+    const response = await fetchResource(this.apiUrl + path, method, body, {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${this.authToken}`,
+    });
 
     if (!response || !response.ok) {
-      this.handleNetworkError(response?.status, isExternal);
-      await new Promise(resolve => setTimeout(resolve, this.retryTimer));
-      return this.fetch(path, method, body, isExternal, skipAuthentication);
+      this.handleNetworkError(response?.status);
+      await new Promise(resolve => setTimeout(resolve, this.fetchRetryTimer));
+      return this.fetch(path, method, body, false, skipAuthentication);
     }
 
-    if (isExternal) {
-      return [true, JSON.parse(await response.text()), response.headers];
-    }
+    this.hasAPIError = false;
 
-    const headers = response.headers;
     const responseBody = await response.json();
 
     if ('code' in responseBody) {
-      return [false, responseBody, headers];
+      return [false, responseBody, response.headers];
     }
-
-    runInAction(() => {
-      if (isExternal) {
-        this.hasExternalError = false;
-      } else {
-        this.hasAPIError = false;
-      }
-    });
-    return [true, responseBody.payload, headers];
+    return [true, responseBody.payload, response.headers];
   }
 
   public logout() {
@@ -132,8 +108,8 @@ export class RemoteDataBinder extends DataBinder {
   }
 
   @computed
-  public get hasNetworkError() {
-    return this.hasAPIError || this.hasSocketError || this.hasExternalError;
+  public get hasConnectionError() {
+    return this.hasExternalError || this.hasAPIError || this.hasSocketError;
   }
 
   @action
@@ -159,15 +135,10 @@ export class RemoteDataBinder extends DataBinder {
     });
   }
 
-  private handleNetworkError(status: number | undefined, isExternal: boolean) {
+  @action
+  private handleNetworkError(status: number | undefined) {
     if (!status || status === 503 || status === 504) {
-      runInAction(() => {
-        if (isExternal) {
-          this.hasExternalError = true;
-        } else {
-          this.hasAPIError = true;
-        }
-      });
+      this.hasAPIError = true;
     } else if (status === 403) {
       this.logout();
     }

@@ -2,6 +2,7 @@ import {
   SBConfirmOpenProps,
   SBConfirmRef,
 } from '@sb/components/common/sb-confirm/sb-confirm';
+import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
 import {RootStore} from '@sb/lib/stores/root-store';
 import {
   Notification,
@@ -28,9 +29,16 @@ export class NotificationStore extends DataStore<
   constructor(rootStore: RootStore) {
     super(rootStore);
 
-    this.rootStore._apiConnectorStore.socket.on('notification', data => {
-      this.handleNotification(NotificationStore.parseNotification(data, false));
-    });
+    if (process.env.IS_ONLINE) {
+      (this.rootStore._dataBinder as RemoteDataBinder).socket.on(
+        'notification',
+        data => {
+          this.handleNotification(
+            NotificationStore.parseNotification(data, false)
+          );
+        }
+      );
+    }
   }
 
   protected get resourcePath(): string {

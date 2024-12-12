@@ -12,11 +12,11 @@ import './app.sass';
 
 import {
   RootStoreContext,
-  useAPIStore,
+  useDataBinder,
   useNotifications,
   useRootStore,
 } from '@sb/lib/stores/root-store';
-import {If} from '@sb/types/control';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
 import {PrimeReactProvider} from 'primereact/api';
@@ -32,7 +32,7 @@ const App: React.FC = observer(() => {
   const confirmationRef = useRef<SBConfirmRef>(null);
 
   const rootStore = useRootStore();
-  const apiStore = useAPIStore();
+  const dataBinder = useDataBinder();
   const notificationStore = useNotifications();
 
   const [doneLoading, setDoneLoading] = useState(false);
@@ -45,8 +45,8 @@ const App: React.FC = observer(() => {
   }, [notificationStore]);
 
   useEffect(() => {
-    if (!apiStore.isLoggedIn) setDoneLoading(false);
-  }, [apiStore.isLoggedIn]);
+    if (!dataBinder.isLoggedIn) setDoneLoading(false);
+  }, [dataBinder.isLoggedIn]);
 
   return (
     <PrimeReactProvider>
@@ -57,12 +57,23 @@ const App: React.FC = observer(() => {
             visible: doneLoading,
           })}
         >
-          <If condition={apiStore.isLoggedIn}>
-            <SBDock />
+          <If condition={dataBinder.isLoggedIn}>
+            <If condition={process.env.IS_ONLINE}>
+              <SBDock />
+            </If>
             <div className="flex flex-grow-1 gap-2 min-h-0">
               <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/editor" element={<EditorPage />} />
+                <Choose>
+                  <When condition={process.env.IS_ONLINE}>
+                    <Route path="/" element={<DashboardPage />} />
+                    <Route path="/editor" element={<EditorPage />} />
+                  </When>
+                  <Otherwise>
+                    <Route path="/" element={<EditorPage />} />
+                    <Route path="/editor" element={<EditorPage />} />
+                  </Otherwise>
+                </Choose>
+
                 <Route
                   path="*"
                   element={

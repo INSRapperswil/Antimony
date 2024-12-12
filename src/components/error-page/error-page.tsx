@@ -1,4 +1,4 @@
-import {useAPIStore} from '@sb/lib/stores/root-store';
+import {useDataBinder} from '@sb/lib/stores/root-store';
 import {Choose, Otherwise, When} from '@sb/types/control';
 import classNames from 'classnames';
 import {ProgressSpinner} from 'primereact/progressspinner';
@@ -16,7 +16,7 @@ interface ErrorPageProps {
 
 const ErrorPage = (props: ErrorPageProps) => {
   const error: Error | null = useRouteError() as Error | null;
-  const apiStore = useAPIStore();
+  const dataBinder = useDataBinder();
 
   useEffect(() => {
     if (!error) return;
@@ -37,12 +37,12 @@ const ErrorPage = (props: ErrorPageProps) => {
       </span>
 
       <Choose>
-        <When condition={apiStore.hasConnectionError}>
+        <When condition={dataBinder.hasConnectionError}>
           <div className="sb-error-network-content">
             <div className="sb-error-network-entry">
               <span>Antimony API</span>
               <Choose>
-                <When condition={apiStore.hasResourceError}>
+                <When condition={dataBinder.hasAPIError}>
                   <ProgressSpinner strokeWidth="5" />
                 </When>
                 <Otherwise>
@@ -53,7 +53,7 @@ const ErrorPage = (props: ErrorPageProps) => {
             <div className="sb-error-network-entry">
               <span>Antimony Socket</span>
               <Choose>
-                <When condition={apiStore.hasSocketError}>
+                <When condition={dataBinder.hasSocketError}>
                   <ProgressSpinner strokeWidth="5" />
                 </When>
                 <Otherwise>
@@ -64,7 +64,7 @@ const ErrorPage = (props: ErrorPageProps) => {
             <div className="sb-error-network-entry">
               <span>External Resources</span>
               <Choose>
-                <When condition={apiStore.hasExternalError}>
+                <When condition={dataBinder.hasExternalError}>
                   <ProgressSpinner strokeWidth="5" />
                 </When>
                 <Otherwise>

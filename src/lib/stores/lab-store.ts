@@ -33,8 +33,6 @@ export class LabStore extends DataStore<Lab, LabIn, Lab> {
 
   @computed
   protected get getParams() {
-    console.log('STORE START DATE:', this.startDate);
-    console.log('STORE END DATE:', this.endDate);
     return (
       `?limit=${this.limit}` +
       `&offset=${this.offset}` +
@@ -50,7 +48,10 @@ export class LabStore extends DataStore<Lab, LabIn, Lab> {
   protected handleUpdate(updatedData: Lab[], headers: Headers | null): void {
     this.data = updatedData;
     this.lookup = new Map(this.data.map(lab => [lab.id, lab]));
-    this.totalEntries = Number(headers!.get('X-Total-Count'));
+
+    if (headers && headers.has('X-Total-Count')) {
+      this.totalEntries = Number(headers!.get('X-Total-Count'));
+    }
 
     this.metaLookup = new Map(
       this.data.map(lab => [

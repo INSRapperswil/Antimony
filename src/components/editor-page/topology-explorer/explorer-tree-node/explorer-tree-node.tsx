@@ -73,9 +73,18 @@ const ExplorerTreeNode: React.FC<ExplorerTreeNodeProps> = (
               severity="success"
               rounded
               text
-              tooltip="Deploy Topology"
+              disabled={!process.env.IS_ONLINE}
+              tooltip={
+                process.env.IS_ONLINE
+                  ? 'Deploy Topology'
+                  : 'Deploying not available in offline build.'
+              }
+              tooltipOptions={{
+                position: 'bottom',
+                showDelay: 500,
+                showOnDisabled: true,
+              }}
               onClick={onDeployTopology}
-              tooltipOptions={{showDelay: 500}}
             />
           </div>
         </When>

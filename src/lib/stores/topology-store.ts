@@ -15,7 +15,7 @@ export class TopologyStore extends DataStore<
   constructor(rootStore: RootStore) {
     super(rootStore);
     this.manager = new TopologyManager(
-      this.rootStore._apiConnectorStore,
+      this.rootStore._dataBinder,
       this,
       this.rootStore._deviceStore
     );

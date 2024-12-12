@@ -8,7 +8,7 @@ import {OverlayPanel} from 'primereact/overlaypanel';
 import {Image} from 'primereact/image';
 
 import {If} from '@sb/types/control';
-import {useAPIStore, useNotifications} from '@sb/lib/stores/root-store';
+import {useDataBinder, useNotifications} from '@sb/lib/stores/root-store';
 import NotificationPanel from './notification-panel/notification-panel';
 
 import './sb-dock.sass';
@@ -17,7 +17,7 @@ import CalendarDialog from '@sb/components/calendar-dialog/calender-dialog';
 const SBDock: React.FC = observer(() => {
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
 
-  const apiStore = useAPIStore();
+  const dataBinder = useDataBinder();
   const navigate = useNavigate();
   const notificationStore = useNotifications();
 
@@ -66,7 +66,7 @@ const SBDock: React.FC = observer(() => {
           icon="pi pi-sign-out"
           label="Log Out"
           className="flex gap-1"
-          onClick={() => apiStore.logout()}
+          onClick={() => dataBinder.logout()}
           tooltipOptions={{position: 'bottom'}}
         />
       </div>

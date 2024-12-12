@@ -4,76 +4,77 @@ import {
   DeviceInfo,
   ErrorResponse,
   Group,
-  Lab,
-  LabIn,
+  GroupIn,
   TopologyIn,
   TopologyOut,
   uuid4,
 } from '@sb/types/types';
 import Cookies from 'js-cookie';
 import {computed, observable} from 'mobx';
-import {io, Socket} from 'socket.io-client';
+
+import devices from '@sb/../local-data/devices.json';
 
 export class CookieDataBinder extends DataBinder {
-  private authToken: string | null = null;
-  private readonly retryTimer = 5000;
-
-  @observable accessor isAdmin = false;
-  @observable accessor isLoggedIn = false;
-
-  @observable accessor hasAPIError = false;
-  @observable accessor hasSocketError = false;
+  @observable accessor isLoggedIn = true;
   @observable accessor hasExternalError = false;
 
-  public socket: Socket = io();
-
-  private async fetch<R, T>(
-    url: string,
+  protected async fetch<R, T>(
     path: string,
     method: string,
-    body?: R
+    body?: R,
+    isExternal = false
   ): Promise<[boolean, T | ErrorResponse, Headers | null]> {
-    const parts = path.split('/');
+    if (isExternal) {
+      return this.fetchExternal(path, method, body);
+    }
+
+    const parts = path.split(/[/?&]/);
     switch (parts[1]) {
       case 'topologies':
-        return this.handleTopology(method, parts[2], body as TopologyIn) as [
-          boolean,
-          T | ErrorResponse,
-          null,
-        ];
-      case 'labs':
-        return this.handleLab(method, parts[2], body as LabIn) as [
-          boolean,
-          T | ErrorResponse,
-          null,
-        ];
-      case 'devices':
-        return this.handleDevices(method, parts[2], body as LabIn) as [
+        return this.handleTopologies(method, parts[2], body as TopologyIn) as [
           boolean,
           T | ErrorResponse,
           null,
         ];
       case 'groups':
-        return this.handleGroup() as [boolean, T | ErrorResponse, null];
+        return this.handleGroups(method, parts[2], body as GroupIn) as [
+          boolean,
+          T | ErrorResponse,
+          null,
+        ];
+      case 'devices':
+        return this.handleDevices(method) as [boolean, T | ErrorResponse, null];
+      case 'labs':
+        return this.handleLabs(method) as [boolean, T | ErrorResponse, null];
+      case 'notifications':
+        return this.handleNotifications(method) as [
+          boolean,
+          T | ErrorResponse,
+          null,
+        ];
     }
 
-    return [true, responseBody.payload, headers];
+    return [false, {code: '-1', message: `Invalid cookie URI '${path}'`}, null];
   }
 
-  private handleTopology(
+  private handleTopologies(
     method: string,
     id?: uuid4,
     body?: TopologyIn
-  ): [boolean, TopologyOut[] | ErrorResponse | null, null] {
+  ): [boolean, TopologyOut[] | ErrorResponse | string | null, null] {
     switch (method) {
       case 'GET':
-        return safeParseJsonCookie('topologies', '[]') as [
-          boolean,
-          TopologyOut[],
+        return [
+          true,
+          safeParseJsonCookie('topologies', '[]') as TopologyOut[],
           null,
         ];
       case 'DELETE':
-        return this.deleteTopology(id) as [boolean, null | ErrorResponse, null];
+        return this.deleteTopology(id!) as [
+          boolean,
+          null | ErrorResponse,
+          null,
+        ];
       case 'PATCH':
         return this.patchTopology(id!, body!) as [
           boolean,
@@ -81,7 +82,7 @@ export class CookieDataBinder extends DataBinder {
           null,
         ];
       case 'POST':
-        return this.postTopology(body) as [
+        return this.postTopology(body!) as [
           boolean,
           string | ErrorResponse,
           null,
@@ -91,42 +92,7 @@ export class CookieDataBinder extends DataBinder {
     return [false, {code: '-1', message: 'Unknown method'}, null];
   }
 
-  private handleLab(
-    method: string,
-    id?: uuid4,
-    body?: TopologyIn
-  ): [boolean, Lab[] | ErrorResponse, null] {
-    switch (method) {
-      case 'GET':
-        return safeParseJsonCookie('labs', '[]') as [boolean, Lab[], null];
-      case 'DELETE':
-        return this.deleteTopology(id) as [
-          boolean,
-          Lab[] | ErrorResponse,
-          null,
-        ];
-      case 'PATCH':
-        return this.patchTopology(id, body) as [
-          boolean,
-          Lab[] | ErrorResponse,
-          null,
-        ];
-      case 'POST':
-        return this.postTopology(body) as [
-          boolean,
-          Lab[] | ErrorResponse,
-          null,
-        ];
-    }
-
-    return [false, {code: '-1', message: 'Unknown method'}, null];
-  }
-
-  private handleGroup(): [boolean, Group[] | ErrorResponse, null] {}
-
-  private handleDevices(): [boolean, DeviceInfo[] | ErrorResponse, null] {}
-
-  private deleteTopology(id?: uuid4): [boolean, ErrorResponse | null, null] {
+  private deleteTopology(id: uuid4): [boolean, ErrorResponse | null, null] {
     const topologies = safeParseJsonCookie('topologies', '[]') as TopologyOut[];
     const topology = topologies.find(topology => topology.id === id);
     const topologyIndex = topology ? topologies.indexOf(topology) : -1;
@@ -180,8 +146,114 @@ export class CookieDataBinder extends DataBinder {
       groupId: targetGroup.id,
       definition: topology.definition,
     });
+    Cookies.set('topologies', JSON.stringify(topologies));
 
     return [true, topologyId, null];
+  }
+
+  private handleGroups(
+    method: string,
+    id?: uuid4,
+    body?: GroupIn
+  ): [boolean, Group[] | ErrorResponse | null, null] {
+    switch (method) {
+      case 'GET':
+        return [true, safeParseJsonCookie('groups', '[]') as Group[], null];
+      case 'DELETE':
+        return this.deleteGroup(id!) as [boolean, ErrorResponse | null, null];
+      case 'PATCH':
+        return this.patchGroup(id!, body!) as [
+          boolean,
+          ErrorResponse | null,
+          null,
+        ];
+      case 'POST':
+        return this.postGroup(body!) as [boolean, ErrorResponse | null, null];
+    }
+
+    return [false, {code: '-1', message: 'Unknown method'}, null];
+  }
+
+  private deleteGroup(id: uuid4): [boolean, ErrorResponse | null, null] {
+    const groups = safeParseJsonCookie('groups', '[]') as TopologyOut[];
+    const group = groups.find(group => group.id === id);
+    const groupIndex = group ? groups.indexOf(group) : -1;
+
+    if (groupIndex === -1) {
+      return [false, {code: '-1', message: 'Group ID not found'}, null];
+    }
+
+    groups.splice(groupIndex, 1);
+    Cookies.set('groups', JSON.stringify(groups));
+
+    return [true, null, null];
+  }
+
+  private patchGroup(
+    id: uuid4,
+    updatedGroup: GroupIn
+  ): [boolean, ErrorResponse | null, null] {
+    const groups = safeParseJsonCookie('groups', '[]') as TopologyOut[];
+    const group = groups.find(group => group.id === id);
+    const groupIndex = group ? groups.indexOf(group) : -1;
+
+    if (groupIndex === -1) {
+      return [false, {code: '-1', message: 'Group ID not found'}, null];
+    }
+
+    groups[groupIndex] = {
+      ...groups[groupIndex],
+      ...updatedGroup,
+    };
+    Cookies.set('groups', JSON.stringify(groups));
+
+    return [true, null, null];
+  }
+
+  private postGroup(group: GroupIn): [boolean, ErrorResponse | null, null] {
+    const groups = safeParseJsonCookie('groups', '[]') as Group[];
+    const groupId = generateUuidv4();
+
+    groups.push({
+      id: groupId,
+      name: group.name,
+      canWrite: group.canWrite,
+      canRun: group.canRun,
+    });
+    Cookies.set('groups', JSON.stringify(groups));
+
+    return [true, null, null];
+  }
+
+  private handleDevices(
+    method: string
+  ): [boolean, DeviceInfo[] | ErrorResponse | null, null] {
+    switch (method) {
+      case 'GET':
+        return [true, devices as DeviceInfo[], null];
+    }
+
+    return [false, {code: '-1', message: 'Unknown method'}, null];
+  }
+
+  private handleLabs(method: string): [boolean, DeviceInfo[] | null, null] {
+    switch (method) {
+      case 'GET':
+        return [true, [], null];
+    }
+
+    return [true, null, null];
+  }
+
+  private handleNotifications(
+    method: string
+  ): [boolean, Notification[] | null, null] {
+    switch (method) {
+      case 'GET':
+        return [true, [], null];
+    }
+
+    return [true, null, null];
   }
 
   public async login(): Promise<boolean> {
@@ -191,14 +263,14 @@ export class CookieDataBinder extends DataBinder {
 
   @computed
   public get hasConnectionError() {
-    return false;
+    return this.hasExternalError;
   }
 }
 
 function safeParseJsonCookie(key: string, defaultValue: string) {
   if (!Cookies.get(key)) {
     Cookies.set(key, defaultValue);
-    return defaultValue;
+    return JSON.parse(defaultValue);
   }
 
   try {
@@ -208,6 +280,6 @@ function safeParseJsonCookie(key: string, defaultValue: string) {
       `[COOKIES] Failed to parse JSON from cookie '${key}'. Resetting to default value. Original value: ${Cookies.get(key)}`
     );
     Cookies.set(key, defaultValue);
-    return defaultValue;
+    return JSON.parse(defaultValue);
   }
 }

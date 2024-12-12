@@ -1,13 +1,12 @@
-import MonacoWrapper, {
-  MonacoWrapperRef,
-} from '@sb/components/editor-page/topology-editor/monaco-wrapper/monaco-wrapper';
-import NodeEditDialog from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-edit-dialog';
-import NodeEditor from '@sb/components/editor-page/topology-editor/node-editor/node-editor';
+import MonacoWrapper, {MonacoWrapperRef} from './monaco-wrapper/monaco-wrapper';
+import NodeEditDialog from './node-edit-dialog/node-edit-dialog';
+import NodeEditor from './node-editor/node-editor';
 import {
   SimulationConfig,
   SimulationConfigContext,
-} from '@sb/components/editor-page/topology-editor/node-editor/state/simulation-config';
+} from './node-editor/state/simulation-config';
 import {
+  useGroupStore,
   useNotifications,
   useSchemaStore,
   useTopologyStore,
@@ -20,6 +19,8 @@ import {
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 
 import {Topology, uuid4} from '@sb/types/types';
+
+import FileSaver from 'file-saver';
 
 import {Badge} from 'primereact/badge';
 import {Button} from 'primereact/button';
@@ -56,6 +57,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     null
   );
 
+  const groupStore = useGroupStore();
   const schemaStore = useSchemaStore();
   const topologyStore = useTopologyStore();
   const notificatioStore = useNotifications();
@@ -163,6 +165,19 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     props.onTopologyDeploy(openTopology.id);
   }
 
+  function onDownloadTopology() {
+    if (!openTopology) return;
+
+    const topologyGroup = groupStore.lookup.get(openTopology.groupId)!;
+    const blob = new Blob([openTopology.definition.toString()], {
+      type: 'text/plain;charset=utf-8',
+    });
+    FileSaver.saveAs(
+      blob,
+      `${topologyGroup.name}_${openTopology.definition.get('name')}.yaml`
+    );
+  }
+
   return (
     <>
       <Choose>
@@ -212,18 +227,28 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   outlined
                   icon="pi pi-download"
                   size="large"
+                  onClick={onDownloadTopology}
                   tooltip="Download"
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
                 />
               </div>
-              <div className="flex gap-2 justify-content-center right-tab">
+              <div className="flex gap-2 justify-content-center">
                 <Button
                   outlined
                   icon="pi pi-play"
                   size="large"
-                  tooltip="Deploy Topology"
                   onClick={onDeployTopoplogy}
-                  tooltipOptions={{position: 'bottom', showDelay: 500}}
+                  disabled={!process.env.IS_ONLINE}
+                  tooltip={
+                    process.env.IS_ONLINE
+                      ? 'Deploy Topology'
+                      : 'Deploying not available in offline build.'
+                  }
+                  tooltipOptions={{
+                    position: 'bottom',
+                    showDelay: 500,
+                    showOnDisabled: true,
+                  }}
                 />
                 <Choose>
                   <When condition={props.isMaximized}>
@@ -231,9 +256,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                       outlined
                       icon="pi pi-arrow-down-left-and-arrow-up-right-to-center"
                       size="large"
-                      tooltip="Fullscreen"
                       onClick={() => props.setMaximized(false)}
-                      tooltipOptions={{position: 'bottom', showDelay: 2000}}
                     />
                   </When>
                   <Otherwise>
@@ -241,9 +264,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                       outlined
                       icon="pi pi-arrow-up-right-and-arrow-down-left-from-center"
                       size="large"
-                      tooltip="Fullscreen"
                       onClick={() => props.setMaximized(true)}
-                      tooltipOptions={{position: 'bottom', showDelay: 2000}}
                     />
                   </Otherwise>
                 </Choose>

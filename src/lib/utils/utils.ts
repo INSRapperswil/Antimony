@@ -4,6 +4,23 @@ import {FetchState, Topology} from '@sb/types/types';
 import {Edge, Node} from 'vis';
 import {DataSet} from 'vis-data/peer';
 
+export async function fetchResource<T>(
+  path: string,
+  method: string,
+  body?: T,
+  requestHeaders?: HeadersInit
+): Promise<Response | null> {
+  try {
+    return await fetch(path, {
+      method: method,
+      headers: requestHeaders,
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return null;
+  }
+}
+
 export function matchesSearch(value: string, search: string) {
   return value.toLowerCase().includes(search.toLowerCase());
 }

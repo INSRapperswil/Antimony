@@ -540,7 +540,7 @@ function makeTitle(value) {
 async function loadTestData() {
   store.topologies = readDataFile('topologies.yaml');
   store.labs = readDataFile('labs.yaml');
-  store.devices = readDataFile('devices.yaml');
+  store.devices = readDataFile('devices.json');
   store.groups = readDataFile('groups.yaml');
   store.users = readDataFile('users.yaml');
   store.notifications = await generateNotificationTestData(store.users);

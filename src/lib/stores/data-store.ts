@@ -1,4 +1,4 @@
-import {action, observable, observe} from 'mobx';
+import {action, computed, observable, observe} from 'mobx';
 
 import {RootStore} from '@sb/lib/stores/root-store';
 import {
@@ -29,19 +29,19 @@ export abstract class DataStore<T, I, O> {
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
 
-    observe(rootStore._apiConnectorStore, () => this.fetch());
+    observe(rootStore._dataBinder, () => this.fetch());
 
     void this.fetch();
   }
 
   public async fetch() {
-    if (!this.rootStore._apiConnectorStore.isLoggedIn) {
+    if (!this.rootStore._dataBinder.isLoggedIn) {
       this.fetchReport = {state: FetchState.Pending};
       return;
     }
 
     this.handleData(
-      await this.rootStore._apiConnectorStore.get<O[]>(
+      await this.rootStore._dataBinder.get<O[]>(
         this.resourcePath + this.getParams,
         this.isExternal
       )
@@ -49,7 +49,7 @@ export abstract class DataStore<T, I, O> {
   }
 
   public async delete(id: string): Promise<ErrorResponse | null> {
-    const response = await this.rootStore._apiConnectorStore.delete<void>(
+    const response = await this.rootStore._dataBinder.delete<void>(
       `${this.resourcePath}/${id}` + this.deleteParams
     );
     if (!response[0]) {
@@ -61,10 +61,10 @@ export abstract class DataStore<T, I, O> {
   }
 
   public async add(body: I): Promise<[boolean, ErrorResponse | PostResponse]> {
-    const response = await this.rootStore._apiConnectorStore.post<
-      I,
-      PostResponse
-    >(this.resourcePath + this.postParams, body);
+    const response = await this.rootStore._dataBinder.post<I, PostResponse>(
+      this.resourcePath + this.postParams,
+      body
+    );
 
     if (!response[0]) {
       return [false, response[1]];
@@ -78,7 +78,7 @@ export abstract class DataStore<T, I, O> {
   public async update(id: uuid4, body: I): Promise<ErrorResponse | null> {
     console.log(id);
     console.log(body);
-    const response = await this.rootStore._apiConnectorStore.patch<I, void>(
+    const response = await this.rootStore._dataBinder.patch<I, void>(
       `${this.resourcePath}/${id}` + this.patchParams,
       body
     );
@@ -105,18 +105,22 @@ export abstract class DataStore<T, I, O> {
     }
   }
 
+  @computed
   protected get getParams() {
     return '';
   }
 
+  @computed
   protected get postParams() {
     return '';
   }
 
+  @computed
   protected get patchParams() {
     return '';
   }
 
+  @computed
   protected get deleteParams() {
     return '';
   }

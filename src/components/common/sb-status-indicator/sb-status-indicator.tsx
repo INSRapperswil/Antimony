@@ -1,6 +1,7 @@
 import ErrorPage from '@sb/components/error-page/error-page';
+import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
 
-import {useAPIStore, useRootStore} from '@sb/lib/stores/root-store';
+import {useDataBinder, useRootStore} from '@sb/lib/stores/root-store';
 import {Choose, Otherwise, When} from '@sb/types/control';
 import {FetchState} from '@sb/types/types';
 import classNames from 'classnames';
@@ -17,28 +18,29 @@ interface SBStatusIndicatorProps {
 }
 
 const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
-  const apiStore = useAPIStore();
+  const dataBinder = useDataBinder();
   const rootStore = useRootStore();
 
   const [loaderVisible, setLoaderVisible] = useState(false);
 
-  const errorPanelVisible = apiStore.hasConnectionError && apiStore.isLoggedIn;
+  const errorPanelVisible =
+    dataBinder.hasConnectionError && dataBinder.isLoggedIn;
   const errorOverlayVisible =
-    apiStore.hasConnectionError && !apiStore.isLoggedIn;
+    dataBinder.hasConnectionError && !dataBinder.isLoggedIn;
 
   useEffect(() => {
     const isDone = rootStore.fetchState === FetchState.Done;
-    if (apiStore.isLoggedIn && !isDone && !loaderVisible) {
+    if (dataBinder.isLoggedIn && !isDone && !loaderVisible) {
       setLoaderVisible(true);
-    } else if (apiStore.isLoggedIn && isDone && loaderVisible) {
+    } else if (dataBinder.isLoggedIn && isDone && loaderVisible) {
       setTimeout(() => {
         setLoaderVisible(false);
         props.setDoneLoading();
       }, 0);
     }
   }, [
-    apiStore.hasConnectionError,
-    apiStore.isLoggedIn,
+    dataBinder.hasConnectionError,
+    dataBinder.isLoggedIn,
     loaderVisible,
     props,
     rootStore.fetchState,
@@ -78,7 +80,7 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
             <div className="sb-indicator-error-entry">
               <span>Antimony API</span>
               <Choose>
-                <When condition={apiStore.hasResourceError}>
+                <When condition={(dataBinder as RemoteDataBinder).hasAPIError}>
                   <ProgressSpinner strokeWidth="5" />
                 </When>
                 <Otherwise>
@@ -89,7 +91,9 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
             <div className="sb-indicator-error-entry">
               <span>Antimony Socket</span>
               <Choose>
-                <When condition={apiStore.hasSocketError}>
+                <When
+                  condition={(dataBinder as RemoteDataBinder).hasSocketError}
+                >
                   <ProgressSpinner strokeWidth="5" />
                 </When>
                 <Otherwise>
@@ -100,7 +104,7 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
             <div className="sb-indicator-error-entry">
               <span>External Resources</span>
               <Choose>
-                <When condition={apiStore.hasExternalError}>
+                <When condition={dataBinder.hasExternalError}>
                   <ProgressSpinner strokeWidth="5" />
                 </When>
                 <Otherwise>

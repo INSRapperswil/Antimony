@@ -24,6 +24,8 @@ interface SBDialogProps {
 
   cancelLabel?: string;
   submitLabel?: string;
+
+  onShow?: () => void;
 }
 
 const SBDialog: React.FC<SBDialogProps> = (props: SBDialogProps) => {
@@ -35,6 +37,7 @@ const SBDialog: React.FC<SBDialogProps> = (props: SBDialogProps) => {
       dismissableMask={true}
       className={props.className}
       onHide={props.onClose}
+      onShow={props.onShow}
     >
       <div className="sb-dialog-header">
         <div className="sb-dialog-header-title">

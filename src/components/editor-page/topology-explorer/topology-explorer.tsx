@@ -1,6 +1,7 @@
 import GroupEditDialog from '@sb/components/editor-page/topology-explorer/group-edit-dialog/group-edit-dialog';
 import {Choose, Otherwise, When} from '@sb/types/control';
 import {observer} from 'mobx-react-lite';
+import {Button} from 'primereact/button';
 import {ContextMenu} from 'primereact/contextmenu';
 import {MenuItem} from 'primereact/menuitem';
 import {Message} from 'primereact/message';
@@ -300,7 +301,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   ];
 
   return (
-    <div className="w-full h-full" onContextMenu={onContextMenu}>
+    <div className="sb-topology-explorer" onContextMenu={onContextMenu}>
       <Tooltip target=".tree-node" />
       <Tree
         filter
@@ -334,6 +335,11 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
       />
       <SBConfirm />
       <ContextMenu model={contextMenuModel} ref={contextMenuRef} />
+      <Button
+        className="sb-topology-explorer-add-group"
+        icon="pi pi-plus"
+        onClick={onAddGroup}
+      />
     </div>
   );
 });

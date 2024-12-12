@@ -102,14 +102,9 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
     if (nodeMeta) {
       const textToCopy = nodeMeta.webSsh + ':' + nodeMeta.port;
 
-      navigator.clipboard
-        .writeText(textToCopy)
-        .then(() => {
-          console.log('Copied to clipboard:', textToCopy);
-        })
-        .catch(err => {
-          console.error('Failed to copy to clipboard:', err);
-        });
+      navigator.clipboard.writeText(textToCopy).catch(err => {
+        console.error('Failed to copy to clipboard:', err);
+      });
     }
   }
 

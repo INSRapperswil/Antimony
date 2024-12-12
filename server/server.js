@@ -540,7 +540,7 @@ function makeTitle(value) {
 async function loadTestData() {
   store.topologies = readDataFile('topologies.yaml');
   store.labs = readDataFile('labs.yaml');
-  store.devices = readDataFile('devices.json');
+  store.devices = readDataFile('devices.yaml');
   store.groups = readDataFile('groups.yaml');
   store.users = readDataFile('users.yaml');
   store.notifications = await generateNotificationTestData(store.users);
@@ -591,8 +591,6 @@ function executeLabStep() {
   let notificationDetail = null;
   let notificationSeverity = '';
 
-  console.log('Executing lab: ', lab);
-
   switch (lab.state) {
     case 0:
       lab.state = 1;
@@ -636,7 +634,6 @@ function executeNotificationStep() {
   const notification = notificationQueue.pop();
   if (!socketMap.has(notification.userId)) return;
 
-  console.log('SEND NOTIFICATION TO FRONTEND');
   socketMap.get(notification.userId).emit('notification', notification.data);
 }
 

@@ -138,7 +138,6 @@ const CalendarDialog: React.FC<CalendarProps> = observer(
             onRangeChange={onRangeChange}
             onSelectEvent={onEventSelect}
             onDrillDown={date => {
-              console.log('in onDrillDown');
               setCurrentView('week');
               setCurrentDate(date);
             }}

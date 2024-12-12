@@ -1,6 +1,6 @@
 import {fetchResource} from '@sb/lib/utils/utils';
 import {ErrorResponse, UserCredentials} from '@sb/types/types';
-import {action, computed, observable} from 'mobx';
+import {computed, observable, runInAction} from 'mobx';
 
 export abstract class DataBinder {
   protected readonly fetchRetryTimer = 5000;
@@ -81,7 +81,6 @@ export abstract class DataBinder {
     );
   }
 
-  @action
   protected async fetchExternal<R, T>(
     path: string,
     method: string,
@@ -91,12 +90,12 @@ export abstract class DataBinder {
     const response = await fetchResource(path, method, body, requestHeaders);
 
     if (!response || !response.ok) {
-      this.hasExternalError = true;
+      runInAction(() => (this.hasExternalError = true));
       await new Promise(resolve => setTimeout(resolve, this.fetchRetryTimer));
       return this.fetchExternal(path, method, body, requestHeaders);
     }
 
-    this.hasExternalError = false;
+    runInAction(() => (this.hasExternalError = false));
     return [true, JSON.parse(await response.text()), response.headers];
   }
 }

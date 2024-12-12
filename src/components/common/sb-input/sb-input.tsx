@@ -1,4 +1,4 @@
-import React, {FocusEvent, KeyboardEvent, useState} from 'react';
+import React, {FocusEvent, forwardRef, KeyboardEvent, useState} from 'react';
 
 import classNames from 'classnames';
 import {InputText} from 'primereact/inputtext';
@@ -19,6 +19,7 @@ interface SBInputProps {
   placeholder?: string;
   keyfilter?: KeyFilterType;
   tooltip?: string;
+  autoFocus?: boolean;
 
   doubleClick?: boolean;
   explicitSubmit?: boolean;
@@ -27,7 +28,7 @@ interface SBInputProps {
   onValueSubmit?: (value: string) => string | null | void;
 }
 
-const SBInput = (props: SBInputProps) => {
+const SBInput = forwardRef<HTMLInputElement, SBInputProps>((props, ref) => {
   const [isEditing, setEditing] = useState(false);
   const [content, setContent] = useState(props.defaultValue);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -79,12 +80,14 @@ const SBInput = (props: SBInputProps) => {
         </label>
       </If>
       <InputText
+        ref={ref}
         onClick={onSingleClick}
         capture={false}
         onDoubleClick={onEnterEditing}
         onChange={e => setContent(e.target.value)}
         disabled={false}
         value={content}
+        autoFocus={props.autoFocus}
         className={classNames('sb-input', {
           'sb-input-disabled': !isEditing && props.isHidden,
           'sb-input-error': !!validationError && !!props.validationError,
@@ -101,6 +104,6 @@ const SBInput = (props: SBInputProps) => {
       />
     </div>
   );
-};
+});
 
 export default SBInput;

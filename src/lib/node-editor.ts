@@ -565,8 +565,6 @@ export class NodeEditor {
   public modifyConnection(updatedConnection: NodeConnection) {
     if (!this.editingTopology) return;
 
-    console.log('MODIFY WITH:', updatedConnection);
-
     const updatedTopology = this.editingTopology.clone();
 
     const links = updatedTopology.getIn(['topology', 'links']) as YAMLSeq;

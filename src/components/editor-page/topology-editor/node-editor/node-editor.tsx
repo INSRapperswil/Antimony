@@ -308,8 +308,6 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
     function onContext(selectData: GraphNodeClickEvent) {
       if (!contextMenuRef.current) return;
 
-      console.log('ON CONTEXY');
-
       // If connection mode is currently active, exit and don't show menu
       if (nodeConnectDestination !== null) {
         exitConnectionMode();

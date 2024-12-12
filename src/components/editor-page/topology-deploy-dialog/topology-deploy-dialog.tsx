@@ -60,10 +60,10 @@ const TopologyDeployDialog = (props: TopologyDeployDialogProps) => {
       topologyId: deployingTopology?.id,
     };
 
-    labStore.add(lab).then(error => {
-      if (error[0]) {
+    labStore.add(lab).then(([success, error]) => {
+      if (!success) {
         notificationStore.error(
-          (error[1] as ErrorResponse).message,
+          (error as ErrorResponse).message,
           'Failed to deploy topology'
         );
       } else {

@@ -84,13 +84,14 @@ export class RemoteDataBinder extends DataBinder {
       return this.fetch(path, method, body, false, skipAuthentication);
     }
 
-    this.hasAPIError = false;
+    runInAction(() => (this.hasAPIError = false));
 
     const responseBody = await response.json();
 
     if ('code' in responseBody) {
       return [false, responseBody, response.headers];
     }
+
     return [true, responseBody.payload, response.headers];
   }
 

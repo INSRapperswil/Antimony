@@ -200,8 +200,6 @@ export class TopologyManager {
   public connectNodes(nodeName1: string, nodeName2: string) {
     if (!this.editingTopology || !this.deviceStore.data) return;
 
-    console.log('CONNECT NODES');
-
     const updatedTopology = this.editingTopology.definition.clone();
     const hostInterface = this.getNextInterface(nodeName1);
     const targetInterface = this.getNextInterface(nodeName2);
@@ -223,8 +221,6 @@ export class TopologyManager {
    */
   public addNode(kind: string) {
     if (!this.editingTopology) return;
-
-    console.log('Add node:', kind);
 
     this.apply(this.editingTopology.definition, TopologyEditSource.NodeEditor);
   }

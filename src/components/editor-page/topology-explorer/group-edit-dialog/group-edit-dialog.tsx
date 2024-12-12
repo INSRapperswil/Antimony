@@ -3,7 +3,7 @@ import {useGroupStore, useNotifications} from '@sb/lib/stores/root-store';
 import {ErrorResponse, Group, GroupIn} from '@sb/types/types';
 import {isEqual} from 'lodash';
 import {Checkbox} from 'primereact/checkbox';
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
 
@@ -18,6 +18,8 @@ interface GroupEditDialogProps {
 }
 
 const GroupEditDialog = (props: GroupEditDialogProps) => {
+  const groupNameRef = useRef<HTMLInputElement>(null);
+
   const groupStore = useGroupStore();
   const notificationStore = useNotifications();
 
@@ -27,16 +29,26 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
     canWrite: props.editingGroup?.canWrite ?? false,
   });
 
+  useEffect(() => {
+    if (props.isOpen) {
+      setUpdatedGroup({
+        name: props.editingGroup?.name ?? '',
+        canRun: props.editingGroup?.canRun ?? false,
+        canWrite: props.editingGroup?.canWrite ?? false,
+      });
+    }
+  }, [props.isOpen]);
+
   async function onSubmit() {
     if (!props.editingGroup) {
       groupStore.add(updatedGroup).then(([success, error]) => {
         if (!success) {
           notificationStore.error(
             (error as ErrorResponse).message,
-            'Failed to rename group'
+            'Failed to create group'
           );
         } else {
-          notificationStore.success('Group has been renamed successfully.');
+          notificationStore.success('Group has been created successfully.');
           props.onClose();
         }
       });
@@ -56,9 +68,9 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
 
     groupStore.update(props.editingGroup.id, updatedGroup).then(error => {
       if (error) {
-        notificationStore.error(error.message, 'Failed to rename group');
+        notificationStore.error(error.message, 'Failed to edit group');
       } else {
-        notificationStore.success('Group has been renamed successfully.');
+        notificationStore.success('Group has been edited successfully.');
         props.onClose();
       }
     });
@@ -73,15 +85,18 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
       submitLabel="Apply"
       onSubmit={onSubmit}
       onCancel={props.onClose}
+      onShow={() => groupNameRef.current?.focus()}
     >
       <div className="flex gap-4 flex-column">
         <SBInput
+          ref={groupNameRef}
           onValueSubmit={value =>
             void setUpdatedGroup({
               ...updatedGroup,
               name: value,
             })
           }
+          placeholder="e.g. CN2"
           id="group-edit-name"
           defaultValue={updatedGroup.name}
           label="Group Name"

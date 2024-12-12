@@ -1,11 +1,11 @@
 import {useCallback, useEffect, useState} from 'react';
 
 import {FetchState} from '@sb/types/types';
-import {APIStore} from '@sb/lib/stores/api-store';
+import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
 
 export function useResource<T>(
   path: string,
-  apiConnector: APIStore,
+  apiConnector: DataBinder,
   defaultValue: T,
   mapper: ((input: unknown) => T) | null = null,
   isExternal = false

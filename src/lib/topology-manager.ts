@@ -1,4 +1,4 @@
-import {APIStore} from '@sb/lib/stores/api-store';
+import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
 import {isEqual, cloneDeep} from 'lodash-es';
 import {parseDocument, Scalar, YAMLMap, YAMLSeq} from 'yaml';
 
@@ -39,7 +39,7 @@ export enum TopologyEditSource {
 }
 
 export class TopologyManager {
-  private apiStore: APIStore;
+  private apiStore: DataBinder;
   private deviceStore: DeviceStore;
   private topologyStore: TopologyStore;
   private editingTopology: Topology | null = null;
@@ -50,7 +50,7 @@ export class TopologyManager {
   public readonly onEdit: Binding<TopologyEditReport> = new Binding();
 
   constructor(
-    apiStore: APIStore,
+    apiStore: DataBinder,
     topologyStore: TopologyStore,
     deviceStore: DeviceStore
   ) {

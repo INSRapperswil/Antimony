@@ -37,12 +37,12 @@ const ErrorPage = (props: ErrorPageProps) => {
       </span>
 
       <Choose>
-        <When condition={apiStore.hasNetworkError}>
+        <When condition={apiStore.hasConnectionError}>
           <div className="sb-error-network-content">
             <div className="sb-error-network-entry">
               <span>Antimony API</span>
               <Choose>
-                <When condition={apiStore.hasAPIError}>
+                <When condition={apiStore.hasResourceError}>
                   <ProgressSpinner strokeWidth="5" />
                 </When>
                 <Otherwise>

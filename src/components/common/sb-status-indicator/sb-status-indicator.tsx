@@ -22,8 +22,9 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
 
   const [loaderVisible, setLoaderVisible] = useState(false);
 
-  const errorPanelVisible = apiStore.hasNetworkError && apiStore.isLoggedIn;
-  const errorOverlayVisible = apiStore.hasNetworkError && !apiStore.isLoggedIn;
+  const errorPanelVisible = apiStore.hasConnectionError && apiStore.isLoggedIn;
+  const errorOverlayVisible =
+    apiStore.hasConnectionError && !apiStore.isLoggedIn;
 
   useEffect(() => {
     const isDone = rootStore.fetchState === FetchState.Done;
@@ -36,7 +37,7 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
       }, 0);
     }
   }, [
-    apiStore.hasNetworkError,
+    apiStore.hasConnectionError,
     apiStore.isLoggedIn,
     loaderVisible,
     props,
@@ -77,7 +78,7 @@ const SBStatusIndicator = observer((props: SBStatusIndicatorProps) => {
             <div className="sb-indicator-error-entry">
               <span>Antimony API</span>
               <Choose>
-                <When condition={apiStore.hasAPIError}>
+                <When condition={apiStore.hasResourceError}>
                   <ProgressSpinner strokeWidth="5" />
                 </When>
                 <Otherwise>

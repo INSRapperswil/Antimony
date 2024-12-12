@@ -1,12 +1,11 @@
-import {RootStore} from '@sb/lib/stores/root-store';
+import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
 import {AuthResponse, ErrorResponse, UserCredentials} from '@sb/types/types';
 import {action, computed, observable, runInAction} from 'mobx';
 import Cookies from 'js-cookie';
 import {io, Socket} from 'socket.io-client';
 
-export class APIStore {
+export class RemoteDataBinder extends DataBinder {
   private readonly apiUrl = process.env.SB_API_SERVER_URL;
-  private rootStore: RootStore;
   private authToken: string | null = null;
   private readonly retryTimer = 5000;
 
@@ -19,8 +18,8 @@ export class APIStore {
 
   public socket: Socket = io();
 
-  constructor(rootStore: RootStore) {
-    this.rootStore = rootStore;
+  constructor() {
+    super();
 
     if (Cookies.get('authToken') !== undefined) {
       this.setupConnection(
@@ -57,59 +56,8 @@ export class APIStore {
     return true;
   }
 
-  public async get<T>(
-    path: string,
-    isExternal = false,
-    skipAuthentication = false
-  ): Promise<[boolean, T | ErrorResponse, Headers | null]> {
-    return this.fetch<void, T>(
-      path,
-      'GET',
-      undefined,
-      isExternal,
-      skipAuthentication
-    );
-  }
-
-  public async delete<T>(
-    path: string,
-    isExternal = false,
-    skipAuthentication = false
-  ): Promise<[boolean, T | ErrorResponse, Headers | null]> {
-    return this.fetch<void, T>(
-      path,
-      'DELETE',
-      undefined,
-      isExternal,
-      skipAuthentication
-    );
-  }
-
-  public async post<R, T>(
-    path: string,
-    body: R,
-    isExternal = false,
-    skipAuthentication = false
-  ): Promise<[boolean, T | ErrorResponse, Headers | null]> {
-    return this.fetch<R, T>(path, 'POST', body, isExternal, skipAuthentication);
-  }
-
-  public async patch<R, T>(
-    path: string,
-    body: R,
-    isExternal = false,
-    skipAuthentication = false
-  ): Promise<[boolean, T | ErrorResponse, Headers | null]> {
-    return this.fetch<R, T>(
-      path,
-      'PATCH',
-      body,
-      isExternal,
-      skipAuthentication
-    );
-  }
-
-  private async fetch<R, T>(
+  protected async fetch<R, T>(
+    url: string,
     path: string,
     method: string,
     body?: R,
@@ -124,7 +72,7 @@ export class APIStore {
 
     try {
       if (isExternal) {
-        response = await fetch(path, {
+        response = await fetch(url + path, {
           method: method,
           body: JSON.stringify(body),
         });
@@ -209,10 +157,6 @@ export class APIStore {
         this.isLoggedIn = true;
       });
     });
-
-    // this.socket.on('disconnect', () => {
-    //   runInAction(() => (this.hasSocketError = true));
-    // });
   }
 
   private handleNetworkError(status: number | undefined, isExternal: boolean) {

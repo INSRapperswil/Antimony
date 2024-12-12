@@ -1,4 +1,5 @@
-import {APIStore} from '@sb/lib/stores/api-store';
+import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
+import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
 import {DeviceStore} from '@sb/lib/stores/device-store';
 
 import {GroupStore} from '@sb/lib/stores/group-store';
@@ -11,7 +12,7 @@ import {createContext, useContext} from 'react';
 import {TopologyStore} from '@sb/lib/stores/topology-store';
 
 export class RootStore {
-  _apiConnectorStore: APIStore;
+  _apiConnectorStore: DataBinder;
   _topologyStore: TopologyStore;
   _labStore: LabStore;
   _calendarLabStore: LabStore;
@@ -21,7 +22,7 @@ export class RootStore {
   _notificationsStore: NotificationStore;
 
   constructor() {
-    this._apiConnectorStore = new APIStore(this);
+    this._apiConnectorStore = new RemoteDataBinder();
     this._schemaStore = new SchemaStore(this);
     this._deviceStore = new DeviceStore(this);
     this._topologyStore = new TopologyStore(this);

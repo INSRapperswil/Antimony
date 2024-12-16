@@ -1,6 +1,7 @@
-import {ClabSchema, DefaultFetchReport, FetchReport} from '@sb/types/types';
 import {action, observable} from 'mobx';
+
 import {DataStore} from '@sb/lib/stores/data-store';
+import {ClabSchema, DefaultFetchReport, FetchReport} from '@sb/types/types';
 
 export class SchemaStore extends DataStore<ClabSchema, void, ClabSchema> {
   @observable accessor fetchReport: FetchReport = DefaultFetchReport;

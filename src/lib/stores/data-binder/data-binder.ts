@@ -1,6 +1,7 @@
+import {computed, observable, runInAction} from 'mobx';
+
 import {fetchResource} from '@sb/lib/utils/utils';
 import {ErrorResponse, UserCredentials} from '@sb/types/types';
-import {computed, observable, runInAction} from 'mobx';
 
 export abstract class DataBinder {
   protected readonly fetchRetryTimer = 5000;

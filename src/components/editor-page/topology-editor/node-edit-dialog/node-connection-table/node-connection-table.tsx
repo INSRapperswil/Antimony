@@ -1,13 +1,14 @@
-import {useDeviceStore, useTopologyStore} from '@sb/lib/stores/root-store';
-import {NodeConnection} from '@sb/types/types';
-import {Image} from 'primereact/image';
-import {InputNumber, InputNumberChangeEvent} from 'primereact/inputnumber';
 import React from 'react';
 
+import {Image} from 'primereact/image';
+import {InputNumber, InputNumberChangeEvent} from 'primereact/inputnumber';
+
 import {NodeEditor} from '@sb/lib/node-editor';
+import {NodeConnection} from '@sb/types/types';
+import {Choose, Otherwise, When} from '@sb/types/control';
+import {useDeviceStore, useTopologyStore} from '@sb/lib/stores/root-store';
 
 import './node-connection-table.sass';
-import {Choose, Otherwise, When} from '@sb/types/control';
 
 interface NodeConnectionTableProps {
   nodeEditor: NodeEditor;

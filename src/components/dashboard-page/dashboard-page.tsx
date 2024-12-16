@@ -1,27 +1,3 @@
-import useResizeObserver from '@react-hook/resize-observer';
-import FilterDialog from '@sb/components/dashboard-page/filter-dialog/filter-dialog';
-import LabDialog from '@sb/components/dashboard-page/lab-dialog/lab-dialog';
-import ReservationDialog from '@sb/components/dashboard-page/reservation-dialog/reservation-dialog';
-import {
-  useGroupStore,
-  useLabStore,
-  useNotifications,
-} from '@sb/lib/stores/root-store';
-import {Choose, If, Otherwise, When} from '@sb/types/control';
-
-import './dashboard-page.sass';
-
-import {FetchState, Lab, LabState} from '@sb/types/types';
-import classNames from 'classnames';
-import {observer} from 'mobx-react-lite';
-import {Button} from 'primereact/button';
-
-import {Chip} from 'primereact/chip';
-import {IconField} from 'primereact/iconfield';
-import {InputIcon} from 'primereact/inputicon';
-import {InputText} from 'primereact/inputtext';
-import {OverlayPanel} from 'primereact/overlaypanel';
-import {Paginator} from 'primereact/paginator';
 import React, {
   MouseEvent,
   useCallback,
@@ -29,8 +5,32 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import {useSearchParams} from 'react-router';
+
+import classNames from 'classnames';
+import {Chip} from 'primereact/chip';
 import {Image} from 'primereact/image';
+import {observer} from 'mobx-react-lite';
+import {Button} from 'primereact/button';
+import {useSearchParams} from 'react-router';
+import {IconField} from 'primereact/iconfield';
+import {InputIcon} from 'primereact/inputicon';
+import {InputText} from 'primereact/inputtext';
+import {Paginator} from 'primereact/paginator';
+import {OverlayPanel} from 'primereact/overlaypanel';
+
+import {
+  useGroupStore,
+  useLabStore,
+  useNotifications,
+} from '@sb/lib/stores/root-store';
+import {FetchState, Lab, LabState} from '@sb/types/types';
+import useResizeObserver from '@react-hook/resize-observer';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
+import LabDialog from '@sb/components/dashboard-page/lab-dialog/lab-dialog';
+import LabFilterDialog from '@sb/components/dashboard-page/lab-filter-dialog/lab-filter-dialog';
+import ReservationDialog from '@sb/components/dashboard-page/reservation-dialog/reservation-dialog';
+
+import './dashboard-page.sass';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
@@ -178,7 +178,7 @@ const DashboardPage: React.FC = observer(() => {
         >
           <i className="pi pi-filter" />
         </span>
-        <FilterDialog popOverRef={popOver} />
+        <LabFilterDialog popOverRef={popOver} />
       </div>
       <div style={{display: 'flex', margin: '0 16px', gap: '5px'}}>
         {labStore.stateFilter.map((state, index) => (

@@ -1,9 +1,10 @@
-import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
-import {fetchResource} from '@sb/lib/utils/utils';
-import {AuthResponse, ErrorResponse, UserCredentials} from '@sb/types/types';
-import {action, computed, observable, runInAction} from 'mobx';
 import Cookies from 'js-cookie';
 import {io, Socket} from 'socket.io-client';
+import {action, computed, observable, runInAction} from 'mobx';
+
+import {fetchResource} from '@sb/lib/utils/utils';
+import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
+import {AuthResponse, ErrorResponse, UserCredentials} from '@sb/types/types';
 
 export class RemoteDataBinder extends DataBinder {
   private readonly apiUrl = process.env.SB_API_SERVER_URL ?? 'localhost';
@@ -24,7 +25,7 @@ export class RemoteDataBinder extends DataBinder {
     if (Cookies.get('authToken') !== undefined) {
       this.setupConnection(
         Cookies.get('authToken')!,
-        Boolean(Cookies.get('isAdmin')) ?? false
+        JSON.parse(Cookies.get('isAdmin') || 'false')
       );
     }
   }

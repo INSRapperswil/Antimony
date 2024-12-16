@@ -1,10 +1,17 @@
-import MonacoWrapper, {MonacoWrapperRef} from './monaco-wrapper/monaco-wrapper';
-import NodeEditDialog from './node-edit-dialog/node-edit-dialog';
-import NodeEditor from './node-editor/node-editor';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+
+import FileSaver from 'file-saver';
+import {Image} from 'primereact/image';
+import {Badge} from 'primereact/badge';
+import {Button} from 'primereact/button';
+import {Splitter, SplitterPanel} from 'primereact/splitter';
+
+import {Topology, uuid4} from '@sb/types/types';
 import {
-  SimulationConfig,
-  SimulationConfigContext,
-} from './node-editor/state/simulation-config';
+  TopologyEditReport,
+  TopologyEditSource,
+  TopologyManager,
+} from '@sb/lib/topology-manager';
 import {
   useGroupStore,
   useNotifications,
@@ -12,23 +19,15 @@ import {
   useTopologyStore,
 } from '@sb/lib/stores/root-store';
 import {
-  TopologyEditReport,
-  TopologyEditSource,
-  TopologyManager,
-} from '@sb/lib/topology-manager';
+  SimulationConfig,
+  SimulationConfigContext,
+} from './node-editor/state/simulation-config';
+import NodeEditor from './node-editor/node-editor';
 import {Choose, If, Otherwise, When} from '@sb/types/control';
-
-import {Topology, uuid4} from '@sb/types/types';
-
-import FileSaver from 'file-saver';
-
-import {Badge} from 'primereact/badge';
-import {Button} from 'primereact/button';
-import {Splitter, SplitterPanel} from 'primereact/splitter';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import NodeEditDialog from './node-edit-dialog/node-edit-dialog';
+import MonacoWrapper, {MonacoWrapperRef} from './monaco-wrapper/monaco-wrapper';
 
 import './topology-editor.sass';
-import {Image} from 'primereact/image';
 
 export enum ValidationState {
   Working,

@@ -1,32 +1,32 @@
-import GroupEditDialog from '@sb/components/editor-page/topology-explorer/group-edit-dialog/group-edit-dialog';
-import {Choose, Otherwise, When} from '@sb/types/control';
-import {observer} from 'mobx-react-lite';
-import {Button} from 'primereact/button';
-import {ContextMenu} from 'primereact/contextmenu';
-import {MenuItem} from 'primereact/menuitem';
-import {Message} from 'primereact/message';
 import React, {MouseEvent, useEffect, useMemo, useRef, useState} from 'react';
 
-import {Tooltip} from 'primereact/tooltip';
-import {TreeNode} from 'primereact/treenode';
 import {
   Tree,
   TreeEventNodeEvent,
   TreeExpandedKeysType,
   TreeSelectionEvent,
 } from 'primereact/tree';
+import {observer} from 'mobx-react-lite';
+import {Button} from 'primereact/button';
+import {Message} from 'primereact/message';
+import {Tooltip} from 'primereact/tooltip';
+import {TreeNode} from 'primereact/treenode';
+import {MenuItem} from 'primereact/menuitem';
+import {ContextMenu} from 'primereact/contextmenu';
 
-import {Group, Topology, uuid4} from '@sb/types/types';
-import SBConfirm from '@sb/components/common/sb-confirm/sb-confirm';
 import {
   useGroupStore,
   useNotifications,
   useTopologyStore,
 } from '@sb/lib/stores/root-store';
-import ExplorerTreeNode from '@sb/components/editor-page/topology-explorer/explorer-tree-node/explorer-tree-node';
+import {Group, Topology, uuid4} from '@sb/types/types';
+import {Choose, Otherwise, When} from '@sb/types/control';
+import SBConfirm from '@sb/components/common/sb-confirm/sb-confirm';
+import GroupEditDialog from './group-edit-dialog/group-edit-dialog';
+import ExplorerTreeNode from './explorer-tree-node/explorer-tree-node';
+import TopologyAddDialog from '@sb/components/editor-page/topology-editor/topology-add-dialog/topology-add-dialog';
 
 import './topology-explorer.sass';
-import TopologyAddDialog from '@sb/components/editor-page/topology-editor/topology-add-dialog/topology-add-dialog';
 
 interface TopologyBrowserProps {
   selectedTopologyId?: string | null;

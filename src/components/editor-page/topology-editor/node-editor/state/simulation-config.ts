@@ -1,10 +1,10 @@
-import Cookies from 'js-cookie';
 import {createContext, useContext} from 'react';
 
+import Cookies from 'js-cookie';
 import {action, autorun, computed, observable} from 'mobx';
 
+import {NetworkOptions} from '../network.conf';
 import * as CookieParser from '@sb/lib/utils/cookie-parser';
-import {NetworkOptions} from '@sb/components/editor-page/topology-editor/node-editor/network.conf';
 
 export class SimulationConfig {
   @observable accessor liveSimulation: boolean = false;

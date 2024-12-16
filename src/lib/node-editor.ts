@@ -1,6 +1,7 @@
 import _, {isEqual} from 'lodash';
-import objectPath from 'object-path';
 import {validate} from 'jsonschema';
+import objectPath from 'object-path';
+import {YAMLMap, YAMLSeq} from 'yaml';
 
 import {
   ClabSchema,
@@ -16,7 +17,6 @@ import {
 import {Binding} from '@sb/lib/utils/binding';
 import {arrayOf, filterSchemaEnum} from '@sb/lib/utils/utils';
 import {NotificationStore} from '@sb/lib/stores/notification-store';
-import {YAMLMap, YAMLSeq} from 'yaml';
 
 /*
  * Object used by the view to communicate with the Node Editor.

@@ -26,11 +26,24 @@ const SBDock: React.FC = observer(() => {
   return (
     <div className="flex align-items-stretch justify-content-between sb-card sb-dock">
       <div className="flex align-items-center gap-2">
-        <div className="sb-logo-tab sb-corner-tab">
+        <div
+          className="sb-logo-tab sb-corner-tab"
+          onClick={() => navigate('/')}
+        >
           <Image src="/assets/icons/favicon-dark.png" width="60px" />
         </div>
-        <Button label="Dashboard" outlined onClick={() => navigate('/')} />
         <Button
+          icon={
+            <span className="material-symbols-outlined">space_dashboard</span>
+          }
+          className="sb-dock-page-button"
+          label="Dashboard"
+          outlined
+          onClick={() => navigate('/')}
+        />
+        <Button
+          icon={<span className="material-symbols-outlined">border_color</span>}
+          className="sb-dock-page-button"
           label="Topology Editor"
           outlined
           onClick={() => navigate('/editor')}
@@ -63,10 +76,10 @@ const SBDock: React.FC = observer(() => {
         />
         <Button
           outlined
+          size="large"
           icon="pi pi-sign-out"
-          label="Log Out"
-          className="flex gap-1"
           onClick={() => dataBinder.logout()}
+          tooltip="Log Out"
           tooltipOptions={{position: 'bottom'}}
         />
       </div>

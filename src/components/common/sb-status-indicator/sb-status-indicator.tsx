@@ -1,16 +1,16 @@
-import ErrorPage from '@sb/components/error-page/error-page';
-import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
-
-import {useDataBinder, useRootStore} from '@sb/lib/stores/root-store';
-import {Choose, Otherwise, When} from '@sb/types/control';
-import {FetchState} from '@sb/types/types';
-import classNames from 'classnames';
-
-import {observer} from 'mobx-react-lite';
-import {ProgressSpinner} from 'primereact/progressspinner';
 import React, {useEffect, useState} from 'react';
 
+import classNames from 'classnames';
+import {observer} from 'mobx-react-lite';
 import {DNA} from 'react-loader-spinner';
+import {ProgressSpinner} from 'primereact/progressspinner';
+
+import {FetchState} from '@sb/types/types';
+import {Choose, Otherwise, When} from '@sb/types/control';
+import ErrorPage from '@sb/components/error-page/error-page';
+import {useDataBinder, useRootStore} from '@sb/lib/stores/root-store';
+import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
+
 import './sb-status-indicator.sass';
 
 interface SBStatusIndicatorProps {

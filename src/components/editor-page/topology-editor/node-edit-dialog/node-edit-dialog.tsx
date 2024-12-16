@@ -1,25 +1,25 @@
-import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
-import SBDropdown from '@sb/components/common/sb-dropdown/sb-dropdown';
-import SBInput from '@sb/components/common/sb-input/sb-input';
-import NodeConnectionTable from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-connection-table/node-connection-table';
-import NodePropertyTable from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-property-table/node-property-table';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import './node-edit-dialog.sass';
-import {NodeEditor} from '@sb/lib/node-editor';
+import objectPath from 'object-path';
+import {Accordion, AccordionTab} from 'primereact/accordion';
+
 import {
   useDeviceStore,
   useNotifications,
   useSchemaStore,
   useTopologyStore,
 } from '@sb/lib/stores/root-store';
-import {TopologyEditSource} from '@sb/lib/topology-manager';
-
 import {If} from '@sb/types/control';
+import {NodeEditor} from '@sb/lib/node-editor';
+import {TopologyEditSource} from '@sb/lib/topology-manager';
+import SBInput from '@sb/components/common/sb-input/sb-input';
 import {TopologyDefinition, YAMLDocument} from '@sb/types/types';
+import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
+import SBDropdown from '@sb/components/common/sb-dropdown/sb-dropdown';
+import NodePropertyTable from './node-property-table/node-property-table';
+import NodeConnectionTable from './node-connection-table/node-connection-table';
 
-import {Accordion, AccordionTab} from 'primereact/accordion';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import objectPath from 'object-path';
+import './node-edit-dialog.sass';
 
 interface NodeEditDialogProps {
   editingTopology: YAMLDocument<TopologyDefinition> | null;

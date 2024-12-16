@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {IdType} from 'vis-network';
 import {Document, ToJSOptions} from 'yaml';
 

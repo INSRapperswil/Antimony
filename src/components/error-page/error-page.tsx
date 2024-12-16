@@ -1,12 +1,14 @@
-import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
-import {useDataBinder} from '@sb/lib/stores/root-store';
-import {Choose, Otherwise, When} from '@sb/types/control';
-import classNames from 'classnames';
-import {ProgressSpinner} from 'primereact/progressspinner';
 import React, {useEffect} from 'react';
 
-import './error-page.sass';
+import classNames from 'classnames';
 import {useRouteError} from 'react-router';
+import {ProgressSpinner} from 'primereact/progressspinner';
+
+import {useDataBinder} from '@sb/lib/stores/root-store';
+import {Choose, Otherwise, When} from '@sb/types/control';
+import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
+
+import './error-page.sass';
 
 interface ErrorPageProps {
   code?: string;

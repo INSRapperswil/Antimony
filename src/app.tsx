@@ -1,14 +1,10 @@
-import SBConfirm, {
-  SBConfirmRef,
-} from '@sb/components/common/sb-confirm/sb-confirm';
-import SBDock from '@sb/components/common/sb-dock/sb-dock';
-import ErrorPage from '@sb/components/error-page/error-page';
-import SBLogin from '@sb/components/common/sb-login/sb-login';
-import EditorPage from '@sb/components/editor-page/editor-page';
-import DashboardPage from '@sb/components/dashboard-page/dashboard-page';
-import SBStatusIndicator from '@sb/components/common/sb-status-indicator/sb-status-indicator';
+import React, {useEffect, useRef, useState} from 'react';
 
-import './app.sass';
+import classNames from 'classnames';
+import {Toast} from 'primereact/toast';
+import {observer} from 'mobx-react-lite';
+import {Route, Routes} from 'react-router';
+import {PrimeReactProvider} from 'primereact/api';
 
 import {
   RootStoreContext,
@@ -16,15 +12,18 @@ import {
   useNotifications,
   useRootStore,
 } from '@sb/lib/stores/root-store';
+import SBConfirm, {
+  SBConfirmRef,
+} from '@sb/components/common/sb-confirm/sb-confirm';
+import SBDock from '@sb/components/common/sb-dock/sb-dock';
+import ErrorPage from '@sb/components/error-page/error-page';
+import SBLogin from '@sb/components/common/sb-login/sb-login';
 import {Choose, If, Otherwise, When} from '@sb/types/control';
-import classNames from 'classnames';
-import {observer} from 'mobx-react-lite';
-import {PrimeReactProvider} from 'primereact/api';
+import EditorPage from '@sb/components/editor-page/editor-page';
+import DashboardPage from '@sb/components/dashboard-page/dashboard-page';
+import SBStatusIndicator from '@sb/components/common/sb-status-indicator/sb-status-indicator';
 
-import {Toast} from 'primereact/toast';
-import React, {useEffect, useRef, useState} from 'react';
-
-import {Route, Routes} from 'react-router';
+import './app.sass';
 import 'primereact/resources/themes/lara-dark-blue/theme.css';
 
 const App: React.FC = observer(() => {

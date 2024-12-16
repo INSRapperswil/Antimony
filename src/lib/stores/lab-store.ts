@@ -1,7 +1,8 @@
+import {action, computed, observable, observe} from 'mobx';
+
 import {DataStore} from '@sb/lib/stores/data-store';
 import {RootStore} from '@sb/lib/stores/root-store';
 import {Lab, LabIn, LabState, NodeMeta} from '@sb/types/types';
-import {action, computed, observable, observe} from 'mobx';
 import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
 
 export class LabStore extends DataStore<Lab, LabIn, Lab> {

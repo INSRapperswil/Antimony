@@ -10,7 +10,7 @@ import {OverlayPanel} from 'primereact/overlaypanel';
 
 import {If} from '@sb/types/control';
 import {useNotifications} from '@sb/lib/stores/root-store';
-import {ToggleSet} from '@sb/lib/utils/toggle-map';
+import {ToggleSet} from '@sb/lib/utils/toggle-set';
 import {Notification, Severity, SeverityMapping} from '@sb/types/types';
 
 import './notification-panel.sass';

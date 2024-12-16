@@ -1,38 +1,22 @@
-import {observer} from 'mobx-react-lite';
 import React from 'react';
 
+import classNames from 'classnames';
 import {Chip} from 'primereact/chip';
+import {observer} from 'mobx-react-lite';
+import {OverlayPanel} from 'primereact/overlaypanel';
 
 import {LabState} from '@sb/types/types';
-
-import './filter-dialog.sass';
-import {OverlayPanel} from 'primereact/overlaypanel';
-import classNames from 'classnames';
 import {useGroupStore, useLabStore} from '@sb/lib/stores/root-store';
 
+import './lab-filter-dialog.sass';
+
 interface FilterDialogProps {
-  // filters: LabState[];
-  // setFilters: Function;
-  // groups: string[];
-  // setGroups: Function;
   popOverRef: React.RefObject<OverlayPanel>;
 }
-const FilterDialog: React.FC<FilterDialogProps> = observer(
+const LabFilterDialog: React.FC<FilterDialogProps> = observer(
   (props: FilterDialogProps) => {
-    // const [tempFilters, setTempFilters] = useState<LabState[]>(props.filters);
-    // const [tempGroups, setTempGroups] = useState<string[]>(props.groups);
     const labStore = useLabStore();
     const groupStore = useGroupStore();
-
-    // useEffect(() => {
-    //   setTempFilters(props.filters);
-    // }, [props.filters]);
-    //
-    // useEffect(() => {
-    //   if (props.groups.length > 0) {
-    //     setTempGroups(props.groups);
-    //   }
-    // }, [props.groups]);
 
     const toggleStateFilter = (state: LabState) => {
       if (labStore.stateFilter.includes(state)) {
@@ -107,4 +91,4 @@ const FilterDialog: React.FC<FilterDialogProps> = observer(
   }
 );
 
-export default FilterDialog;
+export default LabFilterDialog;

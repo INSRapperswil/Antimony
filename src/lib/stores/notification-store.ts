@@ -1,20 +1,21 @@
-import {
-  SBConfirmOpenProps,
-  SBConfirmRef,
-} from '@sb/components/common/sb-confirm/sb-confirm';
-import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
-import {RootStore} from '@sb/lib/stores/root-store';
+import React from 'react';
+
+import {Toast} from 'primereact/toast';
+import {action, computed, observable} from 'mobx';
+
 import {
   Notification,
   NotificationOut,
   Severity,
   SeverityMapping,
 } from '@sb/types/types';
-import {action, computed, observable} from 'mobx';
-
-import {Toast} from 'primereact/toast';
-import React from 'react';
+import {RootStore} from '@sb/lib/stores/root-store';
 import {DataStore} from '@sb/lib/stores/data-store';
+import {
+  SBConfirmOpenProps,
+  SBConfirmRef,
+} from '@sb/components/common/sb-confirm/sb-confirm';
+import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
 
 export class NotificationStore extends DataStore<
   Notification,

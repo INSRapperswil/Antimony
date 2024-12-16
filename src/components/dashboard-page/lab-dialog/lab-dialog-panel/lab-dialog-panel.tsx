@@ -1,7 +1,8 @@
+import React from 'react';
+
 import {Lab} from '@sb/types/types';
 import {Button} from 'primereact/button';
 import {Checkbox} from 'primereact/checkbox';
-import React from 'react';
 
 import './lab-dialog-panel.sass';
 

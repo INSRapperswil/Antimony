@@ -1,10 +1,3 @@
-import SimulationPanel from '@sb/components/editor-page/topology-editor/node-editor/simulation-panel/simulation-panel';
-import {useSimulationConfig} from '@sb/components/editor-page/topology-editor/node-editor/state/simulation-config';
-
-import NodeToolbar from '@sb/components/editor-page/topology-editor/node-editor/toolbar/node-toolbar';
-import {observer} from 'mobx-react-lite';
-import {MenuItem} from 'primereact/menuitem';
-import {SpeedDial} from 'primereact/speeddial';
 import React, {
   MouseEvent,
   useCallback,
@@ -14,21 +7,27 @@ import React, {
   useState,
 } from 'react';
 
-import {IdType, Network} from 'vis-network';
-import {DataSet} from 'vis-data/peer';
-import Graph from 'react-graph-vis';
 import {Node, Position} from 'vis';
-import {NetworkOptions} from './network.conf';
+import Graph from 'react-graph-vis';
+import {DataSet} from 'vis-data/peer';
+import {observer} from 'mobx-react-lite';
+import {IdType, Network} from 'vis-network';
+import {MenuItem} from 'primereact/menuitem';
+import {SpeedDial} from 'primereact/speeddial';
 import {ContextMenu} from 'primereact/contextmenu';
 import useResizeObserver from '@react-hook/resize-observer';
+import {Data} from 'vis-network/declarations/network/Network';
 
+import {NetworkOptions} from './network.conf';
+import NodeToolbar from './toolbar/node-toolbar';
+import {drawGrid, generateGraph} from '@sb/lib/utils/utils';
+import {useSimulationConfig} from './state/simulation-config';
 import {GraphNodeClickEvent, Topology} from '@sb/types/types';
+import SimulationPanel from './simulation-panel/simulation-panel';
 import {useDeviceStore, useTopologyStore} from '@sb/lib/stores/root-store';
 
 import 'vis-network/styles/vis-network.css';
 import './node-editor.sass';
-import {drawGrid, generateGraph} from '@sb/lib/utils/utils';
-import {Data} from 'vis-network/declarations/network/Network';
 
 interface NodeEditorProps {
   openTopology: Topology | null;

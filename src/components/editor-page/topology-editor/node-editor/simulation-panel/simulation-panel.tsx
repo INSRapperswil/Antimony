@@ -1,8 +1,8 @@
+import React from 'react';
+
 import classNames from 'classnames';
 import {Button} from 'primereact/button';
 import {Slider} from 'primereact/slider';
-import React from 'react';
-
 import {observer} from 'mobx-react-lite';
 import {Divider} from 'primereact/divider';
 import {Checkbox} from 'primereact/checkbox';
@@ -10,7 +10,7 @@ import {Checkbox} from 'primereact/checkbox';
 import {
   SimulationConfig,
   useSimulationConfig,
-} from '@sb/components/editor-page/topology-editor/node-editor/state/simulation-config';
+} from '../state/simulation-config';
 
 import './simulation-panel.sass';
 

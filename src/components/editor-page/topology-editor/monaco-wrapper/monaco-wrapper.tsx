@@ -1,17 +1,3 @@
-import {Monaco} from '@monaco-editor/react';
-import {ValidationState} from '@sb/components/editor-page/topology-editor/topology-editor';
-import {useSchemaStore, useTopologyStore} from '@sb/lib/stores/root-store';
-import {TopologyEditReport, TopologyEditSource} from '@sb/lib/topology-manager';
-
-import {Choose, If, Otherwise, When} from '@sb/types/control';
-import {Topology} from '@sb/types/types';
-import {isEqual} from 'lodash';
-
-import {toJS} from 'mobx';
-import {observer} from 'mobx-react-lite';
-import {editor} from 'monaco-editor';
-import {configureMonacoYaml} from 'monaco-yaml';
-import {Tooltip} from 'primereact/tooltip';
 import React, {
   forwardRef,
   useCallback,
@@ -19,9 +5,23 @@ import React, {
   useImperativeHandle,
   useRef,
 } from 'react';
+
+import {toJS} from 'mobx';
+import {isEqual} from 'lodash-es';
+import {editor} from 'monaco-editor';
+import {observer} from 'mobx-react-lite';
+import {Tooltip} from 'primereact/tooltip';
 import {monaco} from 'react-monaco-editor';
+import {Monaco} from '@monaco-editor/react';
+import {configureMonacoYaml} from 'monaco-yaml';
 import MonacoEditor from 'react-monaco-editor/lib/editor';
 import {AntimonyTheme, MonacoOptions} from './monaco.conf';
+
+import {Topology} from '@sb/types/types';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
+import {useSchemaStore, useTopologyStore} from '@sb/lib/stores/root-store';
+import {TopologyEditReport, TopologyEditSource} from '@sb/lib/topology-manager';
+import {ValidationState} from '@sb/components/editor-page/topology-editor/topology-editor';
 
 import './monaco-wrapper.sass';
 
@@ -53,13 +53,23 @@ const MonacoWrapper = observer(
   forwardRef<MonacoWrapperRef, MonacoWrapperProps>((props, ref) => {
     const textModelRef = useRef<editor.ITextModel | null>(null);
     const monacoEditorRef = useRef<Monaco | null>(null);
+    const currentlyOpenTopology = useRef<string | null>(null);
 
     const schemaStore = useSchemaStore();
     const topologyStore = useTopologyStore();
 
     const onTopologyOpen = useCallback((topology: Topology) => {
+      /*
+       * Don't replace the current model if the topology ID has not changed. This happens whenever
+       * a topology is saved a reloaded automatically.
+       */
+      if (currentlyOpenTopology.current === topology.id) {
+        return;
+      }
+
       if (textModelRef.current) {
         textModelRef.current.setValue(topology.definition.toString());
+        currentlyOpenTopology.current = topology.id;
       }
     }, []);
 
@@ -79,7 +89,7 @@ const MonacoWrapper = observer(
 
       if (!isEqual(updatedContentStripped, existingContentStripped)) {
         /*
-         * For some reason the react-editor-library adds multiple unto stops
+         * For some reason the react-monaco-editor library adds multiple unto stops
          * to the history stack whenever the content is updated. This messes
          * up consecutive undos and redos. Therefore, we update the content
          * manually and don't use the library's built-in functionality.

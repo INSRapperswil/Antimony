@@ -1,5 +1,6 @@
-import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
-import {generateUuidv4} from '@sb/lib/utils/utils';
+import Cookies from 'js-cookie';
+import {computed, observable} from 'mobx';
+
 import {
   DeviceInfo,
   ErrorResponse,
@@ -9,10 +10,9 @@ import {
   TopologyOut,
   uuid4,
 } from '@sb/types/types';
-import Cookies from 'js-cookie';
-import {computed, observable} from 'mobx';
-
+import {generateUuidv4} from '@sb/lib/utils/utils';
 import devices from '@sb/../local-data/devices.json';
+import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
 
 export class CookieDataBinder extends DataBinder {
   @observable accessor isLoggedIn = true;

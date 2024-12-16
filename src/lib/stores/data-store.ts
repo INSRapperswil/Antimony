@@ -1,6 +1,5 @@
 import {action, computed, observable, observe} from 'mobx';
 
-import {RootStore} from '@sb/lib/stores/root-store';
 import {
   DefaultFetchReport,
   ErrorResponse,
@@ -9,6 +8,7 @@ import {
   PostResponse,
   uuid4,
 } from '@sb/types/types';
+import {RootStore} from '@sb/lib/stores/root-store';
 
 export abstract class DataStore<T, I, O> {
   protected rootStore: RootStore;

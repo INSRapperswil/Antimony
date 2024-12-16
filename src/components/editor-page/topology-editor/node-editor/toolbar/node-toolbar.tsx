@@ -1,11 +1,13 @@
-import {useSimulationConfig} from '@sb/components/editor-page/topology-editor/node-editor/state/simulation-config';
-import {useTopologyStore} from '@sb/lib/stores/root-store';
+import React from 'react';
+
 import classNames from 'classnames';
 import {ExpandLines} from 'iconoir-react';
 import {observer} from 'mobx-react-lite';
 import {Button} from 'primereact/button';
 import {Divider} from 'primereact/divider';
-import React from 'react';
+
+import {useTopologyStore} from '@sb/lib/stores/root-store';
+import {useSimulationConfig} from '../state/simulation-config';
 
 import './node-toolbar.sass';
 

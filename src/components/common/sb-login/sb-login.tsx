@@ -1,24 +1,23 @@
-import {ParticlesOptions} from '@sb/components/common/sb-login/particles.conf';
-import {useDataBinder} from '@sb/lib/stores/root-store';
-import {If} from '@sb/types/control';
-import {loadLinksPreset} from '@tsparticles/preset-links';
-import Particles, {initParticlesEngine} from '@tsparticles/react';
+import React, {ChangeEvent, FormEvent, useEffect, useState} from 'react';
+
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
 import {Button} from 'primereact/button';
-import {Checkbox} from 'primereact/checkbox';
-import {InputText} from 'primereact/inputtext';
 import {Message} from 'primereact/message';
 import {Password} from 'primereact/password';
-import React, {ChangeEvent, FormEvent, useEffect, useState} from 'react';
+import {Checkbox} from 'primereact/checkbox';
+import {InputText} from 'primereact/inputtext';
+import {loadLinksPreset} from '@tsparticles/preset-links';
+import Particles, {initParticlesEngine} from '@tsparticles/react';
+
+import {If} from '@sb/types/control';
+import {useDataBinder} from '@sb/lib/stores/root-store';
+import {ParticlesOptions} from '@sb/components/common/sb-login/particles.conf';
 
 import './sb-login.sass';
 
 const SBLogin = observer(() => {
   const [particlesReady, setParticlesReady] = useState(false);
-
-  // This doesn't render the overlay at all if the user is already logged in
-  // const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
 
   const dataBinder = useDataBinder();
 
@@ -26,8 +25,6 @@ const SBLogin = observer(() => {
     void initParticlesEngine(async engine => {
       await loadLinksPreset(engine);
     }).then(() => setParticlesReady(true));
-
-    // setAlreadyLoggedIn(Cookies.get('authToken') !== undefined);
   }, []);
 
   const LoginForm = () => {

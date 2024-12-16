@@ -1,17 +1,16 @@
-import {useNotifications, useTopologyStore} from '@sb/lib/stores/root-store';
-
-import {Topology, uuid4} from '@sb/types/types';
+import React, {useCallback, useEffect, useState} from 'react';
 
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
-import React, {useCallback, useEffect, useState} from 'react';
-
 import {useSearchParams} from 'react-router';
 
+import {Topology, uuid4} from '@sb/types/types';
+import TopologyEditor from './topology-editor/topology-editor';
+import TopologyExplorer from './topology-explorer/topology-explorer';
+import {useNotifications, useTopologyStore} from '@sb/lib/stores/root-store';
+import TopologyDeployDialog from './topology-deploy-dialog/topology-deploy-dialog';
+
 import './editor-page.sass';
-import TopologyDeployDialog from '@sb/components/editor-page/topology-deploy-dialog/topology-deploy-dialog';
-import TopologyExplorer from '@sb/components/editor-page/topology-explorer/topology-explorer';
-import TopologyEditor from '@sb/components/editor-page/topology-editor/topology-editor';
 
 const EditorPage: React.FC = observer(() => {
   const [isMaximized, setMaximized] = useState(false);

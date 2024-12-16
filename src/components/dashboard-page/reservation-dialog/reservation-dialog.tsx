@@ -1,12 +1,14 @@
 import React, {useState} from 'react';
-import {Lab} from '@sb/types/types';
+
 import {Calendar} from 'primereact/calendar';
+import {InputText} from 'primereact/inputtext';
+import {Nullable} from 'primereact/ts-helpers';
+
+import {Lab} from '@sb/types/types';
+import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
+import {useLabStore, useNotifications} from '@sb/lib/stores/root-store';
 
 import './reservation-dialog.sass';
-import {InputText} from 'primereact/inputtext';
-import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
-import {Nullable} from 'primereact/ts-helpers';
-import {useLabStore, useNotifications} from '@sb/lib/stores/root-store';
 
 interface ReservationDialogProps {
   lab: Lab;

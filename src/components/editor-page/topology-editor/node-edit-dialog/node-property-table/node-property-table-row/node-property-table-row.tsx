@@ -6,10 +6,10 @@ import {Tooltip} from 'primereact/tooltip';
 import {Checkbox} from 'primereact/checkbox';
 
 import {PropertyIO} from '@sb/lib/node-editor';
+import {Choose, If, Otherwise, When} from '@sb/types/control';
 import SBInput from '@sb/components/common/sb-input/sb-input';
 import SBDropdown from '@sb/components/common/sb-dropdown/sb-dropdown';
-import {Choose, If, Otherwise, When} from '@sb/types/control';
-import NodePropertyArray from '@sb/components/editor-page/topology-editor/node-edit-dialog/node-property-table/node-property-array/node-property-array';
+import NodePropertyArray from '../node-property-array/node-property-array';
 
 interface NodePropertyTableRowProps {
   propertyKey: string;

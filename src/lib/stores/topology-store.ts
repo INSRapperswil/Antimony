@@ -1,9 +1,9 @@
 import {action, observe} from 'mobx';
 
 import {RootStore} from '@sb/lib/stores/root-store';
+import {DataStore} from '@sb/lib/stores/data-store';
 import {TopologyManager} from '@sb/lib/topology-manager';
 import {Topology, TopologyIn, TopologyOut} from '@sb/types/types';
-import {DataStore} from '@sb/lib/stores/data-store';
 
 export class TopologyStore extends DataStore<
   Topology,

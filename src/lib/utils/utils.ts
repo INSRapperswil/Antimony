@@ -1,8 +1,9 @@
+import {Edge, Node} from 'vis';
+import {DataSet} from 'vis-data/peer';
+
 import {DeviceStore} from '@sb/lib/stores/device-store';
 import {TopologyManager} from '@sb/lib/topology-manager';
 import {FetchState, NodeMeta, Topology} from '@sb/types/types';
-import {Edge, Node} from 'vis';
-import {DataSet} from 'vis-data/peer';
 
 export async function fetchResource<T>(
   path: string,

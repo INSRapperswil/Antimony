@@ -1,12 +1,13 @@
+import React, {useRef, useState} from 'react';
+
+import YAML from 'yaml';
+import {ErrorResponse, PostResponse} from '@sb/types/types';
 import SBInput from '@sb/components/common/sb-input/sb-input';
 import {useNotifications, useTopologyStore} from '@sb/lib/stores/root-store';
-import {ErrorResponse, PostResponse} from '@sb/types/types';
-import React, {useRef, useState} from 'react';
 
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
 
 import './topology-add-dialog.sass';
-import YAML from 'yaml';
 
 interface TopologyAddDialogProps {
   groupId: string | null;

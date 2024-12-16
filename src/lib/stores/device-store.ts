@@ -1,5 +1,5 @@
-import {DeviceInfo, InterfaceConfig} from '@sb/types/types';
 import {DataStore} from '@sb/lib/stores/data-store';
+import {DeviceInfo, InterfaceConfig} from '@sb/types/types';
 
 export class DeviceStore extends DataStore<DeviceInfo, DeviceInfo, DeviceInfo> {
   protected get resourcePath(): string {

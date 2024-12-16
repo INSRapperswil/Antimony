@@ -1,11 +1,12 @@
-import SBInput from '@sb/components/common/sb-input/sb-input';
-import {useGroupStore, useNotifications} from '@sb/lib/stores/root-store';
-import {ErrorResponse, Group, GroupIn} from '@sb/types/types';
-import {isEqual} from 'lodash';
-import {Checkbox} from 'primereact/checkbox';
 import React, {useEffect, useRef, useState} from 'react';
 
+import {isEqual} from 'lodash-es';
+import {Checkbox} from 'primereact/checkbox';
+
+import SBInput from '@sb/components/common/sb-input/sb-input';
+import {ErrorResponse, Group, GroupIn} from '@sb/types/types';
 import SBDialog from '@sb/components/common/sb-dialog/sb-dialog';
+import {useGroupStore, useNotifications} from '@sb/lib/stores/root-store';
 
 import './group-edit-dialog.sass';
 

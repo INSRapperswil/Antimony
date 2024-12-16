@@ -1,4 +1,4 @@
-import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
+import {validate} from 'jsonschema';
 import {isEqual, cloneDeep} from 'lodash-es';
 import {parseDocument, Scalar, YAMLMap, YAMLSeq} from 'yaml';
 
@@ -13,10 +13,10 @@ import {
   TopologyOut,
   YAMLDocument,
 } from '@sb/types/types';
-import {validate} from 'jsonschema';
-import {DeviceStore} from '@sb/lib/stores/device-store';
 import {pushOrCreateList} from '@sb/lib/utils/utils';
+import {DeviceStore} from '@sb/lib/stores/device-store';
 import {TopologyStore} from '@sb/lib/stores/topology-store';
+import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
 
 export type TopologyEditReport = {
   updatedTopology: Topology;

@@ -1,9 +1,9 @@
-import {uuid4} from '@sb/types/types';
 import React, {MouseEvent} from 'react';
 
 import {Button} from 'primereact/button';
 import {TreeNode} from 'primereact/treenode';
 
+import {uuid4} from '@sb/types/types';
 import {Choose, Otherwise, When} from '@sb/types/control';
 
 interface ExplorerTreeNodeProps {

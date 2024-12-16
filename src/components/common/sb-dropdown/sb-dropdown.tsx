@@ -1,7 +1,12 @@
 import React, {ReactElement} from 'react';
+
 import classNames from 'classnames';
 import {SelectItem} from 'primereact/selectitem';
-import {Dropdown, DropdownChangeEvent} from 'primereact/dropdown';
+import {
+  Dropdown,
+  DropdownChangeEvent,
+  DropdownProps,
+} from 'primereact/dropdown';
 
 import {Choose, If, Otherwise, When} from '@sb/types/control';
 
@@ -15,7 +20,7 @@ interface SBDropdownProps {
   hasFilter?: boolean;
   showClear?: boolean;
 
-  value: string;
+  value: string | null;
   icon?: string | ReactElement;
   options?: SelectItem[];
   optionLabel?: string;
@@ -34,7 +39,14 @@ const SBDropdown = (props: SBDropdownProps) => {
     props.onValueSubmit(event.value);
   }
 
-  const dropdownTemplate = (option: SelectItem) => {
+  const dropdownTemplate = (
+    option: SelectItem,
+    dropdownProps?: DropdownProps
+  ) => {
+    if (!option) {
+      return <span>{dropdownProps?.placeholder}</span>;
+    }
+
     return (
       <div className="flex align-items-center gap-2">
         <If condition={props.icon}>

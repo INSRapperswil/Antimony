@@ -251,6 +251,10 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
 
       const targetNode = network?.getNodeAt(selectData.pointer.DOM);
 
+      if (targetNode === undefined) {
+        exitConnectionMode();
+      }
+
       if (targetNode === undefined || targetNode === radialMenuTarget) {
         closeRadialMenu();
         network.unselectAll();
@@ -487,6 +491,7 @@ const NodeEditor: React.FC<NodeEditorProps> = observer(
           getNetwork={setNetwork}
         />
         <NodeToolbar
+          onAddNode={props.onAddNode}
           onFitGraph={onFitGraph}
           onSaveGraph={onSaveGraph}
           onToggleStabilization={simulationConfig.togglePanel}

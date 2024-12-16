@@ -242,25 +242,23 @@ app.get('/labs', (req, res) => {
   res.setHeader('X-Total-Count', totalLabsCount);
 
   res.send({
-    payload: filteredLabs
-      .map(lab => {
-        const topology = store.topologies.find(
-          topology => topology.id === lab.topologyId
-        ).definition;
-        const nodes = YAML.parse(topology).topology.nodes;
+    payload: filteredLabs.map(lab => {
+      const topology = store.topologies.find(
+        topology => topology.id === lab.topologyId
+      ).definition;
+      const nodes = YAML.parse(topology).topology.nodes;
 
-        return {
-          ...lab,
-          nodeMeta: Object.keys(nodes).map(nodeName => ({
-            name: nodeName,
-            host: 'example.com',
-            port: randomNumber(1000, 65000),
-            user: 'ins',
-            webSsh: 'console.antimony.network.garden/ssh/' + randomNumber(1, 10),
-          })),
-        };
-      })
-      .toSorted((a, b) => a.name.localeCompare(b.name)),
+      return {
+        ...lab,
+        nodeMeta: Object.keys(nodes).map(nodeName => ({
+          name: nodeName,
+          host: 'example.com',
+          port: randomNumber(1000, 65000),
+          user: 'ins',
+          webSsh: 'console.antimony.network.garden/ssh/' + randomNumber(1, 10),
+        })),
+      };
+    }),
   });
 
   // void addRandomNotification(user.id);
@@ -435,9 +433,6 @@ function filterLabs(
       );
     }
   } catch (err) {}
-
-  const totalLabsCount = filteredLabs.length;
-
   if (startDate && !isNaN(Date.parse(JSON.parse(startDate)))) {
     startDate = Date.parse(JSON.parse(startDate));
     filteredLabs = filteredLabs.filter(
@@ -451,6 +446,12 @@ function filterLabs(
       lab => Date.parse(lab.startDate) < endDate
     );
   }
+
+  const totalLabsCount = filteredLabs.length;
+
+  filteredLabs.sort(
+    (l1, l2) => new Date(l1.startDate) - new Date(l2.startDate)
+  );
 
   if (offset !== undefined && !isNaN(Number(offset))) {
     filteredLabs = filteredLabs.slice(Number(offset), filteredLabs.length);
@@ -615,16 +616,20 @@ function executeLabStep() {
   }
 
   if (notificationDetail) {
+    const message = {
+      id: uuidv4(),
+      timestamp: new Date(),
+      summary: notificationSummary,
+      detail: notificationDetail,
+      severity: notificationSeverity,
+    };
     notificationQueue.push({
       userId: lab.runnerId,
-      data: {
-        id: uuidv4(),
-        timestamp: new Date(),
-        summary: notificationSummary,
-        detail: notificationDetail,
-        severity: notificationSeverity,
-      },
+      data: message,
     });
+    for (let [, socket] of socketMap.entries()) {
+      socket.emit('labsUpdate');
+    }
   }
 }
 

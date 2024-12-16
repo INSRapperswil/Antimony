@@ -18,10 +18,13 @@ import {If} from '@sb/types/control';
 import {TopologyDefinition, YAMLDocument} from '@sb/types/types';
 
 import {Accordion, AccordionTab} from 'primereact/accordion';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import objectPath from 'object-path';
 
 interface NodeEditDialogProps {
   editingTopology: YAMLDocument<TopologyDefinition> | null;
+
+  // Set to null if the dialog is creating a new node
   editingNode: string | null;
   isOpen: boolean;
 
@@ -31,7 +34,12 @@ interface NodeEditDialogProps {
 const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   props: NodeEditDialogProps
 ) => {
-  const [nodeKind, setNodeKind] = useState('');
+  const [nodeKind, setNodeKind] = useState<string | null>(null);
+  const [nameValidationError, setNameValidationError] = useState<string | null>(
+    null
+  );
+
+  const nameFieldRef = useRef<HTMLInputElement>(null);
 
   const topologyStore = useTopologyStore();
   const schemaStore = useSchemaStore();
@@ -41,23 +49,25 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
   const kindList = useMemo(() => {
     if (!schemaStore.clabSchema) return [];
 
-    return schemaStore.clabSchema['definitions']['node-config']['properties'][
-      'kind'
-    ]['enum']!.map(kind => ({value: kind}));
+    const possibleKinds = objectPath.get(schemaStore.clabSchema, [
+      'definitions',
+      'node-config',
+      'properties',
+      'kind',
+      'enum',
+    ]) as string[];
+
+    return !possibleKinds ? [] : possibleKinds.map(kind => ({value: kind}));
   }, [schemaStore.clabSchema]);
 
   const nodeEditor = useMemo(() => {
-    if (
-      !props.editingNode ||
-      !props.editingTopology ||
-      !schemaStore.clabSchema
-    ) {
+    if (!props.editingTopology || !schemaStore.clabSchema) {
       return null;
     }
 
     return new NodeEditor(
       schemaStore.clabSchema,
-      props.editingNode,
+      props.editingNode ?? '',
       props.editingTopology,
       notificationStore
     );
@@ -66,12 +76,13 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
     props.editingNode,
     props.editingTopology,
     notificationStore,
+    props.isOpen,
   ]);
 
   const onTopologyUpdate = useCallback(() => {
     if (!nodeEditor || !nodeEditor.getNode()) return;
 
-    setNodeKind(nodeEditor.getNode()?.kind ?? '');
+    setNodeKind(nodeEditor.getNode()?.kind ?? null);
   }, [nodeEditor]);
 
   useEffect(() => {
@@ -92,14 +103,25 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
         header: 'Unsaved Changes',
         icon: 'pi pi-info-circle',
         severity: 'warning',
-        onAccept: props.onClose,
+        onAccept: onClose,
       });
     } else {
-      props.onClose();
+      onClose();
     }
   }
 
+  function onClose() {
+    setNameValidationError(null);
+    setNodeKind(null);
+    props.onClose();
+  }
+
   function onSave() {
+    if (!nodeEditor?.getNodeName()) {
+      setNameValidationError("Name can't be empty");
+      return;
+    }
+
     if (nodeEditor) {
       topologyStore.manager.apply(
         nodeEditor.getTopology(),
@@ -107,7 +129,14 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
       );
     }
 
-    props.onClose();
+    onClose();
+  }
+
+  function onShow() {
+    // Don't focus input field if dialog was open to edit
+    if (props.editingNode) return;
+
+    nameFieldRef.current?.focus();
   }
 
   return (
@@ -124,14 +153,18 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
       onSubmit={onSave}
       onClose={onCloseRequest}
       onCancel={onCloseRequest}
+      onShow={onShow}
     >
       <If condition={nodeEditor !== null}>
         <div className="flex flex-column gap-2">
           <SBInput
             id="sb-node-name"
+            ref={nameFieldRef}
             label="Name"
-            defaultValue={props.editingNode!}
+            defaultValue={props.editingNode}
+            placeholder="e.g. Arista cEOS"
             onValueSubmit={nodeEditor!.onUpdateName}
+            validationError={nameValidationError}
           />
           <SBDropdown
             id="node-editor-kind"
@@ -143,22 +176,21 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
             useItemTemplate={true}
             useSelectTemplate={true}
             optionLabel="value"
+            placeholder="Select a Kind"
             onValueSubmit={value =>
               nodeEditor!.updatePropertyValue('kind', '', value)
             }
           />
         </div>
-        <Accordion multiple activeIndex={0}>
-          <AccordionTab header="Connections">
-            <NodeConnectionTable nodeEditor={nodeEditor!} />
-          </AccordionTab>
-          <AccordionTab header="Node Properties">
-            <NodePropertyTable
-              nodeEditor={nodeEditor!}
-              objectKey=""
-              schemaKey="node-config"
-            />
-          </AccordionTab>
+        <div className="sb-node-edit-dialog-header">Node Properties</div>
+        <NodePropertyTable
+          nodeEditor={nodeEditor!}
+          objectKey=""
+          schemaKey="node-config"
+        />
+        <div className="sb-node-edit-dialog-header">Connections</div>
+        <NodeConnectionTable nodeEditor={nodeEditor!} />
+        <Accordion multiple>
           <AccordionTab header="Environment Variables">
             <NodePropertyTable
               keyHeader="Key"

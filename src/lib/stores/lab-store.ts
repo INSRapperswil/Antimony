@@ -2,6 +2,7 @@ import {DataStore} from '@sb/lib/stores/data-store';
 import {RootStore} from '@sb/lib/stores/root-store';
 import {Lab, LabIn, LabState, NodeMeta} from '@sb/types/types';
 import {action, computed, observable, observe} from 'mobx';
+import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
 
 export class LabStore extends DataStore<Lab, LabIn, Lab> {
   @observable accessor offset: number = 0;
@@ -25,6 +26,13 @@ export class LabStore extends DataStore<Lab, LabIn, Lab> {
     super(rootStore);
 
     observe(this, 'getParams' as keyof this, () => this.fetch());
+
+    if (!process.env.IS_OFFLINE) {
+      (this.rootStore._dataBinder as RemoteDataBinder).socket.on(
+        'labsUpdate',
+        () => this.fetch()
+      );
+    }
   }
 
   protected get resourcePath(): string {

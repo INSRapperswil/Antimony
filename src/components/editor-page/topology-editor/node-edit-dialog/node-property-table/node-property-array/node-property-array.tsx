@@ -42,6 +42,9 @@ const NodePropertyArray: React.FC<NodePropertyArrayProps> = (
     props.onUpdateValue(props.entries.concat(['']));
   }
 
+  // Disable add button if the list is unique and contains empty values.
+  const addButtonDisabled = props.uniqueItems && props.entries.includes('');
+
   return (
     <>
       <div className="sb-node-property-array">
@@ -74,6 +77,9 @@ const NodePropertyArray: React.FC<NodePropertyArrayProps> = (
         className="sb-property-array-add-button"
         outlined
         onClick={onAddEntry}
+        disabled={addButtonDisabled}
+        tooltip="List requires unique values but contains empty values. Please remove empty values before adding more elements."
+        tooltipOptions={{showOnDisabled: true, disabled: !addButtonDisabled}}
       />
     </>
   );

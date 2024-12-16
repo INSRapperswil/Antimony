@@ -11,7 +11,6 @@ import {
   Topology,
   TopologyDefinition,
   TopologyOut,
-  uuid4,
   YAMLDocument,
 } from '@sb/types/types';
 import {validate} from 'jsonschema';
@@ -212,19 +211,6 @@ export class TopologyManager {
     });
 
     this.apply(updatedTopology, TopologyEditSource.NodeEditor);
-  }
-
-  /**
-   * Adds a new node to the topology.
-   *
-   * @param kind The kind of the node to add.
-   */
-  public addNode(kind: string) {
-    if (!this.editingTopology) return;
-
-    console.log('Adding node of kind: ', kind);
-
-    this.apply(this.editingTopology.definition, TopologyEditSource.NodeEditor);
   }
 
   /**
@@ -517,26 +503,6 @@ export class TopologyManager {
   }
 
   /**
-   * Generates a unique new name for a topology in a given group.
-   */
-  public static generateUniqueName(groupId: uuid4, topologies: Topology[]) {
-    const groupTopologies = topologies
-      .filter(topology => topology.groupId === groupId)
-      .map(topology => topology.definition.getIn(['name']) as string);
-
-    let equalNames = 0;
-    let nameIndex = 0;
-    do {
-      nameIndex++;
-      equalNames = groupTopologies.filter(
-        topology => topology === TopologyDefaultName + String(nameIndex)
-      ).length;
-    } while (equalNames > 0);
-
-    return TopologyDefaultName + String(nameIndex);
-  }
-
-  /**
    * Parses a position string to a position object. Returns null if the parsing
    * failed.
    *
@@ -580,5 +546,3 @@ export class TopologyManager {
     };
   }
 }
-
-const TopologyDefaultName = 'topology';

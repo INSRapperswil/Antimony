@@ -15,7 +15,7 @@ interface SBInputProps {
   fullyTransparent?: boolean;
 
   wasEdited?: boolean;
-  defaultValue?: string;
+  defaultValue?: string | null;
   placeholder?: string;
   keyfilter?: KeyFilterType;
   tooltip?: string;
@@ -24,8 +24,8 @@ interface SBInputProps {
   doubleClick?: boolean;
   explicitSubmit?: boolean;
 
-  validationError?: string;
-  onValueSubmit?: (value: string) => string | null | void;
+  validationError?: string | null;
+  onValueSubmit?: (value: string, isImplicit: boolean) => string | null | void;
 }
 
 const SBInput = forwardRef<HTMLInputElement, SBInputProps>((props, ref) => {
@@ -33,13 +33,13 @@ const SBInput = forwardRef<HTMLInputElement, SBInputProps>((props, ref) => {
   const [content, setContent] = useState(props.defaultValue);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  function onValueSubmit(value: string) {
-    if (!props.onValueSubmit || value === props.defaultValue) {
+  function onValueSubmit(value: string, isImplicit: boolean) {
+    if (!props.onValueSubmit || (isImplicit && value === props.defaultValue)) {
       setEditing(false);
       return;
     }
 
-    const error = props.onValueSubmit(value);
+    const error = props.onValueSubmit(value, isImplicit);
     if (error) setValidationError(error);
 
     if (!error) setEditing(false);
@@ -52,12 +52,12 @@ const SBInput = forwardRef<HTMLInputElement, SBInputProps>((props, ref) => {
       return;
     }
 
-    onValueSubmit(event.target.value);
+    onValueSubmit(event.target.value, true);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'Enter') {
-      onValueSubmit((event.target as HTMLInputElement).value);
+      onValueSubmit((event.target as HTMLInputElement).value, false);
     }
   }
 
@@ -90,7 +90,7 @@ const SBInput = forwardRef<HTMLInputElement, SBInputProps>((props, ref) => {
         autoFocus={props.autoFocus}
         className={classNames('sb-input', {
           'sb-input-disabled': !isEditing && props.isHidden,
-          'sb-input-error': !!validationError && !!props.validationError,
+          'sb-input-error': !!validationError || !!props.validationError,
           'sb-input-hidden': props.isHidden,
         })}
         keyfilter={props.keyfilter}

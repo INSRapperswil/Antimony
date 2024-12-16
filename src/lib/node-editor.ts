@@ -16,7 +16,7 @@ import {
 import {Binding} from '@sb/lib/utils/binding';
 import {arrayOf, filterSchemaEnum} from '@sb/lib/utils/utils';
 import {NotificationStore} from '@sb/lib/stores/notification-store';
-import {YAMLSeq} from 'yaml';
+import {YAMLMap, YAMLSeq} from 'yaml';
 
 /*
  * Object used by the view to communicate with the Node Editor.
@@ -125,7 +125,7 @@ export class NodeEditor {
     if (!obj) return [];
 
     for (const [propertyKey, value] of Object.entries(obj)) {
-      if (propertyKey in IgnoredGenericProperties) continue;
+      if (IgnoredGenericProperties.has(propertyKey)) continue;
 
       const propertyType = this.getPropertyType(propertyKey, schemaKey);
 
@@ -185,7 +185,7 @@ export class NodeEditor {
     const setPropertyKeys = new Set(Object.keys(setProperties));
 
     return [...schemaPropertyKeys.difference(setPropertyKeys)].filter(
-      property => !(property in IgnoredGenericProperties)
+      property => !IgnoredGenericProperties.has(property)
     );
   }
 
@@ -243,6 +243,8 @@ export class NodeEditor {
     value: FieldType
   ): string | null {
     const updatedTopology = this.editingTopology.clone();
+
+    this.ensureBaseNodeExists(updatedTopology);
 
     updatedTopology.setIn(
       this.propertyPath(objectRootPath, propertyKey),
@@ -336,6 +338,8 @@ export class NodeEditor {
   ) {
     const updatedTopology = this.editingTopology.clone();
 
+    this.ensureBaseNodeExists(updatedTopology);
+
     updatedTopology.setIn(
       this.propertyPath(objectRootPath, propertyKey),
       this.getPropertyDefault(
@@ -362,8 +366,10 @@ export class NodeEditor {
     propertyKey: string,
     objectRootPath: string
   ): boolean {
-    return !this.originalTopology.getIn(
-      this.propertyPath(objectRootPath, propertyKey)
+    return (
+      this.originalTopology.getIn(
+        this.propertyPath(objectRootPath, propertyKey)
+      ) === undefined
     );
   }
 
@@ -495,6 +501,20 @@ export class NodeEditor {
       patternPropertyDefinition['.*']?.oneOf ??
       patternPropertyDefinition['.+']?.anyOf;
     return this.getMostSignificantType(typeArray ?? []);
+  }
+
+  /**
+   * Ensures that the YAMLMap object for the whole node exists.
+   *
+   * This is important when adding properties to a blank object.
+   * @param topology The topology to check the node in.
+   * @private
+   */
+  private ensureBaseNodeExists(topology: YAMLDocument<TopologyDefinition>) {
+    const nodeObjectPath = ['topology', 'nodes', this.editingNode];
+    if (!topology.getIn(nodeObjectPath)) {
+      topology.setIn(nodeObjectPath, new YAMLMap());
+    }
   }
 
   /**
@@ -636,7 +656,7 @@ export class NodeEditor {
    * @param root The path to the root of the object.
    * @param key The path to the property.
    */
-  private propertyPath(root: string, ...key: string[]): string[] {
+  private propertyPath(root?: string, ...key: string[]): string[] {
     const prefix = 'topology.nodes.' + this.editingNode + '.';
     if (!root) return (prefix + key.join('.')).split('.');
 
@@ -644,5 +664,20 @@ export class NodeEditor {
   }
 }
 
-// These properties are ignored in generic properties due to being covered individually
-const IgnoredGenericProperties = ['kind', 'image', 'env', 'labels'];
+// These properties are ignored in the generic property list due to being covered individually
+const IgnoredGenericProperties = new Set([
+  'kind',
+  'image',
+  'env',
+  'labels',
+  'dns',
+  'certificate',
+  'extras',
+  'healthcheck',
+
+  /*
+   * We also ignore 'type' as it's currently broken due to schema complications. Has something to do with a schema rule
+   * that is not present directly in 'ndoe-config' definition.
+   */
+  'type',
+]);

@@ -10,6 +10,7 @@ import React from 'react';
 import './node-toolbar.sass';
 
 interface NodeToolbarProps {
+  onAddNode: () => void;
   onFitGraph: () => void;
   onSaveGraph: () => void;
   onToggleStabilization: () => void;
@@ -21,11 +22,11 @@ const NodeToolbar = observer((props: NodeToolbarProps) => {
 
   return (
     <div className="sb-node-editor-toolbar">
-      <Button icon="pi pi-plus" text tooltip="Add Node" />
       <Button
-        icon="pi pi-arrow-right-arrow-left"
+        icon="pi pi-plus"
         text
-        tooltip="Connect Nodes"
+        tooltip="Add Node"
+        onClick={props.onAddNode}
       />
       <Button
         icon="pi pi-trash"

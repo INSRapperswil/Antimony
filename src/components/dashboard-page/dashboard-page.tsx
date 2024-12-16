@@ -30,6 +30,7 @@ import React, {
   useState,
 } from 'react';
 import {useSearchParams} from 'react-router';
+import {Image} from 'primereact/image';
 
 const statusIcons: Record<LabState, string> = {
   [LabState.Scheduled]: 'pi pi-calendar',
@@ -203,7 +204,7 @@ const DashboardPage: React.FC = observer(() => {
 
         <If condition={labStore.searchQuery !== ''}>
           <Chip
-            label={labStore.searchQuery}
+            label={`Query: ${labStore.searchQuery}`}
             removable={true}
             onRemove={() => labStore.setSearchQuery('')}
             className="chip"
@@ -305,7 +306,10 @@ const DashboardPage: React.FC = observer(() => {
             />
           </When>
           <Otherwise>
-            <span>No labs found.</span>
+            <div className="sb-dashboard-empty">
+              <Image src="/assets/icons/no-results.png" width="200px" />
+              <span>No labs found :(</span>
+            </div>
           </Otherwise>
         </Choose>
         <div className="pagination-controls">

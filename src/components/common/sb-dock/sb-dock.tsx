@@ -1,18 +1,18 @@
 import React, {useRef, useState} from 'react';
 
+import {Image} from 'primereact/image';
 import {Badge} from 'primereact/badge';
 import {Button} from 'primereact/button';
 import {observer} from 'mobx-react-lite';
 import {useNavigate} from 'react-router';
 import {OverlayPanel} from 'primereact/overlaypanel';
-import {Image} from 'primereact/image';
 
 import {If} from '@sb/types/control';
-import {useDataBinder, useNotifications} from '@sb/lib/stores/root-store';
 import NotificationPanel from './notification-panel/notification-panel';
+import {useDataBinder, useNotifications} from '@sb/lib/stores/root-store';
+import CalendarDialog from '@sb/components/calendar-dialog/calender-dialog';
 
 import './sb-dock.sass';
-import CalendarDialog from '@sb/components/calendar-dialog/calender-dialog';
 
 const SBDock: React.FC = observer(() => {
   const [showCalendar, setShowCalendar] = useState<boolean>(false);

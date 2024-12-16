@@ -39,9 +39,25 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
     }
   }, [props.isOpen]);
 
-  async function onSubmit() {
+  function onNameSubmit(name: string, isImplicit: boolean) {
+    if (isImplicit) {
+      setUpdatedGroup({
+        ...updatedGroup,
+        name,
+      });
+    } else {
+      void onSubmit({
+        ...updatedGroup,
+        name,
+      });
+    }
+  }
+
+  async function onSubmit(group?: GroupIn) {
+    group ??= updatedGroup;
+
     if (!props.editingGroup) {
-      groupStore.add(updatedGroup).then(([success, error]) => {
+      groupStore.add(group).then(([success, error]) => {
         if (!success) {
           notificationStore.error(
             (error as ErrorResponse).message,
@@ -56,7 +72,7 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
     }
 
     if (
-      isEqual(updatedGroup, {
+      isEqual(group, {
         name: props.editingGroup.name,
         canRun: props.editingGroup.canRun,
         canWrite: props.editingGroup.canWrite,
@@ -66,7 +82,7 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
       return;
     }
 
-    groupStore.update(props.editingGroup.id, updatedGroup).then(error => {
+    groupStore.update(props.editingGroup.id, group).then(error => {
       if (error) {
         notificationStore.error(error.message, 'Failed to edit group');
       } else {
@@ -90,12 +106,7 @@ const GroupEditDialog = (props: GroupEditDialogProps) => {
       <div className="flex gap-4 flex-column">
         <SBInput
           ref={groupNameRef}
-          onValueSubmit={value =>
-            void setUpdatedGroup({
-              ...updatedGroup,
-              name: value,
-            })
-          }
+          onValueSubmit={onNameSubmit}
           placeholder="e.g. CN2"
           id="group-edit-name"
           defaultValue={updatedGroup.name}

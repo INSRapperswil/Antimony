@@ -16,13 +16,7 @@ import {
   TreeSelectionEvent,
 } from 'primereact/tree';
 
-import {
-  ErrorResponse,
-  Group,
-  Topology,
-  PostResponse,
-  uuid4,
-} from '@sb/types/types';
+import {Group, Topology, uuid4} from '@sb/types/types';
 import SBConfirm from '@sb/components/common/sb-confirm/sb-confirm';
 import {
   useGroupStore,
@@ -32,8 +26,7 @@ import {
 import ExplorerTreeNode from '@sb/components/editor-page/topology-explorer/explorer-tree-node/explorer-tree-node';
 
 import './topology-explorer.sass';
-import YAML from 'yaml';
-import {TopologyManager} from '@sb/lib/topology-manager';
+import TopologyAddDialog from '@sb/components/editor-page/topology-editor/topology-add-dialog/topology-add-dialog';
 
 interface TopologyBrowserProps {
   selectedTopologyId?: string | null;
@@ -49,6 +42,11 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   const [isEditGroupOpen, setEditGroupOpen] = useState<boolean>(false);
   const [contextMenuModel, setContextMenuModel] = useState<MenuItem[]>();
 
+  // Set to non-null value if the create topology dialog is shown.
+  const [createTopologyGroup, setCreateTopologGroup] = useState<string | null>(
+    null
+  );
+
   const topologyStore = useTopologyStore();
   const groupStore = useGroupStore();
   const notificationStore = useNotifications();
@@ -59,9 +57,6 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   const topologyTree = useMemo(() => {
     const topologyTree: TreeNode[] = [];
     const topologiesByGroup = new Map<string, Topology[]>();
-
-    // DEBUG: UNCOMMENT THIS FOR AN ERORR
-    // console.log('eror:', topologyTree[3].test);
 
     for (const topology of topologyStore.data) {
       if (topologiesByGroup.has(topology.groupId)) {
@@ -135,24 +130,8 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
     setEditGroupOpen(true);
   }
 
-  async function onAddTopology(groupId: uuid4) {
-    const [status, response] = await topologyStore.add({
-      groupId: groupId,
-      definition: YAML.stringify({
-        name: TopologyManager.generateUniqueName(groupId, topologyStore.data),
-        topology: {nodes: {}},
-      }),
-    });
-
-    if (!status) {
-      notificationStore.error(
-        (response as ErrorResponse).message,
-        'Failed to add new topology.'
-      );
-    } else {
-      notificationStore.success('Topology has been created.');
-      props.onTopologySelect((response as PostResponse).id);
-    }
+  async function onAddTopology(groupId: uuid4 | null) {
+    setCreateTopologGroup(groupId);
   }
 
   function onDeleteGroupRequest(id: string) {
@@ -198,6 +177,11 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
       severity: 'danger',
       onAccept: () => onDeleteTopology(id),
     });
+  }
+
+  function onTopologyAdded(topologyId: string) {
+    props.onTopologySelect(topologyId);
+    setCreateTopologGroup(null);
   }
 
   function onContextMenu(e: MouseEvent<HTMLDivElement>) {
@@ -261,9 +245,9 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
   const groupContextMenu = [
     {
       id: 'create',
-      label: 'Add Group',
+      label: 'Add Topology',
       icon: 'pi pi-plus',
-      command: onAddGroup,
+      command: () => onAddTopology(contextMenuTarget.current),
     },
     {
       id: 'edit',
@@ -326,6 +310,11 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
         onContextMenu={e => onContextMenuTree(e)}
         onSelectionChange={onSelectionChange}
         onToggle={e => setExpandedKeys(e.value)}
+      />
+      <TopologyAddDialog
+        groupId={createTopologyGroup}
+        onCreated={onTopologyAdded}
+        onClose={() => setCreateTopologGroup(null)}
       />
       <GroupEditDialog
         key={editingGroup?.id}

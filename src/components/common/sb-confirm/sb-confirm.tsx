@@ -1,5 +1,3 @@
-import {Button} from 'primereact/button';
-import {ConfirmDialog} from 'primereact/confirmdialog';
 import React, {
   forwardRef,
   ReactNode,
@@ -7,6 +5,9 @@ import React, {
   useRef,
   useState,
 } from 'react';
+
+import {Button} from 'primereact/button';
+import {ConfirmDialog} from 'primereact/confirmdialog';
 
 import './sb-confirm.sass';
 

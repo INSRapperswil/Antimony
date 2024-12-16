@@ -51,7 +51,7 @@ const FilterDialog: React.FC<FilterDialogProps> = observer(
     };
 
     return (
-      <OverlayPanel ref={props.popOverRef} id="filter-overlay-panel">
+      <OverlayPanel ref={props.popOverRef} className="filter-overlay-panel">
         <div className="filters-container">
           <div className="filters-title">States</div>
           <div className="filters-chips-container">

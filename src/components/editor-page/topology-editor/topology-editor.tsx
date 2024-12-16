@@ -28,6 +28,7 @@ import {Splitter, SplitterPanel} from 'primereact/splitter';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import './topology-editor.sass';
+import {Image} from 'primereact/image';
 
 export enum ValidationState {
   Working,
@@ -132,12 +133,15 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     setValidationError(error);
   }
 
-  function onNodeEdit(nodeName: string) {
-    setNodeEditDialogOpen(true);
+  function onEditNode(nodeName: string) {
     setCurrentlyEditedNode(nodeName);
+    setNodeEditDialogOpen(true);
   }
 
-  function onAddNode() {}
+  function onAddNode() {
+    setCurrentlyEditedNode(null);
+    setNodeEditDialogOpen(true);
+  }
 
   async function onSaveTopology() {
     if (!hasPendingEdits) return;
@@ -296,7 +300,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   >
                     <NodeEditor
                       onAddNode={onAddNode}
-                      onEditNode={onNodeEdit}
+                      onEditNode={onEditNode}
                       openTopology={openTopology!}
                     />
                   </SimulationConfigContext.Provider>
@@ -306,12 +310,14 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
           </div>
         </When>
         <Otherwise>
-          <div className="flex h-full w-full align-items-center justify-content-center">
+          <div className="sb-topology-editor-empty">
+            <Image src="/assets/icons/among-us.svg" width="350px" />
             <span className="text-center">No topology selected</span>
           </div>
         </Otherwise>
       </Choose>
       <NodeEditDialog
+        key={currentlyEditedNode}
         isOpen={isNodeEditDialogOpen}
         editingTopology={openTopology?.definition ?? null}
         editingNode={currentlyEditedNode}

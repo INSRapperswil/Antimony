@@ -38,7 +38,7 @@ module.exports = {
         exclude: /node_modules/,
       },
       {
-        test: /\.(jpe?g|gif|png|svg)$/i,
+        test: /\.(jpe?g|gif|png|svg|wav)$/i,
         loader: 'file-loader',
         options: {
           name: '[contenthash].[ext]',

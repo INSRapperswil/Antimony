@@ -79,7 +79,9 @@ export class TopologyManager {
 
     const error = await this.topologyStore.update(this.editingTopology.id, {
       groupId: this.editingTopology.groupId,
-      definition: this.editingTopology.definition.toString(),
+      definition: this.editingTopology.definition.toString({
+        collectionStyle: 'block',
+      }),
     });
     if (error) return error;
 
@@ -202,7 +204,13 @@ export class TopologyManager {
     const updatedTopology = this.editingTopology.definition.clone();
     const hostInterface = this.getNextInterface(nodeName1);
     const targetInterface = this.getNextInterface(nodeName2);
+
+    if (!updatedTopology.hasIn(['topology', 'links'])) {
+      updatedTopology.setIn(['topology', 'links'], new YAMLSeq());
+    }
+
     const links = updatedTopology.getIn(['topology', 'links']) as YAMLSeq;
+
     links.add({
       endpoints: [
         `${nodeName1}:${hostInterface}`,
@@ -302,7 +310,7 @@ export class TopologyManager {
       keepSourceTokens: true,
     });
     if (
-      definition.errors.length > 0 &&
+      definition.errors.length > 0 ||
       validate(definition.toJS(), schema).errors.length > 0
     ) {
       return null;

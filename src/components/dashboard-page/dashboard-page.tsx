@@ -255,6 +255,7 @@ const DashboardPage: React.FC = observer(() => {
                             showDelay: 200,
                           }}
                           onClick={e => onRescheduleLab(e, lab)}
+                          aria-label="Reschedule"
                         />
                       </If>
                       <Button
@@ -269,6 +270,7 @@ const DashboardPage: React.FC = observer(() => {
                           showDelay: 200,
                         }}
                         onClick={e => onStopLab(e, lab)}
+                        aria-label="Stop Lab"
                       />
                     </div>
                     <span className="lab-state-label">

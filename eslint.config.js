@@ -28,7 +28,7 @@ export default [
       'workbox-config.cjs',
       'eslint.config.js',
       '.prettierrc.cjs',
-      'server.js',
+      'start.js',
       'server/*',
     ],
   },

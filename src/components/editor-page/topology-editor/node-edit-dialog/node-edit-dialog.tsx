@@ -147,7 +147,7 @@ const NodeEditDialog: React.FC<NodeEditDialogProps> = (
           ? deviceStore.getNodeIcon(nodeEditor.getNode()?.kind)
           : undefined
       }
-      headerTitle="Edit Node"
+      headerTitle={!props.editingNode ? 'Add Node' : 'Edit Node'}
       className="sb-node-edit-dialog"
       submitLabel="Save"
       onSubmit={onSave}

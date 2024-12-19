@@ -27,8 +27,10 @@ const LabDialogPanel = (props: LabDialogPanelProps) => {
       </div>
       <Button
         outlined
-        label="🦈 Start EdgeShark"
+        icon={<span className="material-symbols-outlined">sailing</span>}
+        label="Open EdgeShark"
         onClick={() => window.open(props.lab.edgesharkLink, '_blank')}
+        aria-label="Open EdgeShark"
       />
     </div>
   );

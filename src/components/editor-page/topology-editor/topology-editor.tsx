@@ -62,6 +62,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
   const topologyStore = useTopologyStore();
   const notificatioStore = useNotifications();
 
+  const amogusRef = useRef(new Audio('/assets/amogus.wav'));
   const monacoWrapperRef = useRef<MonacoWrapperRef>(null);
 
   const onTopologyOpen = useCallback((topology: Topology) => {
@@ -105,6 +106,16 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     if (!schemaStore.clabSchema) return;
 
     try {
+      /*
+       * If the topology is empty, instantly return an error as it can't be empty
+       * We need to have this special case because the monaco YAML validator won't recognize
+       * an empty file as invalid.
+       */
+      if (!content) {
+        setValidationState(ValidationState.Error);
+        return;
+      }
+
       const definition = TopologyManager.parseTopology(
         content,
         schemaStore.clabSchema
@@ -181,6 +192,12 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
     );
   }
 
+  function onAmogus() {
+    if (!amogusRef.current?.paused) return;
+    amogusRef.current.volume = 0.1;
+    amogusRef.current.play().catch(() => {});
+  }
+
   return (
     <>
       <Choose>
@@ -194,6 +211,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   tooltip="Undo"
                   onClick={() => monacoWrapperRef.current?.undo()}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
+                  aria-label="Undo"
                 />
                 <Button
                   outlined
@@ -202,6 +220,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   tooltip="Redo"
                   onClick={() => monacoWrapperRef.current?.redo()}
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
+                  aria-label="Redo"
                 />
               </div>
               <div className="flex gap-2">
@@ -225,6 +244,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                       ),
                     },
                   }}
+                  aria-label="Save"
                 />
                 <Button
                   outlined
@@ -233,6 +253,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                   onClick={onDownloadTopology}
                   tooltip="Download"
                   tooltipOptions={{position: 'bottom', showDelay: 500}}
+                  aria-label="Download"
                 />
               </div>
               <div className="flex gap-2 justify-content-center">
@@ -252,6 +273,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                     showDelay: 500,
                     showOnDisabled: true,
                   }}
+                  aria-label="Deploy Topology"
                 />
                 <Choose>
                   <When condition={props.isMaximized}>
@@ -260,6 +282,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                       icon="pi pi-arrow-down-left-and-arrow-up-right-to-center"
                       size="large"
                       onClick={() => props.setMaximized(false)}
+                      aria-label="Maximize"
                     />
                   </When>
                   <Otherwise>
@@ -268,6 +291,7 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
                       icon="pi pi-arrow-up-right-and-arrow-down-left-from-center"
                       size="large"
                       onClick={() => props.setMaximized(true)}
+                      aria-label="Minimize"
                     />
                   </Otherwise>
                 </Choose>
@@ -309,8 +333,12 @@ const TopologyEditor: React.FC<TopologyEditorProps> = (
           </div>
         </When>
         <Otherwise>
-          <div className="sb-topology-editor-empty">
-            <Image src="/assets/icons/among-us.svg" width="350px" />
+          <div className="sb-topology-editor-empty" onDoubleClick={onAmogus}>
+            <Image
+              src="/assets/icons/among-us.svg"
+              width="350px"
+              alt="Nothing selected placeholder"
+            />
             <span className="text-center">No topology selected</span>
           </div>
         </Otherwise>

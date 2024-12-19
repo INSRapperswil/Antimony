@@ -201,12 +201,14 @@ const LabDialog: React.FC<LabDialogProps> = (props: LabDialogProps) => {
               icon="pi pi-copy"
               outlined
               onClick={onCopyActiveNode}
+              aria-label="Copy Host"
             />
             <Button
               label="Web SSH"
               icon="pi pi-external-link"
               outlined
               onClick={onOpenActiveNode}
+              aria-label="Web SSH"
             />
           </div>
         </If>

@@ -94,6 +94,7 @@ const SBConfirm = forwardRef<SBConfirmRef, SBConfirmProps>((props, ref) => {
                 dialogState.current?.onReject?.call(null);
               }}
               className="w-8rem"
+              aria-label={dialogState.current?.rejectText ?? 'Reject'}
             />
             <Button
               label={dialogState.current?.acceptText}
@@ -103,6 +104,7 @@ const SBConfirm = forwardRef<SBConfirmRef, SBConfirmProps>((props, ref) => {
               }}
               severity={dialogState.current?.severity}
               className="w-8rem"
+              aria-label={dialogState.current?.acceptText ?? 'Accept'}
             />
           </div>
         </div>

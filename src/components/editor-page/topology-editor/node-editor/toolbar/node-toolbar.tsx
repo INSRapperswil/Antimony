@@ -29,18 +29,21 @@ const NodeToolbar = observer((props: NodeToolbarProps) => {
         text
         tooltip="Add Node"
         onClick={props.onAddNode}
+        aria-label="Add Node"
       />
       <Button
         icon="pi pi-trash"
         text
         onClick={topologyStore.manager.clear}
         tooltip="Clear Network"
+        aria-label="Clear Network"
       />
       <Button
         icon="pi pi-save"
         text
         tooltip="Save Layout"
         onClick={props.onSaveGraph}
+        aria-label="Save Layout"
       />
       <Button
         className="sb-iconoir-button"
@@ -54,6 +57,7 @@ const NodeToolbar = observer((props: NodeToolbarProps) => {
         text
         tooltip="Fit Graph"
         onClick={props.onFitGraph}
+        aria-label="Fit Graph"
       />
       <Divider />
       <Button
@@ -62,6 +66,7 @@ const NodeToolbar = observer((props: NodeToolbarProps) => {
         tooltip="Graph Stabilization"
         className={classNames({toggled: simulationConfig.panelOpen})}
         onClick={props.onToggleStabilization}
+        aria-label="Graph Stabilization"
       />
     </div>
   );

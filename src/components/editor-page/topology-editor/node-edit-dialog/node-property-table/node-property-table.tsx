@@ -167,6 +167,7 @@ const NodePropertyTable: React.FC<NodePropertyTableProps> = (
             className="sb-property-table-add-button"
             onClick={onAddPropertyClicked}
             outlined
+            aria-label={props.addText ?? 'Add Property'}
           />
         </If>
         <If condition={availableProperties}>

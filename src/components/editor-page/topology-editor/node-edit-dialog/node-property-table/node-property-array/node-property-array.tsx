@@ -64,9 +64,10 @@ const NodePropertyArray: React.FC<NodePropertyArrayProps> = (
                 size="small"
                 rounded
                 text
-                tooltip="Remove entry"
+                tooltip="Remove Entry"
                 tooltipOptions={{showDelay: 500}}
                 onClick={() => onEntryRemoved(entry.index)}
+                aria-label="Remove Entry"
               />
             </If>
           </div>
@@ -80,6 +81,7 @@ const NodePropertyArray: React.FC<NodePropertyArrayProps> = (
         disabled={addButtonDisabled}
         tooltip="List requires unique values but contains empty values. Please remove empty values before adding more elements."
         tooltipOptions={{showOnDisabled: true, disabled: !addButtonDisabled}}
+        aria-label="Add Property"
       />
     </>
   );

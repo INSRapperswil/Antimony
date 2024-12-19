@@ -9,13 +9,15 @@ import {OverlayPanel} from 'primereact/overlaypanel';
 
 import {If} from '@sb/types/control';
 import NotificationPanel from './notification-panel/notification-panel';
+import CreditsDialog from '@sb/components/credits-dialog/credits-dialog';
 import {useDataBinder, useNotifications} from '@sb/lib/stores/root-store';
 import CalendarDialog from '@sb/components/calendar-dialog/calender-dialog';
 
 import './sb-dock.sass';
 
 const SBDock: React.FC = observer(() => {
-  const [showCalendar, setShowCalendar] = useState<boolean>(false);
+  const [isCreditsOpen, setCreditsOpen] = useState<boolean>(false);
+  const [isCalendarOpen, setCalendarOpen] = useState<boolean>(false);
 
   const dataBinder = useDataBinder();
   const navigate = useNavigate();
@@ -30,66 +32,105 @@ const SBDock: React.FC = observer(() => {
           className="sb-logo-tab sb-corner-tab"
           onClick={() => navigate('/')}
         >
-          <Image src="/assets/icons/favicon-dark.png" width="60px" />
+          <Image
+            src="/assets/icons/favicon-dark.png"
+            width="60px"
+            alt="Antimony Logo"
+          />
         </div>
-        <Button
-          icon={
-            <span className="material-symbols-outlined">space_dashboard</span>
-          }
-          className="sb-dock-page-button"
-          label="Dashboard"
-          outlined
-          onClick={() => navigate('/')}
-        />
-        <Button
-          icon={<span className="material-symbols-outlined">border_color</span>}
-          className="sb-dock-page-button"
-          label="Topology Editor"
-          outlined
-          onClick={() => navigate('/editor')}
-        />
+        <If condition={process.env.IS_OFFLINE}>
+          <span className="sb-dock-title">Antimony</span>
+        </If>
+        <If condition={!process.env.IS_OFFLINE}>
+          <Button
+            icon={
+              <span className="material-symbols-outlined">space_dashboard</span>
+            }
+            className="sb-dock-page-button"
+            label="Dashboard"
+            outlined
+            onClick={() => navigate('/')}
+            aria-label="Dashboard Page"
+          />
+          <Button
+            icon={
+              <span className="material-symbols-outlined">border_color</span>
+            }
+            className="sb-dock-page-button"
+            label="Topology Editor"
+            outlined
+            onClick={() => navigate('/editor')}
+            aria-label="Topology Editor Page"
+          />
+        </If>
       </div>
       <div className="flex align-items-center gap-2 justify-content-end">
+        <If condition={!process.env.IS_OFFLINE}>
+          <Button
+            outlined
+            icon="pi pi-bell"
+            size="large"
+            onClick={e => overlayRef.current?.toggle(e)}
+            pt={{
+              icon: {
+                className: 'p-overlay-badge',
+                children: (
+                  <If condition={notificationStore.unreadMessages > 0}>
+                    <Badge severity="danger" />
+                  </If>
+                ),
+              },
+            }}
+            tooltip="Notifications"
+            tooltipOptions={{position: 'bottom'}}
+            aria-label="Notifications"
+          />
+          <Button
+            outlined
+            icon="pi pi-calendar"
+            size="large"
+            tooltip="Lab Schedule"
+            tooltipOptions={{position: 'bottom'}}
+            onClick={() => setCalendarOpen(true)}
+            aria-label="Calendar"
+          />
+        </If>
         <Button
           outlined
-          icon="pi pi-bell"
+          icon="pi pi-info-circle"
           size="large"
-          onClick={e => overlayRef.current?.toggle(e)}
-          pt={{
-            icon: {
-              className: 'p-overlay-badge',
-              children: (
-                <If condition={notificationStore.unreadMessages > 0}>
-                  <Badge severity="danger" />
-                </If>
-              ),
-            },
-          }}
-        />
-        <Button
-          outlined
-          icon="pi pi-calendar"
-          size="large"
-          tooltip="Lab Schedule"
+          tooltip="Credits"
           tooltipOptions={{position: 'bottom'}}
-          onClick={() => setShowCalendar(true)}
+          onClick={() => setCreditsOpen(true)}
+          aria-label="Credits"
         />
-        <Button
-          outlined
-          size="large"
-          icon="pi pi-sign-out"
-          onClick={() => dataBinder.logout()}
-          tooltip="Log Out"
-          tooltipOptions={{position: 'bottom'}}
-        />
+        <If condition={!process.env.IS_OFFLINE}>
+          <Button
+            outlined
+            size="large"
+            icon="pi pi-sign-out"
+            onClick={() => dataBinder.logout()}
+            tooltip="Log Out"
+            tooltipOptions={{position: 'bottom'}}
+            aria-label="Log Out"
+            className="ml-2"
+          />
+        </If>
       </div>
 
-      <CalendarDialog
-        isOpen={showCalendar}
-        onClose={() => setShowCalendar(false)}
+      <CreditsDialog
+        isOpen={isCreditsOpen}
+        onClose={() => setCreditsOpen(false)}
       />
 
-      <NotificationPanel ref={overlayRef} />
+      <If condition={!process.env.IS_OFFLINE}>
+        <CalendarDialog
+          isOpen={isCalendarOpen}
+          onClose={() => setCalendarOpen(false)}
+        />
+
+        <NotificationPanel ref={overlayRef} />
+      </If>
     </div>
   );
 });

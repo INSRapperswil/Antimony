@@ -113,6 +113,7 @@ const NotificationPanel = observer(
             icon="pi pi-eye"
             tooltip="Mark all as read"
             onClick={() => notificationStore.markAllAsRead()}
+            aria-label="Mark all as read"
           />
         </div>
         <ListBox

@@ -67,61 +67,59 @@ const SBLogin = observer(() => {
     }
 
     return (
-      <form onSubmit={onFormSubmit}>
-        <div className="sb-login-content">
-          <div className="sb-login-content-icon">
-            <div className="sb-login-header-icon">
-              <i className="pi pi-user"></i>
-            </div>
+      <form onSubmit={onFormSubmit} className="sb-login-content">
+        <div className="sb-login-content-icon">
+          <div className="sb-login-header-icon">
+            <i className="pi pi-user"></i>
           </div>
-          <If condition={loginError}>
-            <Message severity="error" text={loginError} />
-          </If>
-          <div className="p-inputgroup">
-            <span className="p-inputgroup-addon">
-              <i className="pi pi-user"></i>
-            </span>
-            <InputText
-              autoComplete="username"
-              invalid={loginError !== null}
-              value={usernameValue}
-              onChange={onUsernameChange}
-              name="username"
-              placeholder="Username"
+        </div>
+        <If condition={loginError}>
+          <Message severity="error" text={loginError} />
+        </If>
+        <div className="p-inputgroup">
+          <span className="p-inputgroup-addon">
+            <i className="pi pi-user"></i>
+          </span>
+          <InputText
+            autoComplete="username"
+            invalid={loginError !== null}
+            value={usernameValue}
+            onChange={onUsernameChange}
+            name="username"
+            placeholder="Username"
+          />
+        </div>
+        <div className="p-inputgroup">
+          <span className="p-inputgroup-addon">
+            <i className="pi pi-lock"></i>
+          </span>
+          <Password
+            autoComplete="current-password"
+            invalid={loginError !== null}
+            value={passwordValue}
+            onChange={onPasswordChange}
+            feedback={false}
+            name="password"
+            placeholder="Password"
+          />
+        </div>
+        <div className="sb-login-remember">
+          <div className="flex align-items-center">
+            <Checkbox
+              inputId="login-remember-me"
+              checked={checkedRemember}
+              onChange={e => setCheckedRemember(e.checked ?? false)}
             />
+            <label htmlFor="login-remember-me" className="ml-2">
+              Remember me
+            </label>
           </div>
-          <div className="p-inputgroup">
-            <span className="p-inputgroup-addon">
-              <i className="pi pi-lock"></i>
-            </span>
-            <Password
-              autoComplete="current-password"
-              invalid={loginError !== null}
-              value={passwordValue}
-              onChange={onPasswordChange}
-              feedback={false}
-              name="password"
-              placeholder="Password"
-            />
-          </div>
-          <div className="sb-login-remember">
-            <div className="flex align-items-center">
-              <Checkbox
-                inputId="login-remember-me"
-                checked={checkedRemember}
-                onChange={e => setCheckedRemember(e.checked ?? false)}
-              />
-              <label htmlFor="login-remember-me" className="ml-2">
-                Remember me
-              </label>
-            </div>
-          </div>
+        </div>
 
-          <Button label="LOGIN" type="submit" />
+        <Button label="LOGIN" type="submit" aria-label="Login" />
 
-          <div className="sb-login-content-header">
-            <span>SIGN IN</span>
-          </div>
+        <div className="sb-login-content-header">
+          <span>SIGN IN</span>
         </div>
       </form>
     );

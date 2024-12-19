@@ -67,6 +67,7 @@ const ExplorerTreeNode: React.FC<ExplorerTreeNodeProps> = (
               tooltip="Delete Topology"
               onClick={onDeleteTopology}
               tooltipOptions={{showDelay: 500}}
+              aria-label="Delete Topology"
             />
             <Button
               icon="pi pi-play"
@@ -85,6 +86,7 @@ const ExplorerTreeNode: React.FC<ExplorerTreeNodeProps> = (
                 showOnDisabled: true,
               }}
               onClick={onDeployTopology}
+              aria-label="Deploy Topology"
             />
           </div>
         </When>
@@ -107,6 +109,7 @@ const ExplorerTreeNode: React.FC<ExplorerTreeNodeProps> = (
               tooltip="Edit Group"
               onClick={onEditGroup}
               tooltipOptions={{showDelay: 500}}
+              aria-label="Edit Group"
             />
             <Button
               icon="pi pi-trash"
@@ -115,6 +118,7 @@ const ExplorerTreeNode: React.FC<ExplorerTreeNodeProps> = (
               text
               tooltip="Delete Group"
               onClick={onDeleteGroup}
+              aria-label="Delete Group"
               tooltipOptions={{showDelay: 500}}
             />
             <Button
@@ -125,6 +129,7 @@ const ExplorerTreeNode: React.FC<ExplorerTreeNodeProps> = (
               tooltip="Add Topology"
               onClick={onAddTopology}
               tooltipOptions={{showDelay: 500}}
+              aria-label="Add Topology"
             />
           </div>
         </Otherwise>

@@ -81,7 +81,9 @@ const MonacoWrapper = observer(
         return;
       }
 
-      const updatedContent = editReport.updatedTopology.definition.toString();
+      const updatedContent = editReport.updatedTopology.definition.toString({
+        collectionStyle: 'block',
+      });
       const existingContent = textModelRef.current.getValue();
 
       const updatedContentStripped = updatedContent.replaceAll(' ', '');

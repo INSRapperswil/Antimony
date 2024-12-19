@@ -80,6 +80,7 @@ const SimulationPanel = observer((props: SimulationPanelProps) => {
           simulationConfig.liveSimulation || simulationConfig.isStabilizing
         }
         onClick={props.onStabilizeGraph}
+        aria-label="Stabilize Graph"
       />
     </div>
   );
@@ -120,6 +121,7 @@ const ConfigSlider = (props: ConfigSliderProps) => (
         outlined
         text
         onClick={() => props.onChange(props.defaultValue)}
+        aria-label="Reset"
       />
     </div>
   </>

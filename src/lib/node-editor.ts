@@ -219,7 +219,7 @@ export class NodeEditor {
   /**
    * Returns the current node.
    */
-  public getNode(): TopologyNode {
+  public getNode(): TopologyNode | undefined {
     return this.editingTopology.toJS().topology.nodes[this.editingNode];
   }
 
@@ -667,7 +667,6 @@ export class NodeEditor {
 // These properties are ignored in the generic property list due to being covered individually
 const IgnoredGenericProperties = new Set([
   'kind',
-  'image',
   'env',
   'labels',
   'dns',

@@ -57,9 +57,7 @@ const App: React.FC = observer(() => {
           })}
         >
           <If condition={dataBinder.isLoggedIn}>
-            <If condition={!process.env.IS_OFFLINE}>
-              <SBDock />
-            </If>
+            <SBDock />
             <div className="flex flex-grow-1 gap-2 min-h-0">
               <Routes>
                 <Choose>

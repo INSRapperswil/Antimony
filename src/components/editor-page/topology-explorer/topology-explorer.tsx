@@ -27,6 +27,7 @@ import ExplorerTreeNode from './explorer-tree-node/explorer-tree-node';
 import TopologyAddDialog from '@sb/components/editor-page/topology-editor/topology-add-dialog/topology-add-dialog';
 
 import './topology-explorer.sass';
+import {Image} from 'primereact/image';
 
 interface TopologyBrowserProps {
   selectedTopologyId?: string | null;
@@ -293,7 +294,17 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
         filterPlaceholder="Search"
         value={topologyTree}
         className="w-full"
-        emptyMessage=" "
+        emptyMessage={
+          <div className="sb-topology-explorer-empty">
+            <Image src="/assets/icons/no-results.png" width="100px" />
+            <span>No topologies found :(</span>
+          </div>
+        }
+        pt={{
+          toggler: {
+            'aria-label': 'Expand Node',
+          },
+        }}
         expandedKeys={expandedKeys}
         selectionMode="single"
         selectionKeys={props.selectedTopologyId}
@@ -328,6 +339,7 @@ const TopologyExplorer = observer((props: TopologyBrowserProps) => {
         className="sb-topology-explorer-add-group"
         icon="pi pi-plus"
         onClick={onAddGroup}
+        aria-label="Add Group"
       />
     </div>
   );

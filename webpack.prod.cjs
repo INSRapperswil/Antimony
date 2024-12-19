@@ -4,6 +4,7 @@ const {merge} = require('webpack-merge');
 
 const WorkboxPlugin = require('workbox-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CompressionPlugin = require('compression-webpack-plugin');
 
 module.exports = merge(common, {
   mode: 'production',
@@ -11,9 +12,10 @@ module.exports = merge(common, {
     new WorkboxPlugin.GenerateSW({
       clientsClaim: true,
       skipWaiting: true,
-      // maximumFileSizeToCacheInBytes: 8000000,
+      maximumFileSizeToCacheInBytes: 8000000,
     }),
     new MiniCssExtractPlugin(),
+    new CompressionPlugin(),
   ],
   module: {
     rules: [

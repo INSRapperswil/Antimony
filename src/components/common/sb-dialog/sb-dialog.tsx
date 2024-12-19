@@ -16,7 +16,7 @@ interface SBDialogProps {
   headerIcon?: string;
 
   children: React.ReactNode;
-  className: string;
+  className?: string;
 
   hideButtons?: boolean;
   onCancel?: () => void;
@@ -57,6 +57,7 @@ const SBDialog: React.FC<SBDialogProps> = (props: SBDialogProps) => {
             icon="pi pi-times"
             size="large"
             onClick={props.onClose}
+            aria-label="Close"
           />
         </div>
       </div>
@@ -70,12 +71,14 @@ const SBDialog: React.FC<SBDialogProps> = (props: SBDialogProps) => {
             outlined
             onClick={() => props.onCancel?.call(null)}
             className="w-8rem"
+            aria-label="Cancel"
           />
           <Button
             icon="pi pi-check"
             label={props.submitLabel ?? 'Submit'}
             onClick={() => props.onSubmit?.call(null)}
             className="w-8rem"
+            aria-label="Submit"
           />
         </div>
       </If>

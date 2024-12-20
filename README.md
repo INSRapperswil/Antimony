@@ -15,11 +15,11 @@ Antimony is still in its prototype phase and currently only exist as a frontend.
 
 ## How to Start
 
-There exist two different builds of Antimony right now; the online version and the offline version.
+There exist two different builds of Antimony right now; the online build and the offline build.
 
-### The Offline Version
+### The Offline Build
 
-The offline version can be deployed standalone. It only provides editor functionality and does not support the deployment or management of Containerlab instances.
+The offline build can be deployed standalone. It only provides topology editor functionality and does not support the deployment or management of Containerlab instances.
 
 It is served on `localhost:8100` by default. This can be changed in `./start.js`.
 
@@ -32,9 +32,9 @@ yarn run build-offline:dev		# For the development version
 node ./start.js
 ```
 
-### The Online Version
+### The Online Build
 
-The online version requires a backend which does not exist yet. For testing purposes, we implemented a simple mock backend that handles all API calls and creates fake deployments.
+The online build requires a backend which does not exist yet. For testing purposes, we implemented a simple mock backend that handles all API calls and creates fake deployments.
 
 It is served on `localhost:8100` by default. This can be changed in `./start.js`.
 

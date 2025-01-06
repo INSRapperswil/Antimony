@@ -10,7 +10,7 @@ import {SchemaStore} from '@sb/lib/stores/schema-store';
 import {TopologyStore} from '@sb/lib/stores/topology-store';
 import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
 import {NotificationStore} from '@sb/lib/stores/notification-store';
-import {CookieDataBinder} from '@sb/lib/stores/data-binder/cookie-data-binder';
+import {LocalStorageDataBinder} from '@sb/lib/stores/data-binder/local-storage-data-binder';
 import {RemoteDataBinder} from '@sb/lib/stores/data-binder/remote-data-binder';
 
 export class RootStore {
@@ -25,7 +25,7 @@ export class RootStore {
 
   constructor() {
     if (process.env.IS_OFFLINE) {
-      this._dataBinder = new CookieDataBinder();
+      this._dataBinder = new LocalStorageDataBinder();
     } else {
       this._dataBinder = new RemoteDataBinder();
     }

@@ -1,4 +1,3 @@
-import Cookies from 'js-cookie';
 import {computed, observable} from 'mobx';
 
 import {
@@ -14,7 +13,7 @@ import {generateUuidv4} from '@sb/lib/utils/utils';
 import devices from '@sb/../local-data/devices.json';
 import {DataBinder} from '@sb/lib/stores/data-binder/data-binder';
 
-export class CookieDataBinder extends DataBinder {
+export class LocalStorageDataBinder extends DataBinder {
   @observable accessor isLoggedIn = true;
   @observable accessor hasExternalError = false;
 
@@ -66,7 +65,7 @@ export class CookieDataBinder extends DataBinder {
       case 'GET':
         return [
           true,
-          safeParseJsonCookie('topologies', '[]') as TopologyOut[],
+          safeParseJsonLocalStorage('topologies', '[]') as TopologyOut[],
           null,
         ];
       case 'DELETE':
@@ -93,7 +92,10 @@ export class CookieDataBinder extends DataBinder {
   }
 
   private deleteTopology(id: uuid4): [boolean, ErrorResponse | null, null] {
-    const topologies = safeParseJsonCookie('topologies', '[]') as TopologyOut[];
+    const topologies = safeParseJsonLocalStorage(
+      'topologies',
+      '[]'
+    ) as TopologyOut[];
     const topology = topologies.find(topology => topology.id === id);
     const topologyIndex = topology ? topologies.indexOf(topology) : -1;
 
@@ -102,7 +104,7 @@ export class CookieDataBinder extends DataBinder {
     }
 
     topologies.splice(topologyIndex, 1);
-    Cookies.set('topologies', JSON.stringify(topologies));
+    localStorage.setItem('topologies', JSON.stringify(topologies));
 
     return [true, null, null];
   }
@@ -111,7 +113,10 @@ export class CookieDataBinder extends DataBinder {
     id: uuid4,
     updatedTopology: TopologyIn
   ): [boolean, ErrorResponse | null, null] {
-    const topologies = safeParseJsonCookie('topologies', '[]') as TopologyOut[];
+    const topologies = safeParseJsonLocalStorage(
+      'topologies',
+      '[]'
+    ) as TopologyOut[];
     const topology = topologies.find(topology => topology.id === id);
     const topologyIndex = topology ? topologies.indexOf(topology) : -1;
 
@@ -123,7 +128,7 @@ export class CookieDataBinder extends DataBinder {
       ...topologies[topologyIndex],
       ...updatedTopology,
     };
-    Cookies.set('topologies', JSON.stringify(topologies));
+    localStorage.setItem('topologies', JSON.stringify(topologies));
 
     return [true, null, null];
   }
@@ -131,10 +136,13 @@ export class CookieDataBinder extends DataBinder {
   private postTopology(
     topology: TopologyIn
   ): [boolean, string | ErrorResponse, null] {
-    const topologies = safeParseJsonCookie('topologies', '[]') as TopologyOut[];
+    const topologies = safeParseJsonLocalStorage(
+      'topologies',
+      '[]'
+    ) as TopologyOut[];
     const topologyId = generateUuidv4();
 
-    const groups = safeParseJsonCookie('groups', '[]') as Group[];
+    const groups = safeParseJsonLocalStorage('groups', '[]') as Group[];
     const targetGroup = groups.find(group => group.id === topology.groupId);
     if (!targetGroup) {
       return [false, {code: '-1', message: 'Invalid Group ID'}, null];
@@ -146,7 +154,7 @@ export class CookieDataBinder extends DataBinder {
       groupId: targetGroup.id,
       definition: topology.definition,
     });
-    Cookies.set('topologies', JSON.stringify(topologies));
+    localStorage.setItem('topologies', JSON.stringify(topologies));
 
     return [true, topologyId, null];
   }
@@ -158,7 +166,11 @@ export class CookieDataBinder extends DataBinder {
   ): [boolean, Group[] | ErrorResponse | null, null] {
     switch (method) {
       case 'GET':
-        return [true, safeParseJsonCookie('groups', '[]') as Group[], null];
+        return [
+          true,
+          safeParseJsonLocalStorage('groups', '[]') as Group[],
+          null,
+        ];
       case 'DELETE':
         return this.deleteGroup(id!) as [boolean, ErrorResponse | null, null];
       case 'PATCH':
@@ -175,7 +187,7 @@ export class CookieDataBinder extends DataBinder {
   }
 
   private deleteGroup(id: uuid4): [boolean, ErrorResponse | null, null] {
-    const groups = safeParseJsonCookie('groups', '[]') as TopologyOut[];
+    const groups = safeParseJsonLocalStorage('groups', '[]') as TopologyOut[];
     const group = groups.find(group => group.id === id);
     const groupIndex = group ? groups.indexOf(group) : -1;
 
@@ -184,7 +196,7 @@ export class CookieDataBinder extends DataBinder {
     }
 
     groups.splice(groupIndex, 1);
-    Cookies.set('groups', JSON.stringify(groups));
+    localStorage.setItem('groups', JSON.stringify(groups));
 
     return [true, null, null];
   }
@@ -193,7 +205,7 @@ export class CookieDataBinder extends DataBinder {
     id: uuid4,
     updatedGroup: GroupIn
   ): [boolean, ErrorResponse | null, null] {
-    const groups = safeParseJsonCookie('groups', '[]') as TopologyOut[];
+    const groups = safeParseJsonLocalStorage('groups', '[]') as TopologyOut[];
     const group = groups.find(group => group.id === id);
     const groupIndex = group ? groups.indexOf(group) : -1;
 
@@ -205,13 +217,13 @@ export class CookieDataBinder extends DataBinder {
       ...groups[groupIndex],
       ...updatedGroup,
     };
-    Cookies.set('groups', JSON.stringify(groups));
+    localStorage.setItem('groups', JSON.stringify(groups));
 
     return [true, null, null];
   }
 
   private postGroup(group: GroupIn): [boolean, ErrorResponse | null, null] {
-    const groups = safeParseJsonCookie('groups', '[]') as Group[];
+    const groups = safeParseJsonLocalStorage('groups', '[]') as Group[];
     const groupId = generateUuidv4();
 
     groups.push({
@@ -220,7 +232,7 @@ export class CookieDataBinder extends DataBinder {
       canWrite: group.canWrite,
       canRun: group.canRun,
     });
-    Cookies.set('groups', JSON.stringify(groups));
+    localStorage.setItem('groups', JSON.stringify(groups));
 
     return [true, null, null];
   }
@@ -267,19 +279,19 @@ export class CookieDataBinder extends DataBinder {
   }
 }
 
-function safeParseJsonCookie(key: string, defaultValue: string) {
-  if (!Cookies.get(key)) {
-    Cookies.set(key, defaultValue);
+function safeParseJsonLocalStorage(key: string, defaultValue: string) {
+  if (!localStorage.getItem(key)) {
+    localStorage.setItem(key, defaultValue);
     return JSON.parse(defaultValue);
   }
 
   try {
-    return JSON.parse(Cookies.get(key)!);
+    return JSON.parse(localStorage.getItem(key)!);
   } catch (e) {
     console.warn(
-      `[COOKIES] Failed to parse JSON from cookie '${key}'. Resetting to default value. Original value: ${Cookies.get(key)}`
+      `[COOKIES] Failed to parse JSON from cookie '${key}'. Resetting to default value. Original value: ${localStorage.getItem(key)}`
     );
-    Cookies.set(key, defaultValue);
+    localStorage.setItem(key, defaultValue);
     return JSON.parse(defaultValue);
   }
 }

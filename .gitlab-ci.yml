@@ -85,7 +85,7 @@ retag_images_offline:
     GIT_STRATEGY: none
   script:
     - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - crane cp ${CI_REGISTRY_IMAGE}:offline-${CI_COMMIT_SHORT_SHA} ${CI_REGISTRY_IMAGE}-offline:${CI_COMMIT_TAG}
+    - crane cp ${CI_REGISTRY_IMAGE}:offline-${CI_COMMIT_SHORT_SHA} ${CI_REGISTRY_IMAGE}:offline-${CI_COMMIT_TAG}
   rules:
     - if: $CI_COMMIT_TAG
 

@@ -1,6 +1,19 @@
+workflow:
+  rules:
+      # run pipeline on open merge request
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      # prevent duplicate pipelines
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+      # A change to a branch, but without any open merge requests, run a branch pipeline.
+    - if: $CI_COMMIT_BRANCH
+      # If a commit tag is pushed, run a tag pipeline.
+    - if: $CI_COMMIT_TAG
+
 stages:
  - lint
  - build
+ - release
  - deploy
 
 default:
@@ -19,89 +32,121 @@ lint_frontend:
     - yarn run compile
     - yarn run lint
 
-build_frontend:
+# build_frontend:
+#   stage: build
+#   image: google/cloud-sdk:latest
+#   before_script:
+#     - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+#     - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+#     - gcloud config set project antimony-438914
+#   script:
+#     - gcloud builds submit --config build.prod.yaml
+
+# deploy_frontend:
+#   stage: deploy
+#   image: google/cloud-sdk:latest
+#   before_script:
+#     - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+#     - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+#     - gcloud config set project antimony-438914
+#   script:
+#     - >-
+#       gcloud run deploy antimony-prod
+#       --set-env-vars "PROXY_URL=https://antimony-backend-prod-491689167898.europe-west1.run.app"
+#       --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-prod:latest
+#       --allow-unauthenticated
+#       --region=europe-west1
+#       --memory=2Gi
+#       --ingress=all
+#       --port 8100
+#       --cpu=1
+
+build-frontend_offline:
   stage: build
-  image: google/cloud-sdk:latest
-  before_script:
-    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
-    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
-    - gcloud config set project antimony-438914
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.0-debug
+    entrypoint: [""]
   script:
-    - gcloud builds submit --config build.prod.yaml
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/offline.Dockerfile
+      --destination "${CI_REGISTRY_IMAGE}:offline-latest"
+      --destination "${CI_REGISTRY_IMAGE}:offline-${CI_COMMIT_SHORT_SHA}"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-deploy_frontend:
+retag_images_offline:
+  stage: release
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: [""]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - crane cp ${CI_REGISTRY_IMAGE}:offline-${CI_COMMIT_SHORT_SHA} ${CI_REGISTRY_IMAGE}-offline:${CI_COMMIT_TAG}
+  rules:
+    - if: $CI_COMMIT_TAG
+
+release_offline:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  script:
+    - echo "Release $CI_COMMIT_TAG"
+  release:
+    name: "$CI_COMMIT_TAG"
+    description: "$CI_COMMIT_TAG"
+    tag_name: "$CI_COMMIT_TAG"
+  rules:
+    - if: $CI_COMMIT_TAG
+
+update_infra_repo_offline:
   stage: deploy
-  image: google/cloud-sdk:latest
-  before_script:
-    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
-    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
-    - gcloud config set project antimony-438914
+  image: alpine:3.20
   script:
-    - >-
-      gcloud run deploy antimony-prod
-      --set-env-vars "PROXY_URL=https://antimony-backend-prod-491689167898.europe-west1.run.app"
-      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-prod:latest
-      --allow-unauthenticated
-      --region=europe-west1
-      --memory=2Gi
-      --ingress=all
-      --port 8100
-      --cpu=1
+    - apk update && apk add --no-cache git openssh-client-default yq
+    - git config --global user.email "ins-admin@ost.ch"
+    - git config --global user.name "ci-bot"
+    - git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+    - mkdir -p ~/.ssh
+    - cp $DEPLOY_KEY ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - git clone ssh://git@gitlab.ost.ch:45022/ins-infrastructure/ext-services/antimony.git
+    - cd antimony
+    - |
+      yq -i '(.spec.template.spec.containers[0] | select(.name == "antimony") | .image) = "registry.gitlab.ost.ch:45023/ins/websites/antimony:offline-" + strenv(CI_COMMIT_TAG) | .spec.template.spec.containers[0].image style=""' deployment-offline.yaml
+    - git add deployment-offline.yaml
+    - git diff-index --quiet HEAD || git commit -m "update image version from antimony pipeline"
+    - git push
+  rules:
+    - if: $CI_COMMIT_TAG
 
-build_frontend_offline:
-  stage: build
-  image: google/cloud-sdk:latest
-  before_script:
-    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
-    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
-    - gcloud config set project antimony-438914
-  script:
-    - gcloud builds submit --config build-offline.prod.yaml
+# build_backend:
+#   stage: build
+#   image: google/cloud-sdk:latest
+#   before_script:
+#     - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+#     - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+#     - gcloud config set project antimony-438914
+#   script:
+#     - cd ./server
+#     - gcloud builds submit --config build.prod.yaml
 
-deploy_frontend_offline:
-  stage: deploy
-  image: google/cloud-sdk:latest
-  before_script:
-    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
-    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
-    - gcloud config set project antimony-438914
-  script:
-    - >-
-      gcloud run deploy antimony-offline-prod
-      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-offline-prod:latest
-      --allow-unauthenticated
-      --region=europe-west1
-      --memory=2Gi
-      --ingress=all
-      --port 8100
-      --cpu=1
-
-build_backend:
-  stage: build
-  image: google/cloud-sdk:latest
-  before_script:
-    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
-    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
-    - gcloud config set project antimony-438914
-  script:
-    - cd ./server
-    - gcloud builds submit --config build.prod.yaml
-
-deploy_backend:
-  stage: deploy
-  image: google/cloud-sdk:latest
-  before_script:
-    - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
-    - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
-    - gcloud config set project antimony-438914
-  script:
-    - >-
-      gcloud run deploy antimony-backend-prod
-      --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-backend-prod:latest
-      --allow-unauthenticated
-      --region=europe-west1
-      --memory=2Gi
-      --ingress=all
-      --port 3000
-      --cpu=1
-
+# deploy_backend:
+#   stage: deploy
+#   image: google/cloud-sdk:latest
+#   before_script:
+#     - echo ${GCLOUD_AUTH_KEY} > /tmp/gcloud-api.json
+#     - gcloud auth activate-service-account --key-file /tmp/gcloud-api.json
+#     - gcloud config set project antimony-438914
+#   script:
+#     - >-
+#       gcloud run deploy antimony-backend-prod
+#       --image europe-west1-docker.pkg.dev/antimony-438914/antimony/antimony-backend-prod:latest
+#       --allow-unauthenticated
+#       --region=europe-west1
+#       --memory=2Gi
+#       --ingress=all
+#       --port 3000
+#       --cpu=1

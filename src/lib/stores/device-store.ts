@@ -18,7 +18,7 @@ export class DeviceStore extends DataStore<DeviceInfo, DeviceInfo, DeviceInfo> {
       if (deviceInfo) {
         iconName = IconMap.get(deviceInfo?.type);
       } else {
-        iconName = 'generic';
+        iconName = 'router';
       }
     }
     if (!kind || !iconName) iconName = 'generic';
